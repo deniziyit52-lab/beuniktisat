@@ -1245,8 +1245,8 @@
             }
 
             document.getElementById("newsForm").addEventListener("submit", submitNews);
-            document.getElementById("resetBtn").addEventListener("click", () => {
-                if (Borsa.resetMarket()) {
+            document.getElementById("resetBtn").addEventListener("click", async () => {
+                if (await Borsa.resetMarket()) {
                     Borsa.renderCommon();
                     showToast("Piyasa başlangıç durumuna sıfırlandı");
                     refreshSymbolDropdowns();

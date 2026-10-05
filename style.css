@@ -739,9 +739,9 @@ a.public-link {
         padding: 0.15rem 0.75rem;
     }
 
-    /* Sidebar — telefonda neredeyse tam ekran */
+    /* Sidebar — telefonda kısmi genişlikte çekmece */
     .sidebar-drawer {
-        width: 95vw;
+        width: min(360px, 84vw);
     }
     .sidebar-header {
         padding: 1rem;
@@ -2274,6 +2274,9 @@ body.light-mode .footer-dev { color: #64748b; }
     inset: 0;
     z-index: 40;
     background: rgba(2,6,23,0.65);
+    border: 0;
+    padding: 0;
+    cursor: pointer;
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     opacity: 0;
@@ -2289,7 +2292,7 @@ body.drawer-open .sidebar-backdrop {
     position: fixed;
     top: 0; left: 0;
     z-index: 50;
-    width: min(420px, 92vw);
+    width: min(360px, 84vw);
     height: 100dvh;
     background: linear-gradient(180deg, #0a0f1e 0%, #060913 100%);
     border-right: 1px solid var(--border);
@@ -4000,10 +4003,10 @@ input, select, textarea {
     .side-by-side {
         grid-template-columns: 1fr !important;
     }
-    /* Leaderboard / sidebar 92vw */
+    /* Leaderboard drawer stays partial-width on narrow screens. */
     .sidebar-drawer {
-        width: 92vw !important;
-        max-width: 92vw;
+        width: min(360px, 84vw) !important;
+        max-width: 84vw;
     }
     /* Chart height dengesi */
     .chart-card {
@@ -4175,8 +4178,8 @@ input, select, textarea {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
     .sidebar-drawer {
-        width: 380px !important;
-        max-width: 88vw;
+        width: min(360px, 84vw) !important;
+        max-width: 84vw;
     }
 }
 
