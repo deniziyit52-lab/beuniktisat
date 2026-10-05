@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zonguldak Bülent Ecevit Üniversitesi - İktisat Topluluğu</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        (function i(){window._scriptErrors=[];window.addEventListener('error',function(e){var m="[SYNTAX ERROR] "+(e.message||String(e.error||""))+" @ "+(e.filename||"?")+":"+(e.lineno||"?");console.error(m);window._scriptErrors.push(m);},true);function f(el,s){var m="❌ Script yüklenemedi (404/Network/CORS): "+s;console.error(m);window._scriptErrors.push(m);function s2(){if(!document.body)return setTimeout(s2,30);var d=document.createElement('div');d.style.cssText="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#991b1b;color:#fff;font-weight:700;font-family:sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:92vw;";d.textContent=m;document.body.appendChild(d);}s2();}window._hookScriptFail=function(src){return function(){f(this,src);};})();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
+    <script src="supabase-config.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
+    <script src="shared.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-left">
+                <button id="sidebarToggle" type="button" class="sidebar-hamburger" aria-label="Menüyü Aç" title="Liderlik & Hesap Dökümü">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <h1 class="logo">
+                    <span class="logo-symbol">₺</span>
+                    <span class="logo-text">Zonguldak Bülent Ecevit Üniversitesi</span>
+                    <span class="logo-sub">İktisat Topluluğu</span>
+                </h1>
+            </div>
+            <div class="header-center">
+                <div class="market-status">
+                    <span class="status-dot"></span>
+                    <span>PİYASA AÇIK</span>
+                    <span id="currentTime"></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-right-group">
+                    <div id="guestNav" class="nav-block">
+                        <button id="themeToggleGuest" class="theme-toggle header-icon-btn" type="button" aria-label="Tema Değiştir" title="Aydınlık / Koyu Tema">
+                            <span class="theme-icon">🌙</span>
+                        </button>
+                        <a href="login.html" class="btn btn--primary login-cta" title="Alışveriş yapmak için giriş yapın">
+                            🔑 Giriş / Kayıt Ol
+                        </a>
+                    </div>
+
+                    <div id="userNav" class="nav-block" style="display:none;">
+                        <button id="portfolioBtn" class="portfolio-btn" type="button" title="Portföyüm / Cüzdanım">
+                            👛 Cüzdanım
+                        </button>
+                        <div class="user-balance">
+                            <span class="balance-label">Bakiye</span>
+                            <span class="balance-value" id="userBalanceDisplay">—</span>
+                        </div>
+                        <button id="themeToggleUser" class="theme-toggle header-icon-btn" type="button" aria-label="Tema Değiştir" title="Aydınlık / Koyu Tema">
+                            <span class="theme-icon">🌙</span>
+                        </button>
+                        <div class="user-chip" title="Hesap">
+                            <div class="user-avatar" id="userAvatar">?</div>
+                            <div class="user-meta">
+                                <div class="user-name" id="userNameDisplay">—</div>
+                                <div class="user-email" id="userEmailDisplay">—</div>
+                            </div>
+                        </div>
+                        <button id="logoutBtn" class="btn btn--ghost logout-btn" type="button">Çıkış</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ticker-tape">
+            <div id="tickerContent" class="ticker-content"></div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="left-panel">
+            <div class="section-header">
+                <h2>📈 Canlı Piyasa</h2>
+                <span class="market-cap" id="totalMarketCap"></span>
+            </div>
+            <div id="stocksGrid" class="stocks-grid"></div>
+        </section>
+
+        <section class="right-panel">
+            <div class="panel-section">
+                <div class="section-header">
+                    <h2>📊 Fiyat Geçmişi</h2>
+                    <select id="stockSelector" class="stock-select"></select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="section-header">
+                    <h2>🔴 Canlı Haber Akışı</h2>
+                </div>
+                <div id="newsFeed" class="news-feed"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-left">
+                <div class="footer-copy">© 2026 Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu - Tüm Hakları Saklıdır.</div>
+                <div class="footer-dev">Designed &amp; Developed by <span class="footer-dev-names">Deniz İyit &amp; Ahmet Yavuz Karaköse</span></div>
+            </div>
+            <div class="footer-right">
+                <button type="button" class="kvkk-link" data-open-kvkk>KVKK ve Aydınlatma Metni</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- KVKK / Aydınlatma Metni Modal -->
+    <div id="kvkkModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card kvkk-modal" role="dialog" aria-modal="true" aria-labelledby="kvkkTitle">
+            <button type="button" class="modal-close" id="kvkkCloseBtn" aria-label="Kapat">×</button>
+            <div class="kvkk-header">
+                <h2 id="kvkkTitle" class="kvkk-title">📜 KVKK ve Aydınlatma Metni</h2>
+                <div class="kvkk-sub">Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni</div>
+            </div>
+            <div class="kvkk-body">
+                <section class="kvkk-section">
+                    <h3>ZBEÜ İktisat Topluluğu Borsa Simülasyonu KVKK Aydınlatma Metni</h3>
+
+                    <p><strong>1. Veri Sorumlusu:</strong> Bu simülasyon uygulaması, Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu tarafından tamamen eğitim ve pratik amacıyla tasarlanmıştır.</p>
+
+                    <p><strong>2. İşlenen Kişisel Veriler:</strong> Sisteme kayıt olurken kendi rızanızla paylaştığınız ad, soyad ve e-posta adresiniz ile uygulama içindeki sanal bakiye, portföy ve alım-satım işlem geçmişiniz işlenmektedir.</p>
+
+                    <p><strong>3. İşleme Amacı:</strong> Verileriniz; borsa simülasyonunda kullanıcı hesabınızın güvenle oluşturulması, portföyünüzün yönetilmesi, liderlik tablolarının güncellenmesi ve rekabet ortamının sorunsuz işleyebilmesi amacıyla kullanılmaktadır. Uygulamada gerçek para kullanılmamakta olup, verilerinizden hiçbir ticari kazanç elde edilmemektedir.</p>
+
+                    <p><strong>4. Verilerin Aktarımı ve Güvenliği:</strong> Verileriniz, modern güvenlik standartlarına sahip bulut veritabanı altyapısında (Supabase) şifreli olarak saklanmakta olup, topluluk dışındaki hiçbir yetkisiz üçüncü kişi, kurum veya reklam ajansıyla kesinlikle paylaşılmaz.</p>
+
+                    <p><strong>5. Kullanıcı Hakları:</strong> 6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca; sisteme kayıtlı verilerinizin silinmesini, güncellenmesini veya anonimleştirilmesini talep etme hakkına sahipsiniz. Talepleriniz için doğrudan ZBEÜ İktisat Topluluğu yönetimi ile iletişime geçebilirsiniz.</p>
+                </section>
+            </div>
+    </div>
+</div>
+
+    <!-- Trading Modal -->
+    <div id="tradeModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card trade-modal" role="dialog" aria-modal="true" aria-labelledby="tradeStockName">
+            <button type="button" class="modal-close" id="tradeCloseBtn" aria-label="Kapat">×</button>
+
+            <div class="trade-header">
+                <div class="trade-avatar" id="tradeAvatar">D</div>
+                <div>
+                    <h3 id="tradeStockName" class="trade-name">Deniz</h3>
+                    <div class="trade-symbol" id="tradeSymbol">DEN</div>
+                </div>
+                <div class="trade-price-col">
+                    <div class="trade-price" id="tradePrice">₺0.00</div>
+                    <div class="trade-change" id="tradeChange">—</div>
+                </div>
+            </div>
+
+            <div class="trade-grid">
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Kullanılabilir Bakiye</span>
+                    <span class="trade-stat-value user-only" id="tradeBalance">—</span>
+                    <span class="trade-stat-value guest-only">Giriş yapın</span>
+                </div>
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Sahip Olunan</span>
+                    <span class="trade-stat-value user-only" id="tradeOwned">0 Adet</span>
+                    <span class="trade-stat-value guest-only">Giriş yapın</span>
+                </div>
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Değer (Mevcut)</span>
+                    <span class="trade-stat-value" id="tradeHoldingValue">0,00 TL</span>
+                </div>
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Ortalama Maliyet</span>
+                    <span class="trade-stat-value user-only" id="tradeCostBasis">—</span>
+                    <span class="trade-stat-value guest-only">—</span>
+                </div>
+            </div>
+
+            <div id="tradeGuestBanner" class="trade-guest-banner">
+                🔑 Alışveriş yapmak için
+                <a href="login.html" style="color:var(--accent-bright); font-weight:700; text-decoration:none;">Giriş Yapın veya Kayıt Olun</a>
+            </div>
+
+            <div id="tradeLoggedInBlock" style="display:none;">
+                <div class="form-group" style="margin-top: 0.5rem;">
+                    <label for="tradeQty">Adet</label>
+                    <input type="number" id="tradeQty" min="1" step="1" value="1" placeholder="Almak / satmak istediğiniz adet">
+
+                    <div class="trade-summary" id="tradeSummary">
+                        <div class="trade-summary-row subtotal">
+                            <span class="label">Ara Toplam (Adet × Fiyat)</span>
+                            <span class="value" id="tradeSubtotal">0,00 TL</span>
+                        </div>
+                        <div class="trade-summary-row fee">
+                            <span class="label">Komisyon Ücreti (%1)</span>
+                            <span class="value" id="tradeFee">0,00 TL</span>
+                        </div>
+                        <div class="trade-summary-row total buy" id="tradeSummaryTotalRow">
+                            <span class="label" id="tradeTotalLabel">Ödenecek Toplam Tutar</span>
+                            <span class="value" id="tradeTotal">0,00 TL</span>
+                        </div>
+                    </div>
+
+                    <div id="tradeQuick" class="trade-quick">
+                        <button type="button" class="chip-btn" data-qty="1">1</button>
+                        <button type="button" class="chip-btn" data-qty="5">5</button>
+                        <button type="button" class="chip-btn" data-qty="10">10</button>
+                        <button type="button" class="chip-btn" data-qty="50">50</button>
+                        <button type="button" class="chip-btn chip-max" id="maxBuyBtn">Max Al</button>
+                        <button type="button" class="chip-btn chip-sellall" id="sellAllBtn">Tümünü Sat</button>
+                    </div>
+                    <div id="tradeFeedback" style="display:none; margin-top:0.75rem; padding:0.55rem 0.8rem; border-radius:8px; font-size:0.85rem; text-align:center;"></div>
+                </div>
+
+                <div class="trade-actions">
+                    <button type="button" id="buyBtn" class="action-btn buy-btn">💹 Al</button>
+                    <button type="button" id="sellBtn" class="action-btn sell-btn">📉 Sat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portfolio / Wallet Modal -->
+    <div id="portfolioModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card portfolio-modal" role="dialog" aria-modal="true" aria-labelledby="portfolioTitle">
+            <button type="button" class="modal-close" id="portfolioCloseBtn" aria-label="Kapat">×</button>
+            <div class="portfolio-header">
+                <div>
+                    <h2 id="portfolioTitle" class="portfolio-title">👛 Portföyüm / Cüzdanım</h2>
+                    <div class="portfolio-sub" id="portfolioSub">Toplam varlığınız ve sahip olduğunuz hisseler</div>
+                </div>
+            </div>
+
+            <div class="portfolio-summary">
+                <div class="portfolio-stat">
+                    <div class="portfolio-stat-label">Kullanılabilir Bakiye</div>
+                    <div class="portfolio-stat-value" id="portfolioBalance">—</div>
+                </div>
+                <div class="portfolio-stat">
+                    <div class="portfolio-stat-label">Toplam Yatırım (Maliyet)</div>
+                    <div class="portfolio-stat-value" id="portfolioCost">—</div>
+                </div>
+                <div class="portfolio-stat">
+                    <div class="portfolio-stat-label">Hisse Değeri (Piyasa)</div>
+                    <div class="portfolio-stat-value" id="portfolioStockValue">—</div>
+                </div>
+                <div class="portfolio-stat portfolio-stat-total">
+                    <div class="portfolio-stat-label">Toplam Net Değer</div>
+                    <div class="portfolio-stat-value" id="portfolioNetWorth">—</div>
+                </div>
+                <div class="portfolio-stat portfolio-stat-pl">
+                    <div class="portfolio-stat-label">Gerçekleşmemiş K / Z</div>
+                    <div class="portfolio-stat-value" id="portfolioUnrealized">—</div>
+                </div>
+            </div>
+
+            <div class="portfolio-table-wrap">
+                <table class="portfolio-table">
+                    <thead>
+                        <tr>
+                            <th>Hisse</th>
+                            <th class="num">Alış Fiyatı (Ort. Maliyet)</th>
+                            <th class="num">Güncel Fiyat</th>
+                            <th class="num">Adet</th>
+                            <th class="num">Piyasa Değeri</th>
+                            <th class="num">Anlık K / Z (₺)</th>
+                            <th class="num">K / Z (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolioBody">
+                    </tbody>
+                </table>
+                <div id="portfolioEmpty" class="portfolio-empty" style="display:none;">
+                    <div class="portfolio-empty-icon">📭</div>
+                    <div class="portfolio-empty-title">Henüz hisse sahibi değilsiniz</div>
+                    <div class="portfolio-empty-desc">Piyasadaki üye kartlarından birine tıklayarak ilk alışverişinizi yapın.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let currentTradeSymbol = null;
+
+        function fmt(n) { return BorsaFirebase.formatTL(n); }
+        function stockOf(sym) { return Borsa?.state?.stocks?.[sym] || null; }
+        function escapeHtml(str) {
+            return String(str == null ? "" : str)
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        }
+        function formatDate(val) {
+            if (!val) return "—";
+            let d;
+            if (val instanceof Date) d = val;
+            else {
+                d = new Date(val);
+                if (isNaN(d.getTime())) return String(val);
+            }
+            try {
+                return new Intl.DateTimeFormat("tr-TR", {
+                    day: "2-digit", month: "2-digit", year: "numeric",
+                    hour: "2-digit", minute: "2-digit",
+                }).format(d);
+            } catch (e) {
+                return d.toLocaleString("tr-TR");
+            }
+        }
+
+        // ADMİN BUTONUNU GOSTER / GIZLE
+        // KURAL (Sıfır Supabase API çağrısı):
+        //   - Varsayılan: display:none.
+        //   - SADECE local session cache (sb.auth.getSession())
+        //     üzerinden email == deniziyit52@gmail.com ise
+        //     görünür yapılır. Asla yönlendirme YAPILMAZ.
+        const ADMIN_EMAIL = "deniziyit52@gmail.com";
+        function toggleAdminGateButtonFromSession(forceUser /* optional user override */) {
+            const section = $("sidebarAdminGateSection");
+            if (!section) return;
+
+            let email = "";
+            if (forceUser && forceUser.email) {
+                email = forceUser.email;
+            } else if (window.sb && window.sb.auth && typeof window.sb.auth.session === "function") {
+                // senkron session okuma: cache'ten döner, API çağrısı YOK
+                try {
+                    const sess = window.sb.auth.session && window.sb.auth.session();
+                    if (sess && sess.user && sess.user.email) email = sess.user.email;
+                } catch (e) {}
+            }
+            email = (email || "").toString().trim().toLowerCase();
+            const isAdmin = (email === ADMIN_EMAIL.toLowerCase());
+
+            if (isAdmin) {
+                section.classList.remove("hidden");
+                section.style.display = "block";
+                section.setAttribute("aria-hidden", "false");
+            } else {
+                section.classList.add("hidden");
+                section.style.display = "none";
+                section.setAttribute("aria-hidden", "true");
+            }
+        }
+
+        function refreshUserNav(user, doc) {
+            const guest = $("guestNav");
+            const usernav = $("userNav");
+
+            // Admin butonu görünürlüğü: auth event'i geldiyse user objesinden,
+            // yoksa getSession() önbelleğinden — ikisi de 0 API çağrısı.
+            toggleAdminGateButtonFromSession(user || null);
+
+            if (!user) {
+                guest.style.display = "inline-flex";
+                usernav.style.display = "none";
+                if (typeof Borsa !== "undefined" && Borsa.Theme && Borsa.Theme.bindAllToggles) Borsa.Theme.bindAllToggles();
+                return;
+            }
+            guest.style.display = "none";
+            usernav.style.display = "inline-flex";
+            const name = (doc?.displayName || user.displayName || user.email || "Kullanıcı").toString();
+            const email = user.email || "";
+            $("userNameDisplay").textContent = name.length > 20 ? name.slice(0, 17) + "…" : name;
+            $("userEmailDisplay").textContent = email.length > 22 ? email.slice(0, 19) + "…" : email;
+            $("userAvatar").textContent = name.charAt(0).toUpperCase();
+            $("userBalanceDisplay").textContent = fmt(BorsaFirebase.balance());
+            if (typeof Borsa !== "undefined" && Borsa.Theme && Borsa.Theme.bindAllToggles) Borsa.Theme.bindAllToggles();
+        }
+
+        function openPortfolio() {
+            const m = $("portfolioModal");
+            if (!m) return;
+            m.style.display = "flex";
+            m.setAttribute("aria-hidden", "false");
+            renderPortfolio();
+        }
+        function closePortfolio() {
+            const m = $("portfolioModal");
+            if (!m) return;
+            m.style.display = "none";
+            m.setAttribute("aria-hidden", "true");
+        }
+        function renderPortfolio() {
+            const doc = BorsaFirebase.currentUserData();
+            const bal = BorsaFirebase.balance();
+            const pf = doc && doc.portfolio ? doc.portfolio : {};
+            const symbols = Object.keys(pf).filter(k => Number(pf[k]?.qty || 0) > 0);
+            let stockValue = 0;
+            let totalCost = 0;
+            const tbody = $("portfolioBody");
+            const empty = $("portfolioEmpty");
+            tbody.innerHTML = "";
+            if (!symbols.length) {
+                empty.style.display = "block";
+            } else {
+                empty.style.display = "none";
+                symbols.forEach(sym => {
+                    const s = stockOf(sym);
+                    const entry = pf[sym];
+                    const qty = Number(entry.qty || 0);
+                    const avg = Number(entry.costBasis || entry.avg || entry.cost || 0);
+                    const price = Number(s?.price || 0);
+                    const market = Math.round(qty * price * 100) / 100;
+                    const costTotal = Math.round(qty * avg * 100) / 100;
+                    const pnl = Math.round((market - costTotal) * 100) / 100;
+                    const pnlPct = (costTotal > 0 && avg > 0) ? ((price - avg) / avg * 100) : 0;
+                    stockValue += market;
+                    totalCost += costTotal;
+                    const priceArrow = (price >= avg) ? "▲" : "▼";
+                    const priceDirClass = (price >= avg) ? "pf-up" : "pf-down";
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>
+                            <div class="pf-stock">
+                                <div class="pf-avatar" style="background: linear-gradient(135deg, ${s?.color || '#555'}, ${s?.color || '#555'}aa);">${(s?.name || sym).charAt(0).toUpperCase()}</div>
+                                <div>
+                                    <div class="pf-name">${s?.name || sym}</div>
+                                    <div class="pf-sym">${sym}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="num pf-bold pf-cost">
+                            ${avg > 0 ? fmt(avg) : "—"}
+                        </td>
+                        <td class="num">
+                            <span class="pf-bold">${price > 0 ? fmt(price) : "—"}</span>
+                            ${avg > 0 ? `<div class="pf-subdelta ${priceDirClass}">${priceArrow} ${price > 0 && avg > 0 ? fmt(price - avg) : "—"} / adet</div>` : ""}
+                        </td>
+                        <td class="num">${qty.toLocaleString("tr-TR")} Adet</td>
+                        <td class="num pf-bold">${market > 0 ? fmt(market) : "—"}</td>
+                        <td class="num pf-pnl ${pnl >= 0 ? "pf-up" : "pf-down"}">
+                            <span class="pf-pnl-tl">${pnl >= 0 ? "▲" : "▼"} ${fmt(Math.abs(pnl))}</span>
+                        </td>
+                        <td class="num pf-pnl ${pnl >= 0 ? "pf-up" : "pf-down"}">
+                            <span class="pf-pnl-pct">${pnl >= 0 ? "+" : ""}${pnlPct.toFixed(2)}%</span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            stockValue = Math.round(stockValue * 100) / 100;
+            totalCost = Math.round(totalCost * 100) / 100;
+            const unrealized = stockValue - totalCost;
+            const netWorth = bal + stockValue;
+            $("portfolioBalance").textContent = fmt(bal);
+            $("portfolioCost").textContent = fmt(totalCost);
+            $("portfolioStockValue").textContent = fmt(stockValue);
+            $("portfolioNetWorth").textContent = fmt(netWorth);
+            const uEl = $("portfolioUnrealized");
+            const uPct = totalCost > 0 ? (unrealized / totalCost * 100) : 0;
+            uEl.innerHTML = `<span class="pf-pnl-tl">${unrealized >= 0 ? "▲" : "▼"} ${fmt(Math.abs(unrealized))}</span>
+                             <span class="pf-pnl-pct ${unrealized >= 0 ? "pf-up" : "pf-down"}" style="margin-left:0.5rem;">${unrealized >= 0 ? "+" : ""}${uPct.toFixed(2)}%</span>`;
+            uEl.classList.toggle("pf-up", unrealized >= 0);
+            uEl.classList.toggle("pf-down", unrealized < 0);
+        }
+
+        function openTrade(sym) {
+            const s = stockOf(sym);
+            if (!s) return;
+            currentTradeSymbol = sym;
+            const modal = $("tradeModal");
+            modal.style.display = "flex";
+            modal.setAttribute("aria-hidden", "false");
+            $("tradeAvatar").textContent = s.name.charAt(0).toUpperCase();
+            $("tradeAvatar").style.background = `linear-gradient(135deg, ${s.color}, ${s.color}aa)`;
+            $("tradeStockName").textContent = s.name;
+            $("tradeSymbol").textContent = s.symbol;
+            updateTradeModal();
+            (async () => {
+                try {
+                    if (BorsaFirebase.currentUser() && BorsaFirebase.refreshUserDoc) {
+                        await BorsaFirebase.refreshUserDoc();
+                        updateTradeModal();
+                    }
+                } catch (e) {}
+            })();
+        }
+
+        function closeTrade() {
+            const modal = $("tradeModal");
+            modal.style.display = "none";
+            modal.setAttribute("aria-hidden", "true");
+            currentTradeSymbol = null;
+        }
+
+        function setTradeFeedback(type, msg) {
+            const el = $("tradeFeedback");
+            if (!type || !msg) { el.style.display = "none"; el.innerHTML = ""; return; }
+            el.style.display = "block";
+            if (type === "error") {
+                el.style.background = "rgba(239,68,68,0.1)";
+                el.style.color = "var(--red-bright)";
+                el.style.border = "1px solid rgba(239,68,68,0.3)";
+            } else if (type === "info") {
+                el.style.background = "rgba(59,130,246,0.1)";
+                el.style.color = "var(--accent-bright)";
+                el.style.border = "1px solid rgba(59,130,246,0.3)";
+            } else {
+                el.style.background = "rgba(16,185,129,0.1)";
+                el.style.color = "var(--green-bright)";
+                el.style.border = "1px solid rgba(16,185,129,0.3)";
+            }
+            el.innerHTML = msg;
+        }
+
+        function updateTradeModal() {
+            const sym = currentTradeSymbol;
+            if (!sym) return;
+            const s = stockOf(sym);
+            if (!s) return;
+            const price = Number(s.price || 0);
+            const pct = Number(s.changePct || 0);
+            const isUp = pct >= 0;
+            $("tradePrice").textContent = fmt(price);
+            const tc = $("tradeChange");
+            tc.textContent = `${isUp ? "▲" : "▼"} %${Math.abs(pct).toFixed(2)}`;
+            tc.className = "trade-change " + (isUp ? "up" : "down");
+
+            const user = BorsaFirebase.currentUser();
+            const doc = BorsaFirebase.currentUserData();
+            const guestBlock = $("tradeGuestBanner");
+            const loggedBlock = $("tradeLoggedInBlock");
+            const owned = BorsaFirebase.ownedQty(sym);
+            const costBasis = Number(doc?.portfolio?.[sym]?.costBasis || 0);
+            const bal = BorsaFirebase.balance();
+            $("tradeBalance").textContent = fmt(bal);
+            $("tradeOwned").textContent = `${owned} Adet`;
+            $("tradeHoldingValue").textContent = fmt(owned * price);
+            $("tradeCostBasis").textContent = owned > 0 ? fmt(costBasis) : "—";
+
+            if (!user) {
+                guestBlock.style.display = "flex";
+                loggedBlock.style.display = "none";
+            } else {
+                guestBlock.style.display = "none";
+                loggedBlock.style.display = "block";
+                updateTradeTotals();
+            }
+        }
+
+        // =====================================================================
+        //  %1 KOMISYONLU TOPLAM HESAPLAMA (ALIS / SATIS)
+        //  Komisyon oranı sabit: 0.01 ( yüzde 1 )
+        //  Alışta kullanıcı "qty*price + %1" öder
+        //  Satışta kullanıcı "qty*price - %1" alır
+        // =====================================================================
+        const COMMISSION_RATE = 0.01;
+
+        function calcTradeBreakdown(side, qty, price) {
+            qty   = Math.max(0, Math.floor(Number(qty   || 0)));
+            price = Number(price || 0);
+            const subtotal = qty * price;
+            const fee      = Math.round(subtotal * COMMISSION_RATE * 100) / 100;
+            let finalTotal = 0;
+            if (side === "BUY")  finalTotal = Math.round((subtotal + fee) * 100) / 100; // kullanıcı öder
+            if (side === "SELL") finalTotal = Math.round((subtotal - fee) * 100) / 100; // kullanıcı alır
+            return { qty, price, subtotal, fee, total: finalTotal, side };
+        }
+
+        function updateTradeTotals(sideHint) {
+            const qtyInput = $("tradeQty");
+            if (!qtyInput) return;
+            const qty   = Math.max(0, Math.floor(Number(qtyInput.value || 0)));
+            const s     = stockOf(currentTradeSymbol);
+            const price = Number(s?.price || 0);
+
+            // sideHint verilmemisse: mevcut class toplam satirina bak
+            if (!sideHint) {
+                const row = $("tradeSummaryTotalRow");
+                if (row && row.classList.contains("sell")) sideHint = "SELL";
+                else sideHint = "BUY";
+            }
+            const bd = calcTradeBreakdown(sideHint, qty, price);
+
+            if ($("tradeSubtotal")) $("tradeSubtotal").textContent = fmt(bd.subtotal);
+            if ($("tradeFee"))      $("tradeFee").textContent      = fmt(bd.fee);
+            if ($("tradeTotal"))    $("tradeTotal").textContent    = fmt(bd.total);
+
+            const totalRow = $("tradeSummaryTotalRow");
+            const totalLbl = $("tradeTotalLabel");
+            if (totalRow) {
+                totalRow.classList.remove("buy", "sell");
+                totalRow.classList.add(sideHint === "BUY" ? "buy" : "sell");
+            }
+            if (totalLbl) {
+                totalLbl.textContent = sideHint === "BUY" ? "Ödenecek Toplam Tutar" : "Alacağınız Tutar (Komisyonlu)";
+            }
+        }
+
+        function setButtonsBusy(busy) {
+            ["buyBtn","sellBtn"].forEach(id => {
+                const btn = $(id);
+                if (!btn) return;
+                btn.disabled = busy;
+                btn.style.opacity = busy ? 0.7 : 1;
+            });
+        }
+
+        // =====================================================================
+        //  WHISPER TOAST SISTEMI (Fısıltı Tüyo Bildirimleri)
+        // =====================================================================
+        const WHISPER_SEEN_KEY = "borsa_seen_tips_v1";
+        const WHISPER_MAX_TOASTS = 4;
+        const WHISPER_DISMISS_MS = 20000;
+
+        function _loadSeenWhisperIds() {
+            try {
+                const raw = sessionStorage.getItem(WHISPER_SEEN_KEY);
+                if (!raw) return new Set();
+                const arr = JSON.parse(raw);
+                return new Set(Array.isArray(arr) ? arr : []);
+            } catch (e) {
+                return new Set();
+            }
+        }
+        function _saveSeenWhisperIds(set) {
+            try {
+                const arr = Array.from(set).slice(-200);
+                sessionStorage.setItem(WHISPER_SEEN_KEY, JSON.stringify(arr));
+            } catch (e) {}
+        }
+        window._seenWhisperIds = _loadSeenWhisperIds();
+
+        function _ensureToastStack() {
+            let stack = $("whisperToastStack");
+            if (!stack) {
+                stack = document.createElement("div");
+                stack.id = "whisperToastStack";
+                stack.className = "whisper-toast-stack";
+                stack.setAttribute("aria-live", "polite");
+                stack.setAttribute("role", "status");
+                document.body.appendChild(stack);
+            }
+            return stack;
+        }
+
+        function _truncateWhispers() {
+            const stack = _ensureToastStack();
+            const toasts = stack.querySelectorAll(".whisper-toast:not(.hide)");
+            if (toasts.length > WHISPER_MAX_TOASTS) {
+                const excess = Array.from(toasts).slice(0, toasts.length - WHISPER_MAX_TOASTS);
+                excess.forEach((t) => _dismissToast(t, true));
+            }
+        }
+
+        function _dismissToast(toastEl, immediate) {
+            if (!toastEl) return;
+            if (toastEl._whisperTimer) {
+                clearTimeout(toastEl._whisperTimer);
+                toastEl._whisperTimer = null;
+            }
+            if (toastEl.classList.contains("hide") || !document.body.contains(toastEl)) return;
+            const run = () => {
+                toastEl.classList.add("hide");
+                setTimeout(() => { if (toastEl.parentNode) toastEl.remove(); }, 420);
+            };
+            if (immediate) { run(); }
+            else run();
+        }
+
+        function showWhisperToast(tip) {
+            if (!tip) return;
+            const tipId = tip.id || ("tmp_" + Math.random().toString(36).slice(2));
+            if (window._seenWhisperIds.has(tipId)) return;
+            window._seenWhisperIds.add(tipId);
+            _saveSeenWhisperIds(window._seenWhisperIds);
+
+            const stack = _ensureToastStack();
+            const el = document.createElement("div");
+            const isFake = !!tip.is_fake;
+            el.className = "whisper-toast" + (isFake ? " whisper-toast--fake" : "");
+            el.dataset.id = String(tipId);
+
+            const symbol = String(tip.stock_symbol || "").slice(0, 16);
+            const message = String(tip.message || "").slice(0, 280);
+            const createdAt = tip.created_at ? new Date(tip.created_at) : new Date();
+            const timeText = formatDate(createdAt);
+            const alertText = isFake
+                ? "▸ ASILMAZ BİLGİ SAÇILDI — İŞLEM YAPMADAN ÖNCE DİKKATLİ OL"
+                : "▸ ŞİFRELİ KANAL DINLENDİ — KAMUOYUNDAN ÖNCE BİLGİ";
+
+            el.innerHTML = `
+                <div class="whisper-t-head">
+                    <div class="whisper-t-label">
+                        <span class="whisper-t-lock">🔒</span>
+                        <span>${isFake ? "ŞÜPHELİ FISILTI / TÜYO" : "GIZLI FISILTI / TÜYO"}</span>
+                    </div>
+                    <button type="button" class="whisper-t-close" aria-label="Kapat" title="Kapat">×</button>
+                </div>
+                <div class="whisper-t-alert">${escapeHtml(alertText)}</div>
+                <div class="whisper-t-msg">${escapeHtml(message)}</div>
+                ${symbol ? `<div class="whisper-t-symbol">📡 ${escapeHtml(symbol)}</div>` : ""}
+                ${isFake ? `<div class="whisper-t-banner whisper-t-banner--fake">⚠ UYARI: Bu tüyo admin tarafından ASILSIZ olarak işaretlenmiştir — tersine işlem riski!</div>` : ""}
+                <div class="whisper-t-foot">
+                    <span class="whisper-t-symbol" style="background:transparent;border:none;padding:0;font-weight:700;color:inherit;letter-spacing:0;">
+                        👁 Diğer kullanıcılar henüz görmedi
+                    </span>
+                    <span class="whisper-t-time">🕓 ${escapeHtml(timeText)}</span>
+                </div>
+            `;
+
+            stack.appendChild(el);
+            _truncateWhispers();
+
+            const closeBtn = el.querySelector(".whisper-t-close");
+            if (closeBtn) closeBtn.addEventListener("click", () => _dismissToast(el, true));
+
+            el._whisperTimer = setTimeout(() => _dismissToast(el, false), WHISPER_DISMISS_MS);
+        }
+
+        async function _loadExistingWhispers() {
+            try {
+                if (!window.BorsaFirebase) return;
+                // Supabase SDK henüz yüklenmemişse, 250ms aralıklarla 60 SN boyunca bekle.
+                // 3 saniyelik kısa süre = ağ/cdn miss senaryolarında çok sık yetersiz kalıyor.
+                if (!BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) {
+                    const t0 = Date.now();
+                    while (Date.now() - t0 < 60000 &&
+                           (!BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured())) {
+                        await new Promise(r => setTimeout(r, 250));
+                    }
+                }
+                if (!BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) {
+                    console.warn("[Whisper] Supabase 60 sn sonra hazır değil — eski tüyler atlandı.");
+                    return;
+                }
+                const user = BorsaFirebase.currentUser();
+                if (!user) return;
+                const tips = await BorsaFirebase.fetchMyTips();
+                if (!tips || !tips.length) return;
+                const notSeen = tips.filter(t => t && !window._seenWhisperIds.has(t.id));
+                notSeen.reverse().forEach(tip => showWhisperToast(tip));
+            } catch (e) {
+                console.warn("[Whisper] eski tüyler yuklenemedi:", e);
+            }
+        }
+
+        // ------------------------------------------------------------
+        //  Whisper Gazette Canlı Realtime Abonesi (tekil, tek sefer bağlanır)
+        //  ------------------------------------------------------------
+        //  - Tek denemede bağlantı kurulamazsa 250ms aralıklarla tekrar dener
+        //  - Başarılı olunca window.WhisperRealtime singleton içinden takip
+        //    eder. Kullanıcı değişince veya auth değişince subscribeWhisperRealtime
+        //    içindeki bindForUser() otomatik yeniden kanal açar — dışarıdan 2.
+        //    onChange gerekmez.
+        //  - Bağlantı sonrası gelen her yeni INSERT (postgres_changes) için
+        //    showWhisperToast çağrılır.
+        (function _installWhisperLiveSubscriber() {
+            let _tries = 0;
+            const MAX_TRIES = 900;
+            let _unsub = null;
+
+            function attempt() {
+                if (_unsub) return;
+                _tries++;
+                if (!window.BorsaFirebase) {
+                    if (_tries < MAX_TRIES) setTimeout(attempt, 250);
+                    return;
+                }
+                if (typeof BorsaFirebase.subscribeWhisperRealtime !== "function") return;
+                if (!BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) {
+                    if (_tries < MAX_TRIES) setTimeout(attempt, 250);
+                    return;
+                }
+                try {
+                    _unsub = BorsaFirebase.subscribeWhisperRealtime((tip) => {
+                        if (tip && tip.id && !window._seenWhisperIds.has(tip.id)) {
+                            showWhisperToast(tip);
+                        }
+                    });
+                } catch (e) {
+                    console.warn("[Whisper] canlı abonelik hatası (deneme #" + _tries + "):", e);
+                    if (_tries < MAX_TRIES) setTimeout(attempt, 500);
+                }
+            }
+
+            attempt();
+            window.addEventListener("borsa:supabase-ready", attempt, { once: true });
+        })();
+
+        // =====================================================================
+        //  SIDEBAR (SOL KAYAR MENU)
+        // =====================================================================
+        function openSidebar() {
+            document.body.classList.add("drawer-open");
+            document.dispatchEvent(new CustomEvent("borsa:sidebar-open"));
+            // ilk acilista leaderboard'i yukle
+            loadLeaderboard(true);
+        }
+        function closeSidebar() {
+            document.body.classList.remove("drawer-open");
+            document.dispatchEvent(new CustomEvent("borsa:sidebar-close"));
+        }
+        function switchSidebarTab(tab) {
+            document.querySelectorAll(".sidebar-tab").forEach(b => {
+                b.classList.toggle("sidebar-tab--active", b.dataset.tab === tab);
+            });
+            document.querySelectorAll(".sidebar-panel").forEach(p => {
+                p.classList.toggle("sidebar-panel--active", p.id === `panel${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+            });
+            if (tab === "leaderboard")  loadLeaderboard(true);
+            if (tab === "transactions") loadTransactions(true);
+        }
+
+        function renderLeaderboard(list) {
+            const root = $("leaderboardList");
+            if (!root) return;
+            if (!list || !list.length) {
+                root.innerHTML = `<li class="leaderboard-empty">Henüz sıralama verisi yok.</li>`;
+                return;
+            }
+            root.innerHTML = list.map(r => {
+                const rank = Number(r.rank || 0);
+                const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+                const name = r.display_name ? escapeHtml(r.display_name) : ("Üye " + String(rank).padStart(2,"0"));
+                const sub = `Nakit ${fmt(Number(r.balance || 0))} · Hisseler ${fmt(Number(r.market_value || 0))}`;
+                return `<li class="leaderboard-item rank--${rank}">
+                    <div class="lb-rank">${medal}</div>
+                    <div>
+                        <div class="lb-name">${name}</div>
+                        <div class="lb-sub">${sub}</div>
+                    </div>
+                    <div class="lb-total">
+                        <span class="big">${fmt(Number(r.total_net_worth || 0))}</span>
+                        <span class="sub">Toplam Net Değer</span>
+                    </div>
+                </li>`;
+            }).join("");
+        }
+
+        function renderTransactions(list) {
+            const root = $("transactionsList");
+            if (!root) return;
+            const user = BorsaFirebase.currentUser();
+            if (!user) {
+                root.innerHTML = `<li class="transactions-empty">İşlem dökümünü görmek için giriş yapın.</li>`;
+                return;
+            }
+            if (!list || !list.length) {
+                root.innerHTML = `<li class="transactions-empty">Henüz işlem yapmadınız. İlk işleminizden sonra burada listelenecektir.</li>`;
+                return;
+            }
+            root.innerHTML = list.map(tx => {
+                const side  = (tx.type || "").toLowerCase();
+                const isBuy = side === "buy";
+                const qty   = Number(tx.quantity || 0);
+                const pps   = Number(tx.price_per_share || 0);
+                const total = qty * pps;
+                const date  = formatDate(tx.created_at);
+                return `<li class="tx-item">
+                    <span class="tx-badge ${isBuy ? "tx-badge--buy" : "tx-badge--sell"}">${isBuy ? "Alış" : "Satış"}</span>
+                    <div class="tx-info">
+                        <div class="tx-head">
+                            ${isBuy ? "💹 Alım" : "📉 Satış"}
+                            <span class="sym">${escapeHtml(String(tx.stock_symbol || "—"))}</span>
+                        </div>
+                        <div class="tx-sub">${qty.toLocaleString("tr-TR")} Adet × ${fmt(pps)}</div>
+                    </div>
+                    <div class="tx-right">
+                        <span class="price">${isBuy ? "-" : "+"}${fmt(total)}</span>
+                        <span class="date">${date}</span>
+                    </div>
+                </li>`;
+            }).join("");
+        }
+
+        // Cache + throttle: ayni oturumda 10 sn icinde tekrar atma
+        let _lbCache = { at: 0, data: null };
+        let _txCache = { at: 0, data: null };
+        const CACHE_MS = 10000;
+
+        async function loadLeaderboard(force) {
+            if (!BorsaFirebase.fetchLeaderboard) return;
+            const now = Date.now();
+            if (!force && _lbCache.data && now - _lbCache.at < CACHE_MS) {
+                renderLeaderboard(_lbCache.data); return;
+            }
+            try {
+                const data = await BorsaFirebase.fetchLeaderboard();
+                _lbCache = { at: Date.now(), data };
+                renderLeaderboard(data);
+            } catch (e) {
+                renderLeaderboard(null);
+                $("leaderboardList").innerHTML = `<li class="leaderboard-empty">Sıralama yüklenemedi. Sonra tekrar deneyin.</li>`;
+            }
+        }
+        async function loadTransactions(force) {
+            if (!BorsaFirebase.fetchMyTransactions) return;
+            const now = Date.now();
+            if (!force && _txCache.data && now - _txCache.at < CACHE_MS) {
+                renderTransactions(_txCache.data); return;
+            }
+            try {
+                const data = await BorsaFirebase.fetchMyTransactions();
+                _txCache = { at: Date.now(), data };
+                renderTransactions(data);
+            } catch (e) {
+                renderTransactions(null);
+            }
+        }
+
+        function invalidateSidebarCaches() {
+            _lbCache = { at: 0, data: null };
+            _txCache = { at: 0, data: null };
+            if (document.body.classList.contains("drawer-open")) {
+                const active = document.querySelector(".sidebar-tab--active");
+                if (active) {
+                    if (active.dataset.tab === "leaderboard")  loadLeaderboard(true);
+                    if (active.dataset.tab === "transactions") loadTransactions(true);
+                }
+            }
+        }
+
+        // =====================================================================
+        //  DOMContentLoaded: Butun wiring
+        // =====================================================================
+        document.addEventListener("DOMContentLoaded", () => {
+            Borsa.Theme.init();
+            Borsa.Theme.bindAllToggles();
+
+            // Extend card click to also open the trading modal.
+            const origRenderGrid = Borsa.renderStocksGrid.bind(Borsa);
+            Borsa.renderStocksGrid = function (opts) {
+                origRenderGrid(opts);
+                document.querySelectorAll(".stock-card").forEach(card => {
+                    const sym = card.dataset.symbol;
+                    card.addEventListener("click", () => openTrade(sym), true);
+                });
+            };
+
+            Borsa.ensureInitialized();
+            Borsa.renderCommon();
+            Borsa.startAutoUpdates(true);
+
+            // (SIFIR API ÇAĞRISI) index.html YÖNETİCİ BUTONU İLK STATE:
+            // Sayfa ilk yüklenirken session önbelleğinden bak, buton göster/gizle.
+            // Hiçbir kullanıcı / normal kullanıcı ise hiçbir şey YAPMA (sakla kalsın).
+            // ASLA index.html üzerinde yönlendirme YOK.
+            toggleAdminGateButtonFromSession();
+
+            // Wire auth subscription.
+            BorsaFirebase.onChange((user, doc) => {
+                refreshUserNav(user, doc);
+                invalidateSidebarCaches();
+                const tm = $("tradeModal");
+                const pm = $("portfolioModal");
+                if (tm && tm.style.display === "flex") updateTradeModal();
+                if (pm && pm.style.display === "flex") renderPortfolio();
+                if (!user) {
+                    // cikis yapildiysa sidebar cache temizle
+                    loadTransactions(true);
+                } else {
+                    // yeni giris yapildiysa, eski görülmemis fisiltolari yukle
+                    // (canlı realtime dinleyicisi zaten _installWhisperLiveSubscriber
+                    //  IIFE tarafından tek seferde bağlanır, auth on change içinden takip eder)
+                    _loadExistingWhispers();
+                }
+            });
+
+            // Sayfa yüklemesi tamamlandıktan + Supabase hazır olduktan sonra subscribeAuth çalışsın.
+            // Önce hazır olup olmadığını kontrol et; event gelmezse poll ile de düşeriz.
+            function kickoffAuth() {
+                if (!window.BorsaFirebase || !BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) return false;
+                BorsaFirebase.subscribeAuth();
+
+                // Oturum zaten acikken sayfa yenileme durumunda: fisiltolari yukle
+                if (BorsaFirebase.currentUser()) {
+                    _loadExistingWhispers();
+                }
+                return true;
+            }
+            if (!kickoffAuth()) {
+                window.addEventListener("borsa:supabase-ready", () => kickoffAuth(), { once: true });
+                // yedek polling
+                let _tries = 0;
+                const _iv = setInterval(() => {
+                    _tries++;
+                    if (kickoffAuth() || _tries > 240) clearInterval(_iv);
+                }, 250);
+            }
+
+            // Re-render trade modal & portfolio prices every tick + sidebar active tab refresh
+            setInterval(() => {
+                if (currentTradeSymbol) updateTradeModal();
+                const pm = $("portfolioModal");
+                if (pm && pm.style.display === "flex") renderPortfolio();
+                // sidebar aciksa 25 tick sonrasinda 1 defa tazele (fiyatlar degistigi icin LB market degeri)
+                if (document.body.classList.contains("drawer-open")) {
+                    const active = document.querySelector(".sidebar-tab--active");
+                    if (active && active.dataset.tab === "leaderboard") loadLeaderboard(false);
+                }
+            }, 2500);
+
+            // Modal + trade events
+            const tradeClose = $("tradeCloseBtn");
+            if (tradeClose) tradeClose.addEventListener("click", closeTrade);
+            const tm = $("tradeModal");
+            if (tm) tm.addEventListener("click", (e) => { if (e.target.id === "tradeModal") closeTrade(); });
+
+            if ($("portfolioCloseBtn")) $("portfolioCloseBtn").addEventListener("click", closePortfolio);
+            const pm = $("portfolioModal");
+            if (pm) pm.addEventListener("click", (e) => { if (e.target.id === "portfolioModal") closePortfolio(); });
+            if ($("portfolioBtn")) {
+                $("portfolioBtn").addEventListener("click", async () => {
+                    try { if (BorsaFirebase.currentUser()) await BorsaFirebase.refreshUserDoc(); } catch (e) {}
+                    openPortfolio();
+                });
+            }
+
+            // KVKK Modal: aç / kapat (footer bağlantıları, X, backdrop, Esc)
+            function openKvkk() {
+                const m = $("kvkkModal");
+                if (!m) return;
+                m.style.display = "flex";
+                m.setAttribute("aria-hidden", "false");
+            }
+            function closeKvkk() {
+                const m = $("kvkkModal");
+                if (!m) return;
+                m.style.display = "none";
+                m.setAttribute("aria-hidden", "true");
+            }
+            document.querySelectorAll("[data-open-kvkk]").forEach(el => el.addEventListener("click", openKvkk));
+            if ($("kvkkCloseBtn")) $("kvkkCloseBtn").addEventListener("click", closeKvkk);
+            const kvkk = $("kvkkModal");
+            if (kvkk) kvkk.addEventListener("click", (e) => { if (e.target.id === "kvkkModal") closeKvkk(); });
+
+            // Sidebar: aç / kapat / tabs / backdrop / Esc
+            const sbToggle = $("sidebarToggle");
+            const sbClose  = $("sidebarCloseBtn");
+            const sbBackdrop = $("sidebarBackdrop");
+            if (sbToggle)   sbToggle.addEventListener("click", openSidebar);
+            if (sbClose)    sbClose.addEventListener("click", closeSidebar);
+            if (sbBackdrop) sbBackdrop.addEventListener("click", closeSidebar);
+            document.querySelectorAll(".sidebar-tab").forEach(tab => {
+                tab.addEventListener("click", () => switchSidebarTab(tab.dataset.tab));
+            });
+            const lbRefresh = $("refreshLeaderboardBtn");
+            const txRefresh = $("refreshTransactionsBtn");
+            if (lbRefresh) lbRefresh.addEventListener("click", () => loadLeaderboard(true));
+            if (txRefresh) txRefresh.addEventListener("click", () => loadTransactions(true));
+
+            // ADMİN MODU BUTONU (sadece deniziyit52@gmail.com için görünür):
+            // Tıklayınca doğrudan admin.html'e yönlendirir — Supabase auth oturumu dokunulmaz.
+            const openAdminBtn = $("openAdminBtn");
+            if (openAdminBtn) {
+                openAdminBtn.addEventListener("click", () => {
+                    try {
+                        closeSidebar();
+                        window.location.href = "admin.html";
+                    } catch (e) {
+                        window.location.replace("admin.html");
+                    }
+                });
+            }
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    if (document.body.classList.contains("drawer-open")) { closeSidebar(); return; }
+                    if (tm && tm.style.display === "flex") closeTrade();
+                    if (pm && pm.style.display === "flex") closePortfolio();
+                    if (kvkk && kvkk.style.display === "flex") closeKvkk();
+                }
+            });
+
+            // Trade quantity + quick chips
+            if ($("tradeQty")) $("tradeQty").addEventListener("input", () => updateTradeTotals());
+            document.querySelectorAll("#tradeQuick .chip-btn[data-qty]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    $("tradeQty").value = btn.dataset.qty;
+                    updateTradeTotals();
+                });
+            });
+
+            // Max Al: Komisyon dahil hesapla -> qty = floor(bal / (price * 1.01))
+            const maxBuy = $("maxBuyBtn");
+            if (maxBuy) {
+                maxBuy.addEventListener("click", () => {
+                    const s = stockOf(currentTradeSymbol);
+                    if (!s) return;
+                    const price = Number(s.price || 0);
+                    if (!(price > 0)) return;
+                    const bal = BorsaFirebase.balance();
+                    if (!(bal > 0)) { $("tradeQty").value = 0; updateTradeTotals(); return; }
+                    // bal >= qty * price * 1.01 => qty_max = floor( bal / (price * 1.01) )
+                    const max = Math.floor(bal / (price * (1 + COMMISSION_RATE)));
+                    $("tradeQty").value = Math.max(0, max);
+                    updateTradeTotals("BUY");
+                });
+            }
+
+            // Tümünü Sat: komisyonla müşterinin maks alacağı yok, sadece sahip olduğu adet
+            const sellAll = $("sellAllBtn");
+            if (sellAll) {
+                sellAll.addEventListener("click", () => {
+                    const qty = BorsaFirebase.ownedQty(currentTradeSymbol);
+                    $("tradeQty").value = qty;
+                    updateTradeTotals("SELL");
+                });
+            }
+
+            // Al butonuna basmadan hemen önce özeti "BUY" moduna getir (label renk değişimi)
+            const buyBtn = $("buyBtn");
+            const sellBtn = $("sellBtn");
+            if (buyBtn)  buyBtn.addEventListener("mouseenter",  () => updateTradeTotals("BUY"));
+            if (sellBtn) sellBtn.addEventListener("mouseenter", () => updateTradeTotals("SELL"));
+
+            // ALIS
+            if (buyBtn) {
+                buyBtn.addEventListener("click", async () => {
+                    const qty = Math.floor(Number($("tradeQty").value || 0));
+                    if (!currentTradeSymbol || !(qty > 0)) {
+                        setTradeFeedback("error", "Geçerli bir adet girin.");
+                        return;
+                    }
+                    setButtonsBusy(true); setTradeFeedback(null);
+                    try {
+                        updateTradeTotals("BUY");
+                        const r = await BorsaFirebase.buyStock(currentTradeSymbol, qty);
+                        const totalPaid = Number(r.total || 0); // komisyon dahil
+                        setTradeFeedback("success", `✅ Alım başarılı! ${qty} Adet → ${fmt(totalPaid)} tahsil edildi (komisyon dahil).`);
+                        refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
+                        updateTradeModal();
+                        if ($("portfolioModal").style.display === "flex") renderPortfolio();
+                        invalidateSidebarCaches();
+                        setTimeout(() => setTradeFeedback(null), 3800);
+                    } catch (err) {
+                        setTradeFeedback("error", err.message || "Alım başarısız.");
+                    } finally {
+                        setButtonsBusy(false);
+                    }
+                });
+            }
+
+            // SATIS
+            if (sellBtn) {
+                sellBtn.addEventListener("click", async () => {
+                    const qty = Math.floor(Number($("tradeQty").value || 0));
+                    if (!currentTradeSymbol || !(qty > 0)) {
+                        setTradeFeedback("error", "Geçerli bir adet girin.");
+                        return;
+                    }
+                    setButtonsBusy(true); setTradeFeedback(null);
+                    try {
+                        updateTradeTotals("SELL");
+                        const r = await BorsaFirebase.sellStock(currentTradeSymbol, qty);
+                        const rev = Number(r.revenue || 0); // komisyon dusulmus
+                        setTradeFeedback("success", `✅ Satım başarılı! ${qty} Adet → ${fmt(rev)} bakiyenize eklendi (komisyon dahil).`);
+                        refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
+                        updateTradeModal();
+                        if ($("portfolioModal").style.display === "flex") renderPortfolio();
+                        invalidateSidebarCaches();
+                        setTimeout(() => setTradeFeedback(null), 3800);
+                    } catch (err) {
+                        setTradeFeedback("error", err.message || "Satım başarısız.");
+                    } finally {
+                        setButtonsBusy(false);
+                    }
+                });
+            }
+
+            if ($("logoutBtn")) {
+                $("logoutBtn").addEventListener("click", async () => {
+                    try { await BorsaFirebase.signOut(); } catch (e) {}
+                    if (currentTradeSymbol) updateTradeModal();
+                    closeSidebar();
+                });
+            }
+        });
+    </script>
+
+    <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <aside id="sidebarDrawer" class="sidebar-drawer" aria-hidden="true">
+        <div class="sidebar-header">
+            <div>
+                <h2 class="sidebar-title">📊 Yarışma Merkezi</h2>
+                <div class="sidebar-sub">Liderlik Tablosu &amp; İşlem Geçmişi</div>
+            </div>
+            <button id="sidebarCloseBtn" type="button" class="sidebar-close" aria-label="Menüyü Kapat">×</button>
+        </div>
+
+        <div class="sidebar-tabs">
+            <button type="button" class="sidebar-tab sidebar-tab--active" data-tab="leaderboard">
+                🏆 Liderlik
+            </button>
+            <button type="button" class="sidebar-tab" data-tab="transactions">
+                🧾 Son İşlemler
+            </button>
+        </div>
+
+        <!-- Liderlik Tablosu -->
+        <section id="panelLeaderboard" class="sidebar-panel sidebar-panel--active">
+            <div class="panel-toprow">
+                <div class="panel-title">💎 Top 10 En Değerli Portföy</div>
+                <button id="refreshLeaderboardBtn" type="button" class="panel-refresh" title="Tazele">↻</button>
+            </div>
+            <ol id="leaderboardList" class="leaderboard-list">
+                <li class="leaderboard-empty">Yükleniyor…</li>
+            </ol>
+            <div class="sidebar-note">Sıralama toplam net değere göre yapılır: Nakit Bakiye + Tüm Hisselerin Anlık Piyasa Değeri</div>
+        </section>
+
+        <!-- Son Islemler -->
+        <section id="panelTransactions" class="sidebar-panel">
+            <div class="panel-toprow">
+                <div class="panel-title">🧾 Hesap Dökümü</div>
+                <button id="refreshTransactionsBtn" type="button" class="panel-refresh" title="Tazele">↻</button>
+            </div>
+            <ul id="transactionsList" class="transactions-list">
+                <li class="transactions-empty">Önce giriş yapın.</li>
+            </ul>
+            <div class="sidebar-note">En son 50 işlem gösterilir. Komisyon ücreti <strong>%1</strong> olarak uygulanır.</div>
+        </section>
+
+        <!-- ==========================================================
+             ADMIN GATE BUTTONU — SADECE ADMİN EMAİL İÇİN GÖRÜNÜR
+             Varsayılan olarak display:none / hidden sınıfı.
+             Auth state'i değiştiğinde JS tarafından görünür yapılır.
+             ========================================================== -->
+        <section id="sidebarAdminGateSection"
+                 class="sidebar-admin-gate hidden"
+                 style="display:none;"
+                 aria-hidden="true">
+            <button id="openAdminBtn" type="button" class="sidebar-admin-btn">
+                <span class="admin-btn-lock">🛡️</span>
+                <span class="admin-btn-label">Yönetici Modu</span>
+                <span class="admin-btn-arrow">→</span>
+            </button>
+        </section>
+    </aside>
+</body>
+</html>

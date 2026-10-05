@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş / Kayıt Ol - ZBEÜ İktisat Topluluğu</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Script yüklenme hatalarını (404 / CORS / Network) VISIBLE hale getir.
+        // Bu script başta çalışır, herhangi bir <script src> hatasını yakalar.
+        (function installScriptErrorCatcher(){
+            window._scriptErrors = [];
+            window.addEventListener('error', function(e){
+                var msg = "[SYNTAX ERROR] " + (e.message || String(e.error || "")) + " @ " + (e.filename||"?") + ":" + (e.lineno||"?");
+                console.error(msg);
+                window._scriptErrors.push(msg);
+            }, true);
+            function _onScriptFail(el, src){
+                var msg = "❌ Script yüklenemedi (404/Network/CORS): " + src;
+                console.error(msg);
+                window._scriptErrors.push(msg);
+                // Kullanıcıya görünür uyarı (body hazır olunca)
+                function show(){
+                    if (!document.body) return setTimeout(show, 30);
+                    var div = document.createElement('div');
+                    div.style.cssText = "position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#991b1b;color:#fff;font-weight:700;font-family:sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:92vw;";
+                    div.textContent = msg;
+                    document.body.appendChild(div);
+                }
+                show();
+            }
+            document.currentScript && document.currentScript.setAttribute('data-role','error-catcher');
+            // Sıradaki scriptler onerrore izleyiciyle bağlanır:
+            window._hookScriptFail = function(src){ return function(){ _onScriptFail(this, src); };
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
+    <script src="supabase-config.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" style="text-decoration:none;">
+                <h1 class="logo">
+                    <span class="logo-symbol">₺</span>
+                    <span class="logo-text">Zonguldak Bülent Ecevit Üniversitesi</span>
+                    <span class="logo-sub">İktisat Topluluğu</span>
+                </h1>
+            </a>
+            <div class="market-status">
+                <span class="status-dot"></span>
+                <span>PİYASA AÇIK</span>
+                <a href="index.html" class="public-link" title="Piyasaya Dön">← Piyasaya Dön</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="auth-screen" style="padding-top:3rem;">
+        <div class="auth-card" style="max-width:480px;">
+            <div class="auth-logo">
+                <h1 class="logo" style="justify-content:center;">
+                    <span class="logo-symbol">₺</span>
+                    <span class="logo-text">ZBEÜ BORSA</span>
+                </h1>
+                <div class="auth-subtitle">İktisat Topluluğu</div>
+            </div>
+
+            <div class="tabs">
+                <button type="button" class="tab-btn active" data-tab="login">Giriş Yap</button>
+                <button type="button" class="tab-btn" data-tab="signup">Kayıt Ol</button>
+            </div>
+
+            <div id="configWarning" class="auth-error" style="display:none;">
+                ⚠ Firebase yapılandırılmamış. Lütfen <code>firebase.js</code> içindeki
+                <code>FIREBASE_CONFIG</code> alanlarını doldurun.
+            </div>
+
+            <div id="authFeedback" style="display:none; margin-bottom:1rem; padding:0.65rem 0.9rem; border-radius:8px; text-align:center; font-size:0.85rem;"></div>
+
+            <form id="loginForm" class="news-form" style="display:block;">
+                <div class="form-group">
+                    <label for="loginEmail">E-posta</label>
+                    <input type="email" id="loginEmail" placeholder="ornek@beun.edu.tr" autocomplete="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Şifre</label>
+                    <input type="password" id="loginPassword" placeholder="Şifrenizi girin" autocomplete="current-password" required minlength="6">
+                </div>
+                <button type="submit" class="submit-btn">🔐 Giriş Yap</button>
+                <p style="text-align:center; margin-top:1rem; font-size:0.8rem; color:var(--text-muted);">
+                    Hesabınız yok mu? <span class="tab-switch" data-goto="signup" style="color:var(--accent-bright); cursor:pointer; font-weight:600;">Kayıt olun</span>
+                </p>
+            </form>
+
+            <form id="signupForm" class="news-form" style="display:none;">
+                <div class="form-group">
+                    <label for="signupName">Ad Soyad</label>
+                    <input type="text" id="signupName" placeholder="Adınız soyadınız" autocomplete="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">E-posta</label>
+                    <input type="email" id="signupEmail" placeholder="ornek@beun.edu.tr" autocomplete="email" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupPassword">Şifre</label>
+                        <input type="password" id="signupPassword" placeholder="En az 6 karakter" autocomplete="new-password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupConfirm">Şifre (Tekrar)</label>
+                        <input type="password" id="signupConfirm" placeholder="Şifreyi tekrar girin" autocomplete="new-password" required minlength="6">
+                    </div>
+                </div>
+                <div class="signup-bonus">
+                    🎁 Yeni hesaplara <strong>100.000 TL</strong> sanal başlangıç parası!
+                </div>
+                <button type="submit" class="submit-btn">✅ Hesap Oluştur & Başla</button>
+                <p style="text-align:center; margin-top:1rem; font-size:0.8rem; color:var(--text-muted);">
+                    Zaten hesabınız var mı? <span class="tab-switch" data-goto="login" style="color:var(--accent-bright); cursor:pointer; font-weight:600;">Giriş yapın</span>
+                </p>
+            </form>
+
+            <p style="text-align:center; margin-top:1.75rem;">
+                <a href="index.html" class="public-link">← Piyasayı Ziyaret Et (Giriş Yapmadan)</a>
+            </p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-left">
+                <div class="footer-copy">© 2026 Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu - Tüm Hakları Saklıdır.</div>
+                <div class="footer-dev">Designed &amp; Developed by <span class="footer-dev-names">Deniz İyit &amp; Ahmet Yavuz Karaköse</span></div>
+            </div>
+            <div class="footer-right">
+                <button type="button" class="kvkk-link" data-open-kvkk>KVKK ve Aydınlatma Metni</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- KVKK / Aydınlatma Metni Modal -->
+    <div id="kvkkModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card kvkk-modal" role="dialog" aria-modal="true" aria-labelledby="kvkkTitleLogin">
+            <button type="button" class="modal-close" id="kvkkCloseBtn" aria-label="Kapat">×</button>
+            <div class="kvkk-header">
+                <h2 id="kvkkTitleLogin" class="kvkk-title">📜 KVKK ve Aydınlatma Metni</h2>
+                <div class="kvkk-sub">Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni</div>
+            </div>
+            <div class="kvkk-body">
+                <section class="kvkk-section">
+                    <h3>ZBEÜ İktisat Topluluğu Borsa Simülasyonu KVKK Aydınlatma Metni</h3>
+
+                    <p><strong>1. Veri Sorumlusu:</strong> Bu simülasyon uygulaması, Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu tarafından tamamen eğitim ve pratik amacıyla tasarlanmıştır.</p>
+
+                    <p><strong>2. İşlenen Kişisel Veriler:</strong> Sisteme kayıt olurken kendi rızanızla paylaştığınız ad, soyad ve e-posta adresiniz ile uygulama içindeki sanal bakiye, portföy ve alım-satım işlem geçmişiniz işlenmektedir.</p>
+
+                    <p><strong>3. İşleme Amacı:</strong> Verileriniz; borsa simülasyonunda kullanıcı hesabınızın güvenle oluşturulması, portföyünüzün yönetilmesi, liderlik tablolarının güncellenmesi ve rekabet ortamının sorunsuz işleyebilmesi amacıyla kullanılmaktadır. Uygulamada gerçek para kullanılmamakta olup, verilerinizden hiçbir ticari kazanç elde edilmemektedir.</p>
+
+                    <p><strong>4. Verilerin Aktarımı ve Güvenliği:</strong> Verileriniz, modern güvenlik standartlarına sahip bulut veritabanı altyapısında (Supabase) şifreli olarak saklanmakta olup, topluluk dışındaki hiçbir yetkisiz üçüncü kişi, kurum veya reklam ajansıyla kesinlikle paylaşılmaz.</p>
+
+                    <p><strong>5. Kullanıcı Hakları:</strong> 6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca; sisteme kayıtlı verilerinizin silinmesini, güncellenmesini veya anonimleştirilmesini talep etme hakkına sahipsiniz. Talepleriniz için doğrudan ZBEÜ İktisat Topluluğu yönetimi ile iletişime geçebilirsiniz.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+
+        function setFeedback(type, msg) {
+            const el = $("authFeedback");
+            if (!type || !msg) { el.style.display = "none"; el.innerHTML = ""; return; }
+            el.style.display = "block";
+            if (type === "error") {
+                el.style.background = "rgba(239,68,68,0.1)";
+                el.style.color = "var(--red-bright)";
+                el.style.border = "1px solid rgba(239,68,68,0.3)";
+            } else {
+                el.style.background = "rgba(16,185,129,0.1)";
+                el.style.color = "var(--green-bright)";
+                el.style.border = "1px solid rgba(16,185,129,0.3)";
+            }
+            el.innerHTML = msg;
+        }
+
+        function switchTab(tab) {
+            const loginBtn = document.querySelector('.tab-btn[data-tab="login"]');
+            const signupBtn = document.querySelector('.tab-btn[data-tab="signup"]');
+            loginBtn.classList.toggle("active", tab === "login");
+            signupBtn.classList.toggle("active", tab === "signup");
+            $("loginForm").style.display = tab === "login" ? "block" : "none";
+            $("signupForm").style.display = tab === "signup" ? "block" : "none";
+            setFeedback(null);
+        }
+
+        document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+        document.querySelectorAll(".tab-switch").forEach(s => s.addEventListener("click", () => switchTab(s.dataset.goto)));
+
+        // ============================================================
+        //  KRİTİK: `BorsaFirebase` objesi MUTLAKA hazır olunca bağlan.
+        //  CDN yarım yüklenmişse direkt `BorsaFirebase.onChange(...)` çağrısı
+        //  ReferenceError fırlatır, TÜM SCRIPT PATLAR, form listenerları
+        //  bağlanmaz ve sayfa sessizce reload olur. Bunu KESİN olarak
+        //  engellemek için: (1) typeof check (2) polling + event fallback.
+        // ============================================================
+        let _authListenersAttached = false;
+        function _attachAuthListeners() {
+            if (_authListenersAttached) return;
+            if (typeof window.BorsaFirebase === "undefined" ||
+                typeof window.BorsaFirebase.onChange !== "function") return false;
+            _authListenersAttached = true;
+
+            // 1) Auth state değişince yönlendir (signIn promise resolve'dan bağımsız)
+            BorsaFirebase.onChange((user, doc) => {
+                if (user) {
+                    setFeedback("success", "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz...");
+                    setTimeout(() => { window.location.href = "index.html"; }, 800);
+                }
+            });
+
+            // 2) SDK + config hazır olunca subscribeAuth başlat
+            _startSubscribeAuthWhenReady();
+            return true;
+        }
+        // Poll 50ms x 600 = 30 sn (gerçekten emin olmak için)
+        (function _pollAttach() {
+            if (_attachAuthListeners()) return;
+            let t = 0;
+            const iv = setInterval(() => {
+                t++;
+                if (_attachAuthListeners() || t > 600) clearInterval(iv);
+            }, 50);
+            window.addEventListener("borsa:supabase-ready", () => {
+                _attachAuthListeners();
+                clearInterval(iv);
+            }, { once: true });
+        })();
+
+        let _subscribeAuthStarted = false;
+        async function _startSubscribeAuthWhenReady() {
+            if (_subscribeAuthStarted) return;
+            _subscribeAuthStarted = true;
+            const t0 = Date.now();
+            while (
+                (!window.BorsaFirebase || !BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) &&
+                Date.now() - t0 < 60000
+            ) {
+                await new Promise(r => setTimeout(r, 250));
+            }
+
+            if (!window.BorsaFirebase || !BorsaFirebase.isConfigured()) {
+                $("configWarning").style.display = "block";
+                setFeedback(
+                    "error",
+                    "⚠ Supabase ayarları eksik. Admin: supabase-config.js içindeki URL + anon key doğruluğunu kontrol edin."
+                );
+                return;
+            }
+            if (!BorsaFirebase.hasSdk()) {
+                setFeedback("error", "⚠ Supabase SDK 60 sn sonra bağlanamadı. İnternet bağlantısını kontrol edin.");
+                return;
+            }
+            // Artık hazırsak auth akışını başlat (INITIAL_SESSION ve diğer eventler dinlenir)
+            try {
+                BorsaFirebase.subscribeAuth();
+            } catch (e) {
+                console.error("[Auth] subscribeAuth hatası:", e);
+                setFeedback("error", "Auth başlatılamadı: " + (e && e.message ? e.message : e));
+            }
+        }
+        // Fallback: supabase hazır olunca yine tetiklenir (listener attach öncesi gelirse)
+        window.addEventListener("borsa:supabase-ready", _startSubscribeAuthWhenReady, { once: true });
+
+        async function _ensureSdkReady(maxMs) {
+            const t0 = Date.now();
+            while (
+                (!window.BorsaFirebase || !BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) &&
+                Date.now() - t0 < maxMs
+            ) {
+                await new Promise(r => setTimeout(r, 250));
+            }
+            if (!window.BorsaFirebase)   return "BorsaFirebase modülü yüklenemedi.";
+            if (!BorsaFirebase.isConfigured()) return "Supabase URL/anon key eksik — site yöneticisiyle iletişime geçin.";
+            if (!BorsaFirebase.hasSdk())       return "Supabase bağlantısı " + Math.round(maxMs/1000) + " sn sonra kurulamadı. İnternet bağlantısını kontrol edin.";
+            return null;
+        }
+
+        function _redirectToIndex(user) {
+            if (!user) return;
+            setFeedback("success", "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz...");
+            setTimeout(() => { window.location.href = "index.html"; }, 800);
+        }
+
+        // ============ Form listenerlarını da AYNI ŞEKİLDE güvenle bağla ============
+        (function attachFormsSafely() {
+            const loginForm  = $("loginForm");
+            const signupForm = $("signupForm");
+            if (!loginForm || !signupForm) { setTimeout(attachFormsSafely, 30); return; }
+
+            loginForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                setFeedback(null);
+                const email = $("loginEmail").value.trim();
+                const pass  = $("loginPassword").value;
+                const ready = await _ensureSdkReady(30000);
+                if (ready) return setFeedback("error", ready);
+                try {
+                    // Önce auth listenerlarını kesin bağla (henüz yok ise)
+                    _attachAuthListeners();
+                    const user = await BorsaFirebase.signIn(email, pass);
+                    console.log("[Login] signIn başarılı, user:", user && user.email);
+                    // Session gerçekten var mı final kontrol (email confirm kapalıysa gerek yok,
+                    // ama açıksa signIn zaten email confirm olmadan hata verirdi.)
+                    if (!user) {
+                        setFeedback("error", "Oturum açılamadı — lütfen tekrar deneyin.");
+                        return;
+                    }
+                    _redirectToIndex(user);
+                } catch (err) {
+                    console.error("[Login] signIn hatası:", {
+                        code:    err && err.code,
+                        status:  err && err.status,
+                        name:    err && err.name,
+                        message: err && err.message,
+                        stack:   err && err.stack,
+                        raw:     err
+                    });
+                    const map = {
+                        "auth/invalid-credential": "E-posta veya şifre hatalı.",
+                        "auth/user-not-found":   "Bu e-postaya ait hesap bulunamadı.",
+                        "auth/wrong-password":   "Şifre yanlış.",
+                        "auth/invalid-email":    "Geçersiz e-posta adresi.",
+                        "auth/user-disabled":    "Bu hesap devre dışı bırakılmış.",
+                        "auth/too-many-requests":"Çok fazla deneme. Lütfen biraz sonra tekrar deneyin.",
+                        "auth/email-not-confirmed":"✉️ Önce e-postanızı onaylayın. Gelen kutunuzdaki onay linkine tıkladıktan sonra tekrar giriş yapın.",
+                    };
+                    const code = (err && err.code) || "";
+                    const msg  = (err && err.message) ? err.message : String(err);
+                    setFeedback(
+                        "error",
+                        map[code] || ("Giriş hatası: " + msg + (code ? ` <small>(${code})</small>` : ""))
+                    );
+                }
+            });
+
+            signupForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                setFeedback(null);
+                const name  = $("signupName").value.trim();
+                const email = $("signupEmail").value.trim();
+                const pass  = $("signupPassword").value;
+                const confirm = $("signupConfirm").value;
+                if (!name) return setFeedback("error", "Ad soyad girin.");
+                if (pass !== confirm) return setFeedback("error", "Şifreler uyuşmuyor.");
+                const ready = await _ensureSdkReady(30000);
+                if (ready) return setFeedback("error", ready);
+                try {
+                    _attachAuthListeners();
+                    setFeedback("success", "⏳ Hesabınız oluşturuluyor, bakiye hazırlanıyor...");
+                    const user = await BorsaFirebase.signUp(email, pass, name);
+                    console.log("[SignUp] kayıt başarılı, user:", user && user.email, "confirm?:", user && user.email_confirmed_at);
+
+                    // ÖNEMLİ: Email confirm AÇIK ise (Supabase varsayılan: AÇIK)
+                    // signUp() session döndürmez, kullanıcı girişi olmaz.
+                    if (user && user._needsEmailConfirmation) {
+                        setFeedback(
+                            "success",
+                            "✅ Hesabınız oluşturuldu! ✉️ Lütfen gelen kutunuzdaki onay e-postasına tıklayın, onayladıktan sonra giriş yapabilirsiniz."
+                        );
+                        return;
+                    }
+                    if (user && user.email_confirmed_at == null) {
+                        setFeedback(
+                            "success",
+                            "✅ Hesabınız oluşturuldu! E-posta onayı bekleniyor — onay sonrası giriş yapabilirsiniz."
+                        );
+                        return;
+                    }
+                    // Auto-signIn başarılı (email confirm kapalı veya otomatik onay)
+                    if (user) _redirectToIndex(user);
+                } catch (err) {
+                    console.error("[SignUp] signUp hatası:", {
+                        code:    err && err.code,
+                        status:  err && err.status,
+                        name:    err && err.name,
+                        message: err && err.message,
+                        stack:   err && err.stack,
+                        raw:     err
+                    });
+                    const map = {
+                        "auth/email-already-in-use": "Bu e-posta adresi zaten kayıtlı. Giriş yapmayı deneyin.",
+                        "auth/invalid-email":        "Geçersiz e-posta adresi.",
+                        "auth/weak-password":        "Şifre çok kısa (en az 6 karakter).",
+                        "auth/operation-not-allowed":"E-posta/şifre oturumu etkin değil. Supabase Authentication ayarlarından etkinleştirin.",
+                    };
+                    const code = (err && err.code) || "";
+                    const msg  = (err && err.message) ? err.message : String(err);
+                    setFeedback(
+                        "error",
+                        map[code] || ("Kayıt hatası: " + msg + (code ? ` <small>(${code})</small>` : ""))
+                    );
+                }
+            });
+        })();
+
+        // KVKK Modal (footer bağlantıları, X, backdrop, Esc)
+        (function bindKvkk() {
+            function openKvkk() {
+                const m = $("kvkkModal");
+                if (!m) return;
+                m.style.display = "flex";
+                m.setAttribute("aria-hidden", "false");
+            }
+            function closeKvkk() {
+                const m = $("kvkkModal");
+                if (!m) return;
+                m.style.display = "none";
+                m.setAttribute("aria-hidden", "true");
+            }
+            document.querySelectorAll("[data-open-kvkk]").forEach(el => el.addEventListener("click", openKvkk));
+            if ($("kvkkCloseBtn")) $("kvkkCloseBtn").addEventListener("click", closeKvkk);
+            if ($("kvkkModal")) $("kvkkModal").addEventListener("click", (e) => {
+                if (e.target.id === "kvkkModal") closeKvkk();
+            });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && $("kvkkModal") && $("kvkkModal").style.display === "flex") {
+                    closeKvkk();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Bakımda | ZBEÜ İktisat Topluluğu Borsası</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+</head>
+<body class="body-auth">
+    <main class="auth-wrap auth-wrap--full maintenance-wrap">
+        <div class="maintenance-card">
+            <div class="maintenance-icon">
+                <span class="maintenance-spinner">⚙️</span>
+            </div>
+            <div class="maintenance-seal">
+                <span class="seal-strip seal-strip--top"></span>
+                <span class="seal-strip seal-strip--right"></span>
+                <span class="seal-strip seal-strip--bottom"></span>
+                <span class="seal-strip seal-strip--left"></span>
+            </div>
+            <h1 class="maintenance-title">Borsa Geçici Olarak İşleme Kapatılmıştır</h1>
+            <div class="maintenance-subtitle">Sistem Bakımda</div>
+            <div class="maintenance-divider"></div>
+            <p class="maintenance-desc">
+                Değerli Üyelerimiz, İktisat Topluluğu borsa simülasyonu şu anda planlı bakım
+                çalışmaları nedeniyle geçici olarak kullanıma kapalıdır. Yöneticilerimiz sistem
+                güncellemeleri ve iyileştirmeleri tamamladıktan sonra en kısa sürede tekrar hizmetinize
+                sunulacaktır. Anlayışınız için teşekkür ederiz.
+            </p>
+            <div class="maintenance-status-row">
+                <div class="maintenance-status">
+                    <span class="status-dot status-dot--warn"></span>
+                    Durum: <strong>Bakım Çalışması Sürüyor</strong>
+                </div>
+            </div>
+            <div class="maintenance-footer">
+                <div class="maintenance-copy">© 2026 Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu - Tüm Hakları Saklıdır.</div>
+                <div class="maintenance-dev">Designed &amp; Developed by <span class="maintenance-dev-names">Deniz İyit &amp; Ahmet Yavuz Karaköse</span></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        (function themeInit() {
+            try {
+                var pref = localStorage.getItem("borsa_theme_pref_v1");
+                if (pref === "light") document.body.classList.add("light-mode");
+            } catch (e) {}
+        })();
+
+        /* =========================================================
+         *  MAINTENANCE PAGE REALTIME CIKIS (POLLING YOK)
+         *  - Admin bakim modunu KAPATTIGI ANDA maintenance.html'den
+         *    otomatik olarak cikis yapilir.
+         *  - SETINTERVAL / CONTINUOUS POLLING YOKTUR.
+         *    (Yalnizca 1 kez DOMContentLoaded'da 1 SELECT atar,
+         *     sonraki degisiklikler Supabase Realtime WebSocket uzerinden gelir.)
+         * ========================================================= */
+        (function maintenanceExit() {
+            var channel = null;
+            var subscribed = false;
+
+            function redirectHome() {
+                // Oturum kontrolu: giris yapmissa index.html, yapmamissa login.html
+                Promise.resolve()
+                    .then(function tryGetSession() {
+                        try {
+                            if (window.sb && window.sb.auth && typeof window.sb.auth.getSession === "function") {
+                                return window.sb.auth.getSession();
+                            }
+                            return { data: { session: null } };
+                        } catch (e) {
+                            return { data: { session: null } };
+                        }
+                    })
+                    .then(function (res) {
+                        var session = res && res.data && res.data.session;
+                        if (session && session.user) {
+                            location.href = "index.html";
+                        } else {
+                            location.href = "login.html";
+                        }
+                    })
+                    .catch(function () {
+                        location.href = "index.html";
+                    });
+            }
+
+            function initialCheck() {
+                // Ilk yuklemede YALNIZCA 1 KERE kontrol (1 adet SELECT)
+                Promise.resolve()
+                    .then(function () {
+                        if (!window.sb || !window.sb.from) return false;
+                        return window.sb
+                            .from("app_settings")
+                            .select("maintenance_mode")
+                            .limit(1)
+                            .maybeSingle()
+                            .then(function (r) {
+                                if (r.error) return false;
+                                return !!(r.data && r.data.maintenance_mode === false);
+                            })
+                            .catch(function () { return false; });
+                    })
+                    .then(function (shouldExit) {
+                        if (shouldExit) redirectHome();
+                    })
+                    .catch(function () {});
+            }
+
+            function subscribeRealtime() {
+                if (subscribed) return;
+                if (!window.sb || !window.sb.channel) return;
+                subscribed = true;
+                try {
+                    channel = window.sb
+                        .channel("maintenance-page-exit-channel", {
+                            config: { broadcast: { self: false } },
+                        })
+                        .on(
+                            "postgres_changes",
+                            {
+                                event: "UPDATE",
+                                schema: "public",
+                                table: "app_settings",
+                                filter: "id=eq.1",
+                            },
+                            function onUpdate(payload) {
+                                var row = (payload && payload.new) || {};
+                                var mode = row.maintenance_mode;
+                                if (mode === false) {
+                                    // Bakim modu KAPATILDI -> ANINDA cikis (polling yok)
+                                    redirectHome();
+                                }
+                            }
+                        )
+                        .subscribe(function (status) {
+                            console.log("[Maintenance] Realtime cikis aboneligi:", status);
+                        });
+                } catch (e) {
+                    console.warn("[Maintenance] Realtime abonelik hatasi:", e);
+                }
+            }
+
+            function boot() {
+                // Supabase client hazir olana kadar kisa bir bekleme (250ms)
+                setTimeout(function () {
+                    initialCheck();
+                    subscribeRealtime();
+                }, 250);
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", boot, { once: true });
+            } else {
+                boot();
+            }
+        })();
+    </script>
+</body>
+</html>
