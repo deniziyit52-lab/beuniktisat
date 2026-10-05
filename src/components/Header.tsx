@@ -80,7 +80,12 @@ export function Header() {
                 Toplam Piyasa
               </div>
               <div className="font-mono text-sm sm:text-base font-bold text-gray-200">
-                ₺{(totalCap / 1_000_000).toFixed(2)}M
+                {new Intl.NumberFormat("tr-TR", {
+                  style: "currency",
+                  currency: "TRY",
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }).format(totalCap / 1_000_000)}M
               </div>
             </div>
 

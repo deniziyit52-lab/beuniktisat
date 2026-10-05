@@ -4,10 +4,12 @@ import { useMarket } from "@/context/MarketContext";
 import { Stock } from "@/types";
 
 function formatPrice(p: number): string {
-  return p.toLocaleString("tr-TR", {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  }).format(p);
 }
 
 function getChange(stock: Stock): { value: number; percent: number } {
@@ -41,7 +43,7 @@ export function StockTicker() {
                 {stock.symbol}
               </span>
               <span className="font-mono text-sm font-semibold text-gray-200">
-                ₺{formatPrice(stock.currentPrice)}
+                {formatPrice(stock.currentPrice)}
               </span>
               <span
                 className={`font-mono text-xs font-bold flex items-center gap-0.5 ${

@@ -4,10 +4,12 @@ import { useMarket } from "@/context/MarketContext";
 import { Stock } from "@/types";
 
 function formatPrice(p: number): string {
-  return p.toLocaleString("tr-TR", {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  }).format(p);
 }
 
 function getChange(stock: Stock): { value: number; percent: number } {
@@ -146,7 +148,7 @@ export function StocksGrid() {
             <div className="flex items-end justify-between gap-2 mb-3">
               <div>
                 <div className="font-mono text-xl sm:text-2xl font-bold text-gray-50">
-                  ₺{formatPrice(stock.currentPrice)}
+                  {formatPrice(stock.currentPrice)}
                 </div>
                 <div
                   className={`font-mono text-xs sm:text-sm font-semibold mt-1 ${
@@ -172,7 +174,7 @@ export function StocksGrid() {
                   Yüksek
                 </div>
                 <div className="font-mono font-semibold text-gray-300">
-                  ₺{formatPrice(stock.dayHigh)}
+                  {formatPrice(stock.dayHigh)}
                 </div>
               </div>
               <div>
@@ -180,7 +182,7 @@ export function StocksGrid() {
                   Düşük
                 </div>
                 <div className="font-mono font-semibold text-gray-300">
-                  ₺{formatPrice(stock.dayLow)}
+                  {formatPrice(stock.dayLow)}
                 </div>
               </div>
               <div>

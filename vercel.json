@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "devCommand": null,
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/",          "destination": "/index.html" },
+    { "source": "/giris",     "destination": "/login.html" },
+    { "source": "/login",     "destination": "/login.html" },
+    { "source": "/kayit",     "destination": "/login.html" },
+    { "source": "/signup",    "destination": "/login.html" },
+    { "source": "/admin",     "destination": "/admin.html" },
+    { "source": "/panel",     "destination": "/admin.html" },
+    { "source": "/bakim",     "destination": "/maintenance.html" }
+  ]
+}
