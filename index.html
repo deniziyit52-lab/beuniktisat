@@ -291,6 +291,7 @@
                             <th class="num">Piyasa Değeri</th>
                             <th class="num">Anlık K / Z (₺)</th>
                             <th class="num">K / Z (%)</th>
+                            <th class="num">İşlem</th>
                         </tr>
                     </thead>
                     <tbody id="portfolioBody">
@@ -305,9 +306,31 @@
         </div>
     </div>
 
+    <div id="portfolioSellModal" class="modal-backdrop portfolio-sell-overlay" style="display:none;" aria-hidden="true">
+        <div class="modal-card portfolio-sell-dialog" role="dialog" aria-modal="true" aria-labelledby="portfolioSellTitle">
+            <button type="button" class="modal-close" id="portfolioSellCloseBtn" aria-label="Kapat">×</button>
+            <div class="portfolio-sell-heading">
+                <span class="portfolio-sell-icon" aria-hidden="true">↘</span>
+                <div>
+                    <h2 id="portfolioSellTitle">Hisse Sat</h2>
+                    <p><span id="portfolioSellSymbol">—</span> · Güncel fiyat <strong id="portfolioSellPrice">—</strong></p>
+                </div>
+            </div>
+            <label class="portfolio-sell-label" for="portfolioSellQty">Satılacak adet</label>
+            <input id="portfolioSellQty" class="portfolio-sell-input" type="number" min="1" step="1" inputmode="numeric" autocomplete="off" aria-describedby="portfolioSellLimit portfolioSellError">
+            <div id="portfolioSellLimit" class="portfolio-sell-limit">Maksimum: <span id="portfolioSellMax">0</span> adet</div>
+            <div id="portfolioSellError" class="portfolio-sell-error" role="alert" aria-live="polite"></div>
+            <div class="portfolio-sell-actions">
+                <button type="button" id="portfolioSellCancelBtn" class="portfolio-sell-cancel">İptal</button>
+                <button type="button" id="portfolioSellConfirmBtn" class="portfolio-sell-confirm">Satışı Onayla</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const $ = (id) => document.getElementById(id);
         let currentTradeSymbol = null;
+        let pendingPortfolioSale = null;
 
         function fmt(n) { return BorsaFirebase.formatTL(n); }
         function stockOf(sym) { return Borsa?.state?.stocks?.[sym] || null; }
@@ -407,6 +430,87 @@
             m.style.display = "none";
             m.setAttribute("aria-hidden", "true");
         }
+
+        function openPortfolioSellModal(symbol, maxQty, price) {
+            const modal = $("portfolioSellModal");
+            if (!modal || !Number.isSafeInteger(maxQty) || maxQty <= 0) {
+                showPortfolioToast("Satılabilir hisse bulunamadı.", true);
+                return;
+            }
+            pendingPortfolioSale = { symbol, maxQty, busy: false };
+            $("portfolioSellSymbol").textContent = symbol;
+            $("portfolioSellPrice").textContent = price > 0 ? fmt(price) : "—";
+            $("portfolioSellMax").textContent = maxQty.toLocaleString("tr-TR");
+            $("portfolioSellQty").value = "";
+            $("portfolioSellQty").max = String(maxQty);
+            $("portfolioSellError").textContent = "";
+            $("portfolioSellConfirmBtn").disabled = false;
+            modal.style.display = "flex";
+            modal.setAttribute("aria-hidden", "false");
+            requestAnimationFrame(() => $("portfolioSellQty").focus());
+        }
+
+        function closePortfolioSellModal() {
+            const modal = $("portfolioSellModal");
+            if (!modal || pendingPortfolioSale?.busy) return;
+            modal.style.display = "none";
+            modal.setAttribute("aria-hidden", "true");
+            pendingPortfolioSale = null;
+        }
+
+        async function confirmPortfolioSale() {
+            const sale = pendingPortfolioSale;
+            if (!sale || sale.busy) return;
+            const input = $("portfolioSellQty").value.trim();
+            const quantity = Number(input);
+            if (!/^\d+$/.test(input) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > sale.maxQty) {
+                $("portfolioSellError").textContent = `1 ile ${sale.maxQty} arasında tam adet girin.`;
+                $("portfolioSellQty").focus();
+                return;
+            }
+
+            sale.busy = true;
+            $("portfolioSellConfirmBtn").disabled = true;
+            $("portfolioSellCancelBtn").disabled = true;
+            $("portfolioSellCloseBtn").disabled = true;
+            $("portfolioSellQty").disabled = true;
+            $("portfolioSellError").textContent = "Satış işleniyor…";
+            try {
+                const result = await BorsaFirebase.sellStock(sale.symbol, quantity);
+                sale.busy = false;
+                closePortfolioSellModal();
+                refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
+                invalidateSidebarCaches();
+                renderPortfolio();
+                showPortfolioToast(`Satış başarılı! ${quantity} ${sale.symbol} satıldı, ${fmt(Number(result.revenue || 0))} bakiyenize eklendi.`);
+            } catch (err) {
+                console.error("[Portfolio] Hisse satışı başarısız:", err);
+                sale.busy = false;
+                $("portfolioSellError").textContent = err.message || "Satış başarısız. Tekrar deneyin.";
+            } finally {
+                $("portfolioSellConfirmBtn").disabled = false;
+                $("portfolioSellCancelBtn").disabled = false;
+                $("portfolioSellCloseBtn").disabled = false;
+                $("portfolioSellQty").disabled = false;
+            }
+        }
+
+        function showPortfolioToast(message, isError = false) {
+            const toast = document.createElement("div");
+            toast.className = "success-toast";
+            toast.textContent = (isError ? "❌ " : "✅ ") + message;
+            if (isError) {
+                toast.style.background = "rgba(185, 28, 28, 0.96)";
+                toast.style.boxShadow = "0 8px 24px rgba(185, 28, 28, 0.35)";
+            }
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.transition = "opacity 0.3s";
+                toast.style.opacity = "0";
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         function renderPortfolio() {
             const doc = BorsaFirebase.currentUserData();
             const bal = BorsaFirebase.balance();
@@ -462,6 +566,19 @@
                             <span class="pf-pnl-pct">${pnl >= 0 ? "+" : ""}${pnlPct.toFixed(2)}%</span>
                         </td>
                     `;
+                    const actionCell = document.createElement("td");
+                    actionCell.className = "num pf-action";
+                    const sellButton = document.createElement("button");
+                    sellButton.type = "button";
+                    sellButton.className = "portfolio-sell-btn";
+                    sellButton.textContent = "Sat";
+                    sellButton.setAttribute("aria-label", `${sym} hissesinden satış yap`);
+                    sellButton.addEventListener("click", () => {
+                        const maxQty = BorsaFirebase.ownedQty(sym);
+                        openPortfolioSellModal(sym, maxQty, Number(stockOf(sym)?.price || 0));
+                    });
+                    actionCell.appendChild(sellButton);
+                    tr.appendChild(actionCell);
                     tbody.appendChild(tr);
                 });
             }
@@ -1050,6 +1167,16 @@
             if ($("portfolioCloseBtn")) $("portfolioCloseBtn").addEventListener("click", closePortfolio);
             const pm = $("portfolioModal");
             if (pm) pm.addEventListener("click", (e) => { if (e.target.id === "portfolioModal") closePortfolio(); });
+            const portfolioSellModal = $("portfolioSellModal");
+            const portfolioSellCancelBtn = $("portfolioSellCancelBtn");
+            const portfolioSellCloseBtn = $("portfolioSellCloseBtn");
+            const portfolioSellConfirmBtn = $("portfolioSellConfirmBtn");
+            if (portfolioSellModal) portfolioSellModal.addEventListener("click", (e) => {
+                if (e.target === portfolioSellModal) closePortfolioSellModal();
+            });
+            if (portfolioSellCancelBtn) portfolioSellCancelBtn.addEventListener("click", closePortfolioSellModal);
+            if (portfolioSellCloseBtn) portfolioSellCloseBtn.addEventListener("click", closePortfolioSellModal);
+            if (portfolioSellConfirmBtn) portfolioSellConfirmBtn.addEventListener("click", confirmPortfolioSale);
             if ($("portfolioBtn")) {
                 $("portfolioBtn").addEventListener("click", async () => {
                     try { if (BorsaFirebase.currentUser()) await BorsaFirebase.refreshUserDoc(); } catch (e) {}
@@ -1107,6 +1234,7 @@
             document.addEventListener("keydown", (e) => {
                 if (e.key === "Escape") {
                     if (document.body.classList.contains("drawer-open")) { closeSidebar(); return; }
+                    if (portfolioSellModal && portfolioSellModal.style.display === "flex") { closePortfolioSellModal(); return; }
                     if (tm && tm.style.display === "flex") closeTrade();
                     if (pm && pm.style.display === "flex") closePortfolio();
                     if (kvkk && kvkk.style.display === "flex") closeKvkk();
