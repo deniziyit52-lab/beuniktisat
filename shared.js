@@ -7,6 +7,7 @@ const Borsa = {
         selectedStock: null,
     },
     priceChart: null,
+    _chartSymbol: null,
     _clockInterval: null,
 
     round2(n) {
@@ -15,9 +16,12 @@ const Borsa = {
 
     formatTime(ts) {
         const d = new Date(ts);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
         const hh = String(d.getHours()).padStart(2, "0");
         const mm = String(d.getMinutes()).padStart(2, "0");
-        return `${hh}:${mm}`;
+        const ss = String(d.getSeconds()).padStart(2, "0");
+        return `${day}.${month} ${hh}:${mm}:${ss}`;
     },
 
     formatDateTime(ts) {
@@ -215,6 +219,9 @@ const Borsa = {
                 if (sel) sel.value = sym;
                 this.renderStocksGrid({ onSelect });
                 this.renderChart();
+                this.Realtime.loadPriceHistory(sym).then(() => {
+                    if (this.state.selectedStock === sym) this.renderChart();
+                });
                 if (typeof onSelect === "function") onSelect(sym);
             });
             grid.appendChild(card);
@@ -236,6 +243,9 @@ const Borsa = {
                 this.state.selectedStock = e.target.value;
                 this.renderStocksGrid();
                 this.renderChart();
+                this.Realtime.loadPriceHistory(e.target.value).then(() => {
+                    if (this.state.selectedStock === e.target.value) this.renderChart();
+                });
             };
         }
         const tgt = document.getElementById("targetPerson");
@@ -355,6 +365,43 @@ const Borsa = {
                 },
             },
         });
+        this._chartSymbol = sym;
+        this.priceChart.$historyTimestamps = stock.history.map(point => Number(point.time));
+    },
+
+    updateLiveChart(stock) {
+        if (!this.priceChart || this._chartSymbol !== stock.symbol) {
+            if (this.state.selectedStock === stock.symbol) this.renderChart();
+            return;
+        }
+
+        const chart = this.priceChart;
+        const dataset = chart.data.datasets[0];
+        const timestamps = chart.$historyTimestamps || [];
+        const history = (stock.history || []).slice(-5760);
+        const lastTimestamp = timestamps.length ? timestamps[timestamps.length - 1] : -Infinity;
+        const newPoints = history.filter(point => Number(point.time) > lastTimestamp);
+
+        newPoints.forEach(point => {
+            chart.data.labels.push(this.formatTime(point.time));
+            dataset.data.push(Number(point.price));
+            timestamps.push(Number(point.time));
+        });
+
+        if (newPoints.length === 0 && history.length && timestamps.length) {
+            const lastPoint = history[history.length - 1];
+            if (Number(lastPoint.time) === timestamps[timestamps.length - 1]) {
+                dataset.data[dataset.data.length - 1] = Number(lastPoint.price);
+            }
+        }
+
+        while (timestamps.length > 5760) {
+            timestamps.shift();
+            chart.data.labels.shift();
+            dataset.data.shift();
+        }
+        chart.$historyTimestamps = timestamps;
+        chart.update("none");
     },
 
     renderNewsFeed() {
@@ -413,52 +460,76 @@ const Borsa = {
         if (this._clockInterval) clearInterval(this._clockInterval);
         this.updateClock();
         this._clockInterval = setInterval(() => this.updateClock(), 1000);
-                const { data: stockRows, error } = await sb
+
+    },
+
     renderCommon({ onStockSelect } = {}) {
-                    .select("symbol, name, color, current_price, previous_close, change, change_pct, shares, updated_at")
-                    .order("symbol", { ascending: true });
+        this.renderStocksGrid({ onSelect: onStockSelect });
+        this.renderStockSelector();
+        this.renderTickerTape();
+        this.renderMarketCap();
+        this.renderChart();
+        this.renderNewsFeed();
+    },
+
     ensureInitialized() {
-                    console.warn("[Realtime] stocks tablosu okunamadi:", error.message);
+        this.loadState();
+        const symbols = Object.keys(this.state.stocks);
+        if (!this.state.selectedStock || !this.state.stocks[this.state.selectedStock]) {
+            this.state.selectedStock = symbols[0];
+        }
+    },
+
+    /* =========================================================
+     *  SUPABASE REALTIME ENTEGRASYONU (Canlı Senkronizasyon)
+     * =========================================================
+     * - Tek doğruluk kaynağı (SSOT): Supabase stocks tablosu
+     * - Clientlar: postgres_changes dinleyicisiyle canlı güncelleme alır
+    * - Fiyat mutations are committed through Supabase RPCs.
+     */
+    Realtime: {
+        _chan: null,
+        _statusChan: null,
+        _appSettingsChan: null,
         _newsChan: null,
         _bound: false,
-                if (!stockRows || !Array.isArray(stockRows) || stockRows.length === 0) return false;
+        _enabled: false,
+        _lastStatus: null,
 
-                const symbols = stockRows.map(row => String(row.symbol || "").toUpperCase()).filter(Boolean);
-                const historyBySymbol = {};
-                const { data: historyRows, error: historyError } = await sb
-                    .from("price_history")
-                    .select("symbol, price, recorded_at")
-                    .in("symbol", symbols)
-                    .order("recorded_at", { ascending: false })
-                    .limit(Math.min(symbols.length * 100, 1000));
-                if (historyError) {
-                    console.warn("[Realtime] price_history okunamadi:", historyError.message);
-                } else {
-                    (historyRows || []).forEach(point => {
-                        const sym = String(point.symbol || "").toUpperCase();
-                        if (!historyBySymbol[sym]) historyBySymbol[sym] = [];
-                        historyBySymbol[sym].push(point);
-                    });
-                }
+        _sb() {
+            return (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        },
 
+        isEnabled() {
+            return this._enabled === true;
+        },
+
+        _normalizeStockRow(row) {
+            if (!row) return null;
+            const symbol = String(row.symbol || row.code || "").trim().toUpperCase();
+            if (!symbol) return null;
             const name = String(row.name || row.stock_name || symbol).trim();
-                stockRows.forEach(row => {
-                    const sym = String(row.symbol || "").toUpperCase();
-                    row.__history = (historyBySymbol[sym] || []).sort(
-                        (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
-                    );
+            const price = Number(row.current_price ?? row.price ?? 0);
+            const previousClose = Number(row.previous_close ?? row.open_price ?? price);
+            const change = Number(row.change ?? Borsa.round2(price - previousClose));
+            const changePct = Number(row.change_pct ?? Borsa.round2(previousClose > 0 ? (change / previousClose) * 100 : 0));
+            const color = String(row.color || "#3b82f6").trim();
+            const shares = Number(row.shares ?? row.shares_outstanding ?? row.total_shares ?? 100000);
+            const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : Date.now();
+            let history = null;
+            try {
                 if (row.price_history && Array.isArray(row.price_history) && row.price_history.length > 0) {
                     history = row.price_history.map(h => ({
                         time: Number(h.time ?? h.t ?? Date.now()),
-                const loadedSymbols = Object.keys(normalized);
-                if (loadedSymbols.length === 0) return false;
+                        price: Borsa.round2(Number(h.price ?? h.p ?? price)),
+                    }));
                 }
             } catch (_) { history = null; }
             if (!history || history.length === 0) {
                 // Eski JSONB kolonu bossa yeni price_history (ROW tablosundan) cek
-                    Borsa.state.selectedStock = loadedSymbols[0];
+                history = (row.__history && Array.isArray(row.__history))
                     ? row.__history.map(h => ({
-                console.log(`[Realtime] DB'den ${loadedSymbols.length} hisse ve fiyat geçmişi yüklendi.`);
+                        time: h.recorded_at ? new Date(h.recorded_at).getTime() : Date.now(),
                         price: Borsa.round2(Number(h.price ?? price)),
                     }))
                     : (Borsa.state.stocks[symbol]?.history || []).slice();
@@ -467,7 +538,7 @@ const Borsa = {
             if (!last || Number(last.time) < updatedAt || Math.abs(Number(last.price) - price) > 0.01) {
                 history.push({ time: updatedAt, price: Borsa.round2(price) });
             }
-            if (history.length > 100) history = history.slice(-100);
+            if (history.length > 5760) history = history.slice(-5760);
             return {
                 name,
                 symbol,
@@ -487,79 +558,91 @@ const Borsa = {
             const sb = this._sb();
             if (!sb) return false;
             try {
-                // Yeni: stocks + son 40 price_history satirlarini BIRLIKTE cek
-                // (tek roundtrip, history JSONB yerine ayri tablo)
-                const { data, error } = await sb
+                const { data: stockRows, error } = await sb
                     .from("stocks")
-                    .select(`
-                        symbol, name, color, current_price, previous_close,
-                        change, change_pct, shares, updated_at,
-                        history:price_history(price, recorded_at)
-                    `)
-                    .order("symbol", { ascending: true })
-                    .order("recorded_at", { ascending: false, foreignTable: "history" })
-                    .limit(100, { foreignTable: "history" });
+                    .select("*")
+                    .order("symbol", { ascending: true });
                 if (error) {
-                    console.warn("[Realtime] stocks+price_history okunamadi (yeni tablo hazir mi?):", error.message);
-                    // FALLBACK: sadece stocks tablosunu cek (JSONB ya da gecici seed)
-                    const fb = await sb.from("stocks").select("*").order("symbol");
-                    if (fb.error || !fb.data) return false;
-                    const normalizedFb = {};
-                    fb.data.forEach(row => {
-                        const s = this._normalizeStockRow(row);
-                        if (s) normalizedFb[s.symbol] = s;
-                    });
-                    if (Object.keys(normalizedFb).length === 0) return false;
-                    Borsa.state.stocks = normalizedFb;
-                    Borsa.state.news = Borsa.state.news || Borsa.seedNews();
-                    await this._loadInitialNewsFromDB();
-                    const symsFb = Object.keys(normalizedFb);
-                    if (!Borsa.state.selectedStock || !Borsa.state.stocks[Borsa.state.selectedStock]) {
-                        Borsa.state.selectedStock = symsFb[0];
-                    }
-                    console.log(`[Realtime] DB+fallback: ${symsFb.length} hisse yuklendi.`);
-                    return true;
+                    console.warn("[Realtime] stocks tablosu okunamadi:", error.message);
+                    return false;
                 }
-                if (!data || !Array.isArray(data) || data.length === 0) return false;
-                const grouped = {};
-                data.forEach(r => {
-                    const sym = String(r.symbol || "").toUpperCase();
-                    if (!sym) return;
-                    if (!grouped[sym]) {
-                        grouped[sym] = Object.assign({}, r, { __history: [] });
-                    }
-                    const ph = r.history;
-                    if (ph && Array.isArray(ph)) {
-                        grouped[sym].__history.push(...ph);
-                    } else if (ph && typeof ph === "object") {
-                        grouped[sym].__history.push(ph);
-                    }
-                });
+                if (!Array.isArray(stockRows) || stockRows.length === 0) return false;
+
+                const symbols = stockRows.map(row => String(row.symbol || "").toUpperCase()).filter(Boolean);
+                const historyBySymbol = {};
+                const { data: historyRows, error: historyError } = await sb
+                    .from("price_history")
+                    .select("symbol, price, recorded_at")
+                    .in("symbol", symbols)
+                    .order("recorded_at", { ascending: false })
+                    .limit(Math.min(symbols.length * 100, 1000));
+                if (historyError) {
+                    console.warn("[Realtime] price_history okunamadi:", historyError.message);
+                } else {
+                    (historyRows || []).forEach(point => {
+                        const sym = String(point.symbol || "").toUpperCase();
+                        if (!historyBySymbol[sym]) historyBySymbol[sym] = [];
+                        historyBySymbol[sym].push(point);
+                    });
+                }
+
                 const normalized = {};
-                Object.keys(grouped).forEach(sym => {
-                    const row = grouped[sym];
-                    // __history'i zamana gore sirala (ascending)
-                    if (row.__history && row.__history.length > 0) {
-                        row.__history.sort(
-                            (a, b) => (a.recorded_at ? new Date(a.recorded_at).getTime() : 0)
-                                    - (b.recorded_at ? new Date(b.recorded_at).getTime() : 0)
-                        );
-                    }
-                    const s = this._normalizeStockRow(row);
-                    if (s) normalized[s.symbol] = s;
+                stockRows.forEach(row => {
+                    const sym = String(row.symbol || "").toUpperCase();
+                    const normalizedRow = Object.assign({}, row, {
+                        __history: (historyBySymbol[sym] || []).sort(
+                            (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+                        ),
+                    });
+                    const stock = this._normalizeStockRow(normalizedRow);
+                    if (stock) normalized[stock.symbol] = stock;
                 });
-                const symbols = Object.keys(normalized);
-                if (symbols.length === 0) return false;
+                const loadedSymbols = Object.keys(normalized);
+                if (loadedSymbols.length === 0) return false;
                 Borsa.state.stocks = normalized;
                 Borsa.state.news = Borsa.state.news || Borsa.seedNews();
                 await this._loadInitialNewsFromDB();
                 if (!Borsa.state.selectedStock || !Borsa.state.stocks[Borsa.state.selectedStock]) {
-                    Borsa.state.selectedStock = symbols[0];
+                    Borsa.state.selectedStock = loadedSymbols[0];
                 }
-                console.log(`[Realtime] DB'den ${symbols.length} hisse yuklendi + price_history tablosu.`);
+                console.log(`[Realtime] DB'den ${loadedSymbols.length} hisse yüklendi + price_history.`);
                 return true;
             } catch (e) {
                 console.warn("[Realtime] Ilk hisse yukleme hatasi:", e && e.message || e);
+                return false;
+            }
+        },
+
+        async loadPriceHistory(symbol) {
+            const sb = this._sb();
+            const stock = Borsa.state.stocks[symbol];
+            if (!sb || !stock) return false;
+            try {
+                const rows = [];
+                for (let from = 0; from < 5760; from += 1000) {
+                    const { data, error } = await sb
+                        .from("price_history")
+                        .select("price, recorded_at")
+                        .eq("symbol", symbol)
+                        .order("recorded_at", { ascending: false })
+                        .range(from, Math.min(from + 999, 5759));
+                    if (error) throw error;
+                    rows.push(...(data || []));
+                    if (!data || data.length < 1000) break;
+                }
+
+                const history = rows.reverse().map(point => ({
+                    time: new Date(point.recorded_at).getTime(),
+                    price: Borsa.round2(Number(point.price)),
+                }));
+                const latest = history[history.length - 1];
+                if (!latest || latest.time < stock._updatedAt || Math.abs(latest.price - stock.price) > 0.01) {
+                    history.push({ time: Math.max(stock._updatedAt, Date.now()), price: stock.price });
+                }
+                stock.history = history.slice(-5760);
+                return true;
+            } catch (e) {
+                console.warn(`[Realtime] ${symbol} fiyat geçmişi okunamadı:`, e && e.message || e);
                 return false;
             }
         },
@@ -598,6 +681,7 @@ const Borsa = {
                 timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
             };
             if (!item.title) return;
+            if (Borsa.state.news.some(existing => String(existing.id) === String(item.id))) return;
             Borsa.state.news.unshift(item);
             if (Borsa.state.news.length > 150) Borsa.state.news.pop();
             try { Borsa.renderNewsFeed(); } catch (_) {}
@@ -625,7 +709,7 @@ const Borsa = {
                 try { Borsa.renderTickerTape(); } catch (_) {}
                 try { Borsa.renderMarketCap(); } catch (_) {}
                 if (Borsa.state.selectedStock === sym) {
-                    try { Borsa.renderChart(); } catch (_) {}
+                    try { Borsa.updateLiveChart(normalized); } catch (_) {}
                 }
                 try { Borsa.saveState(); } catch (_) {}
             }
@@ -806,32 +890,31 @@ const Borsa = {
         return this.round2(Number(updated.current_price));
     },
 
-    publishNews({ title, target, impact }) {
+    async publishNews({ title, target, impact }) {
         const impactPct = Number(impact) || 0;
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (!sb || !sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
+        const { data, error } = await sb.rpc("admin_publish_news", {
+            p_title: String(title || "").slice(0, 280),
+            p_symbol: target || null,
+            p_impact_pct: impactPct,
+        });
+        if (error) throw error;
+        const saved = Array.isArray(data) ? data[0] : data;
+        if (!saved) throw new Error("Haber kaydedildi yanıtı alınamadı.");
         const newsItem = {
-            id: Date.now(),
-            title: title,
-            target: target || null,
-            impact: impactPct,
-            timestamp: Date.now(),
+            id: Number(saved.id || Date.now()),
+            title: String(saved.title || title || ""),
+            target: String(saved.stock_symbol || target || "").trim() || null,
+            impact: Number(saved.impact_pct ?? impactPct),
+            timestamp: saved.created_at ? new Date(saved.created_at).getTime() : Date.now(),
         };
-        this.state.news.unshift(newsItem);
-        if (this.state.news.length > 150) this.state.news.pop();
+        if (!this.state.news.some(item => String(item.id) === String(newsItem.id))) {
+            this.state.news.unshift(newsItem);
+            if (this.state.news.length > 150) this.state.news.pop();
+        }
         this.saveState();
         try { this.renderNewsFeed(); } catch (_) {}
-
-        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
-        if (sb && sb.rpc) {
-            sb.rpc("admin_publish_news", {
-                p_title: String(title || "").slice(0, 280),
-                p_symbol: target || null,
-                p_impact_pct: impactPct,
-            }).catch(err => {
-                console.warn("[Realtime] admin_publish_news RPC başarısız:", err && err.message || err);
-            });
-            return newsItem;
-        }
-            console.warn("[Realtime] Supabase RPC hazır değil; haber yayımlanmadı.");
         return newsItem;
     },
 
@@ -944,6 +1027,9 @@ const Borsa = {
             }
         } catch (e) {
             console.warn("[Realtime] Başlangıç DB yüklemesi başarısız (fallback localStorage):", e && e.message || e);
+        }
+        if (usedDB && this.state.selectedStock) {
+            await this.Realtime.loadPriceHistory(this.state.selectedStock);
         }
         try {
             if (this.Realtime && typeof this.Realtime.start === "function") {
