@@ -23,7 +23,7 @@ CREATE POLICY "price_history admin yonetebilir"
     USING (public.is_borsa_admin())
     WITH CHECK (public.is_borsa_admin());
 
-CREATE OR REPLACE FUNCTION public.admin_set_price(
+CREATE OR REPLACE FUNCTION public.admin_set_stock_price(
     p_symbol VARCHAR(16),
     p_price NUMERIC
 )
@@ -35,10 +35,6 @@ DECLARE
 BEGIN
     IF NOT public.is_borsa_admin() THEN
         RAISE EXCEPTION 'Yonetici yetkisi gerekli.' USING ERRCODE = '42501';
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM public.stocks WHERE symbol = p_symbol) THEN
-        RAISE EXCEPTION 'Hisse bulunamadi: %', p_symbol;
     END IF;
 
     WITH upd AS (
@@ -58,11 +54,15 @@ BEGIN
     INSERT INTO public.price_history (symbol, price, recorded_at)
     SELECT symbol, current_price, now() FROM upd;
 
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Hisse bulunamadi: %', p_symbol;
+    END IF;
+
     RETURN QUERY SELECT * FROM public.stocks WHERE symbol = p_symbol LIMIT 1;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.admin_set_price(VARCHAR(16), NUMERIC) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.admin_set_price(VARCHAR(16), NUMERIC) TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_set_stock_price(VARCHAR(16), NUMERIC) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_set_stock_price(VARCHAR(16), NUMERIC) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';

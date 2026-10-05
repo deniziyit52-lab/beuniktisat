@@ -312,7 +312,7 @@ const Borsa = {
                     borderWidth: 2.5,
                     fill: true,
                     tension: 0.35,
-                    pointRadius: 0,
+                    pointRadius: data.length === 1 ? 3 : 0,
                     pointHoverRadius: 5,
                     pointHoverBackgroundColor: lineColor,
                     pointHoverBorderColor: "#fff",
@@ -413,76 +413,52 @@ const Borsa = {
         if (this._clockInterval) clearInterval(this._clockInterval);
         this.updateClock();
         this._clockInterval = setInterval(() => this.updateClock(), 1000);
-
-    },
-
+                const { data: stockRows, error } = await sb
     renderCommon({ onStockSelect } = {}) {
-        this.renderStocksGrid({ onSelect: onStockSelect });
-        this.renderStockSelector();
-        this.renderTickerTape();
-        this.renderMarketCap();
-        this.renderChart();
-        this.renderNewsFeed();
-    },
-
+                    .select("symbol, name, color, current_price, previous_close, change, change_pct, shares, updated_at")
+                    .order("symbol", { ascending: true });
     ensureInitialized() {
-        this.loadState();
-        const symbols = Object.keys(this.state.stocks);
-        if (!this.state.selectedStock || !this.state.stocks[this.state.selectedStock]) {
-            this.state.selectedStock = symbols[0];
-        }
-    },
-
-    /* =========================================================
-     *  SUPABASE REALTIME ENTEGRASYONU (Canlı Senkronizasyon)
-     * =========================================================
-     * - Tek doğruluk kaynağı (SSOT): Supabase stocks tablosu
-     * - Clientlar: postgres_changes dinleyicisiyle canlı güncelleme alır
-    * - Fiyat mutations are committed through Supabase RPCs.
-     */
-    Realtime: {
-        _chan: null,
-        _statusChan: null,
-        _appSettingsChan: null,
+                    console.warn("[Realtime] stocks tablosu okunamadi:", error.message);
         _newsChan: null,
         _bound: false,
-        _enabled: false,
-        _lastStatus: null,
+                if (!stockRows || !Array.isArray(stockRows) || stockRows.length === 0) return false;
 
-        _sb() {
-            return (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
-        },
+                const symbols = stockRows.map(row => String(row.symbol || "").toUpperCase()).filter(Boolean);
+                const historyBySymbol = {};
+                const { data: historyRows, error: historyError } = await sb
+                    .from("price_history")
+                    .select("symbol, price, recorded_at")
+                    .in("symbol", symbols)
+                    .order("recorded_at", { ascending: false })
+                    .limit(Math.min(symbols.length * 100, 1000));
+                if (historyError) {
+                    console.warn("[Realtime] price_history okunamadi:", historyError.message);
+                } else {
+                    (historyRows || []).forEach(point => {
+                        const sym = String(point.symbol || "").toUpperCase();
+                        if (!historyBySymbol[sym]) historyBySymbol[sym] = [];
+                        historyBySymbol[sym].push(point);
+                    });
+                }
 
-        isEnabled() {
-            return this._enabled === true;
-        },
-
-        _normalizeStockRow(row) {
-            if (!row) return null;
-            const symbol = String(row.symbol || row.code || "").trim().toUpperCase();
-            if (!symbol) return null;
             const name = String(row.name || row.stock_name || symbol).trim();
-            const price = Number(row.current_price ?? row.price ?? 0);
-            const previousClose = Number(row.previous_close ?? row.open_price ?? price);
-            const change = Number(row.change ?? Borsa.round2(price - previousClose));
-            const changePct = Number(row.change_pct ?? Borsa.round2(previousClose > 0 ? (change / previousClose) * 100 : 0));
-            const color = String(row.color || "#3b82f6").trim();
-            const shares = Number(row.shares ?? row.shares_outstanding ?? row.total_shares ?? 100000);
-            const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : Date.now();
-            let history = null;
-            try {
+                stockRows.forEach(row => {
+                    const sym = String(row.symbol || "").toUpperCase();
+                    row.__history = (historyBySymbol[sym] || []).sort(
+                        (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+                    );
                 if (row.price_history && Array.isArray(row.price_history) && row.price_history.length > 0) {
                     history = row.price_history.map(h => ({
                         time: Number(h.time ?? h.t ?? Date.now()),
-                        price: Borsa.round2(Number(h.price ?? h.p ?? price)),
-                    }));
+                const loadedSymbols = Object.keys(normalized);
+                if (loadedSymbols.length === 0) return false;
                 }
             } catch (_) { history = null; }
             if (!history || history.length === 0) {
                 // Eski JSONB kolonu bossa yeni price_history (ROW tablosundan) cek
-                history = (row.__history && Array.isArray(row.__history))
+                    Borsa.state.selectedStock = loadedSymbols[0];
                     ? row.__history.map(h => ({
-                        time: h.recorded_at ? new Date(h.recorded_at).getTime() : Date.now(),
+                console.log(`[Realtime] DB'den ${loadedSymbols.length} hisse ve fiyat geçmişi yüklendi.`);
                         price: Borsa.round2(Number(h.price ?? price)),
                     }))
                     : (Borsa.state.stocks[symbol]?.history || []).slice();
@@ -819,7 +795,7 @@ const Borsa = {
         const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
         if (!sb || !sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
         const p = Math.max(0.05, Number(exactPriceTL) || 0);
-        const { data, error } = await sb.rpc("admin_set_price", {
+        const { data, error } = await sb.rpc("admin_set_stock_price", {
             p_symbol: symbol,
             p_price: Number(this.round2(p)),
         });
