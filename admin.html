@@ -1259,11 +1259,12 @@
             document.getElementById("newsForm").addEventListener("submit", submitNews);
             document.getElementById("resetBtn").addEventListener("click", async () => {
                 try {
-                    if (!(await Borsa.resetMarket())) throw new Error("Piyasa sıfırlanamadı.");
+                    if (!(await Borsa.resetMarket())) return;
                     Borsa.renderCommon();
-                    showToast("Piyasa başlangıç durumuna sıfırlandı");
+                    showToast("Haberler ve tüyolar silindi; fiyatlar, grafik geçmişi ve portföyler korundu.");
                     refreshSymbolDropdowns();
                 } catch (err) {
+                    console.error("[Admin] Piyasa sıfırlama RPC hatası:", err);
                     showErr(err.message || "Piyasa sıfırlanamadı.");
                 }
             });

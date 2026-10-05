@@ -227,7 +227,7 @@ export function MarketProvider({ children }: { children: React.ReactNode }) {
   );
 
   const resetMarket = useCallback(async () => {
-    const { error } = await supabase.rpc("admin_reset_market_prices");
+    const { error } = await supabase.rpc("admin_reset_market");
     if (error) {
       console.error("Piyasa sıfırlanamadı:", error);
       return;
