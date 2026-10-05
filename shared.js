@@ -463,9 +463,9 @@ const Borsa = {
         if (!el) return;
         const total = Object.values(this.state.stocks).reduce((sum, s) => sum + s.price * s.shares, 0);
         let formatted;
-        if (total >= 1e9) formatted = "$" + (total / 1e9).toFixed(2) + "B";
-        else if (total >= 1e6) formatted = "$" + (total / 1e6).toFixed(2) + "M";
-        else formatted = "$" + total.toLocaleString();
+        if (total >= 1e9) formatted = "₺" + (total / 1e9).toFixed(2) + "B";
+        else if (total >= 1e6) formatted = "₺" + (total / 1e6).toFixed(2) + "M";
+        else formatted = "₺" + total.toLocaleString();
         el.textContent = "Piyasa Hacmi: " + formatted;
     },
 
