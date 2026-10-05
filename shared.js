@@ -72,14 +72,11 @@ const Borsa = {
     },
 
     async resetMarket() {
-        if (!confirm("Tüm piyasayı sıfırlamak istiyor musunuz? Tüm fiyatlar ve haberler silinecektir.")) return false;
+        if (!confirm("Haber akışı ve tüyolar silinsin mi? Hisse fiyatları, grafik geçmişi ve portföyler korunur.")) return false;
         const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
-        if (!sb || !sb.rpc) return false;
-        const { error } = await sb.rpc("admin_reset_market_prices");
-        if (error) {
-            console.warn("[Realtime] admin_reset_market_prices RPC başarısız:", error.message);
-            return false;
-        }
+        if (!sb || !sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
+        const { error } = await sb.rpc("admin_reset_market");
+        if (error) throw error;
         this.state.news = [];
         this.saveState();
         await this.Realtime._loadInitialStocksFromDB();
