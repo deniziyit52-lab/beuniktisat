@@ -37,7 +37,7 @@
     <header class="header">
         <div class="header-inner">
             <div class="header-left">
-                <button id="sidebarToggle" type="button" class="sidebar-hamburger" aria-label="Menüyü Aç" title="Liderlik & Hesap Dökümü">
+                <button id="sidebarToggle" type="button" class="sidebar-hamburger" aria-label="Menüyü Aç" title="Menüyü Aç" aria-controls="sidebarDrawer" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -810,12 +810,20 @@
         // =====================================================================
         function openSidebar() {
             document.body.classList.add("drawer-open");
+            const drawer = $("sidebarDrawer");
+            const toggle = $("sidebarToggle");
+            if (drawer) drawer.setAttribute("aria-hidden", "false");
+            if (toggle) toggle.setAttribute("aria-expanded", "true");
             document.dispatchEvent(new CustomEvent("borsa:sidebar-open"));
             // ilk acilista leaderboard'i yukle
             loadLeaderboard(true);
         }
         function closeSidebar() {
             document.body.classList.remove("drawer-open");
+            const drawer = $("sidebarDrawer");
+            const toggle = $("sidebarToggle");
+            if (drawer) drawer.setAttribute("aria-hidden", "true");
+            if (toggle) toggle.setAttribute("aria-expanded", "false");
             document.dispatchEvent(new CustomEvent("borsa:sidebar-close"));
         }
         function switchSidebarTab(tab) {
@@ -956,9 +964,8 @@
             };
 
             async function bootBorsa() {
-                let firstLoadLocalDone = false;
                 if (window.sb && typeof window.sb.channel === "function") {
-                    try { await Borsa.ensureInitializedWithRealtime(); firstLoadLocalDone = true; }
+                    try { await Borsa.ensureInitializedWithRealtime(); }
                     catch (e) { Borsa.ensureInitialized(); }
                 } else {
                     Borsa.ensureInitialized();
@@ -969,17 +976,9 @@
                 Borsa.renderCommon();
                 // =========================================================
                 //  MERKEZILIK FIYAT MOTORU (pg_cron 15sn) AKTIF OLDUGU ICIN
-                //  index.html NORMAL KULLANICILARDA: enableTicks=false
-                //  Sadece saat gosterilsin, fiyatlar REALTIME DINLENECEK.
+                //  Fiyatlar Supabase cron motorundan Realtime ile gelir.
                 // =========================================================
                 Borsa.startAutoUpdates(false);
-                if (typeof Borsa.Realtime !== "undefined" &&
-                    typeof Borsa.Realtime.syncAllLocalStocksToDB === "function") {
-                    // Tek seferlik senkron (ilk acilista). Sonraki yazmalar YOK.
-                    if (!firstLoadLocalDone) {
-                        setTimeout(() => Borsa.Realtime.syncAllLocalStocksToDB(), 2500);
-                    }
-                }
             }
             bootBorsa();
 
@@ -1221,7 +1220,7 @@
     </script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
-    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>
     <aside id="sidebarDrawer" class="sidebar-drawer" aria-hidden="true">
         <div class="sidebar-header">
             <div>

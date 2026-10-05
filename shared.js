@@ -1,14 +1,3 @@
-const DEFAULT_MEMBERS = [
-    { name: "Deniz",   symbol: "DEN",  color: "#3b82f6" },
-    { name: "Ahmet",   symbol: "AHM",  color: "#ef4444" },
-    { name: "Ayşe",    symbol: "AYS",  color: "#f59e0b" },
-    { name: "Mehmet",  symbol: "MEH",  color: "#10b981" },
-    { name: "Zeynep",  symbol: "ZEY",  color: "#8b5cf6" },
-    { name: "Can",     symbol: "CAN",  color: "#ec4899" },
-    { name: "Elif",    symbol: "ELI",  color: "#14b8a6" },
-    { name: "Burak",   symbol: "BUR",  color: "#f97316" },
-];
-
 const STORAGE_KEY = "borsa_economics_club_v1";
 
 const Borsa = {
@@ -18,62 +7,6 @@ const Borsa = {
         selectedStock: null,
     },
     priceChart: null,
-    /* =========================================================
-     * FİYATLANDIRMA MOTORU / PRICING ENGINE — AYARLAMA KILAVUZU
-     * =========================================================
-     *
-     * Doğal "rassal dalgalanma" (volatilite) 4 bileşenden oluşur:
-     *
-     * 1) ARKA PLAN TICK HIZI (KAÇ SANİYEDE BİR GÜNCELLEME)
-     *    → startAutoUpdates() içinde, satır ~443:
-     *      setInterval(() => this.randomMarketTick(), 4000)
-     *      4000 ms = 4 sn.
-     *
-     *    Daha AGRESİF piyasa istiyorsan 2000 (2 sn), 1500, 1000 yap.
-     *    Daha SABİT / DURAĞAN piyasa istiyorsan 6000 (6 sn), 8000, 10000 yap.
-     *
-     * 2) HER TICK'TE HANGİ ORANDA HİSSE FİYATI DEĞİŞİR
-     *    → randomMarketTick() içinde, satır ~174:
-     *      if (Math.random() < 0.4)  → %40 olasılıkla her hisse hareket eder.
-     *
-     *    Daha hareketli piyasa: 0.6 → %60, 0.7 → %70
-     *    Daha durağan: 0.2 → %20, 0.15 → %15
-     *
-     * 3) TEK BİR HAREKETİN BÜYÜKLÜĞÜ (VOLATİLİTE)
-     *    → randomMarketTick() içinde, satır ~176:
-     *      const volatility = (Math.random() - 0.5) * 0.018;
-     *
-     *    0.018 → % -0,90  ~  +0,90 aralığında (her tick için).
-     *    Çift yönlü: (Math.random()-0.5) -0.5 ile +0.5 arasındadır.
-     *    Çarpan (0.018) VOLATİLİTE KATSAYISIDIR:
-     *      0.01  → % -0,5  ~  +0,5  (çok stabil, düşük oynaklık)
-     *      0.03  → % -1,5  ~  +1,5  (daha agresif)
-     *      0.05  → % -2,5  ~  +2,5  (yüksek oynaklık — crypto tadında)
-     *
-     * 4) İLK GEÇMİŞ (HİSTORY) OLUŞTURURKENKİ VOLATİLİTE
-     *    → _generatePriceHistory() içinde, satır ~51:
-     *      const volatility = (Math.random() - 0.5) * 0.04;
-     *
-     *    Bu, chart'ın grafiğinin başlangıç seviyesini belirler (geçmiş 40 bar).
-     *    0.04 → her 1 dklık bar için % -2 ~ +2 arası.
-     *
-     *
-     * HABER (NEWS) ETKİSİ:
-     *    applyNewsImpact(symbol, impactPct)  satır ~137
-     *    impactPct = Admin panel'den -15 ~ +15 girilebilen yüzde etkisi.
-     *    Örn: +8 → fiyat %8 artar, -12 → fiyat %12 düşer.
-     *    Haber etkisi ANLIKTIR; randomMarketTick() ile aynı "history push"
-     *    mekanizmasını kullanır ve bir sonraki tick'te devam eder.
-     *
-     * ÖNEMLİ NOT: Fiyatları "manuel, sessizce" değiştirmek istiyorsan
-     *    Admin paneldeki "Sessiz Fiyat Manipülasyonu" aracını kullan.
-     *    Bu fonksiyonları (applyNewsImpact / randomMarketTick) elle
-     *    çağırmana GEREK KALMAZ; admin scriptinde Borsa.setPrice(sym, p)
-     *    veya Borsa.bumpPricePercent(sym, pct) var.
-     * =========================================================
-     */
-
-    _tickInterval: null,
     _clockInterval: null,
 
     round2(n) {
@@ -97,48 +30,6 @@ const Borsa = {
         return "₺" + n.toFixed(2);
     },
 
-    _generatePriceHistory(basePrice, points = 30) {
-        const history = [];
-        let price = basePrice;
-        const now = Date.now();
-        const interval = 60000;
-        for (let i = points - 1; i >= 0; i--) {
-            // [AYAR] İlk 40 bar (geçmiş grafiği) için VOLATİLİTE:
-            // 0.04 → ±%2 / bar (1 dklık). 0.02= sakin, 0.06= çalkantılı.
-            const volatility = (Math.random() - 0.5) * 0.04;
-            price = Math.max(1, price * (1 + volatility));
-            history.push({
-                time: now - i * interval,
-                price: this.round2(price),
-            });
-        }
-        return history;
-    },
-
-    initStocks() {
-        const stocks = {};
-        DEFAULT_MEMBERS.forEach(m => {
-            const basePrice = 50 + Math.random() * 150;
-            const history = this._generatePriceHistory(basePrice, 40);
-            const currentPrice = history[history.length - 1].price;
-            const startPrice = history[0].price;
-            const change = this.round2(currentPrice - startPrice);
-            const changePct = this.round2((change / startPrice) * 100);
-            stocks[m.symbol] = {
-                name: m.name,
-                symbol: m.symbol,
-                color: m.color,
-                price: currentPrice,
-                previousClose: startPrice,
-                change: change,
-                changePct: changePct,
-                history: history,
-                shares: Math.floor(100000 + Math.random() * 500000),
-            };
-        });
-        return stocks;
-    },
-
     seedNews() {
         const seeds = [
             { title: "Piyasa istikrarlı bir şekilde açıldı", target: null, impact: 0 },
@@ -158,11 +49,7 @@ const Borsa = {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed.stocks && Object.keys(parsed.stocks).length > 0) {
-                    this.state.stocks = parsed.stocks;
-                    this.state.news = parsed.news || [];
-                    return true;
-                }
+                this.state.news = parsed.news || [];
             }
         } catch (e) {
             console.warn("Failed to load from localStorage", e);
@@ -173,7 +60,6 @@ const Borsa = {
     saveState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                stocks: this.state.stocks,
                 news: this.state.news,
             }));
         } catch (e) {
@@ -181,64 +67,25 @@ const Borsa = {
         }
     },
 
-    resetMarket() {
+    async resetMarket() {
         if (!confirm("Tüm piyasayı sıfırlamak istiyor musunuz? Tüm fiyatlar ve haberler silinecektir.")) return false;
-        this.state.stocks = this.initStocks();
-        this.state.news = this.seedNews();
-        const symbols = Object.keys(this.state.stocks);
-        this.state.selectedStock = symbols[0];
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (!sb || !sb.rpc) return false;
+        const { error } = await sb.rpc("admin_reset_market_prices");
+        if (error) {
+            console.warn("[Realtime] admin_reset_market_prices RPC başarısız:", error.message);
+            return false;
+        }
+        this.state.news = [];
         this.saveState();
+        await this.Realtime._loadInitialStocksFromDB();
+        this.renderCommon();
         return true;
-    },
-
-    applyNewsImpact(symbol, impactPct) {
-        const stock = this.state.stocks[symbol];
-        if (!stock) return;
-        const oldPrice = stock.price;
-        const newPrice = this.round2(Math.max(0.5, oldPrice * (1 + impactPct / 100)));
-        stock.price = newPrice;
-        stock.history.push({
-            time: Date.now(),
-            price: newPrice,
-        });
-        if (stock.history.length > 200) stock.history.shift();
-        const change = this.round2(newPrice - stock.previousClose);
-        stock.change = change;
-        stock.changePct = this.round2((change / stock.previousClose) * 100);
-        this.flashCard(symbol, impactPct >= 0);
     },
 
     /* ===== ADMIN PANEL YARDIMCILARI =====
      * Sessiz fiyat manipülasyonu (habersiz) + Stock CRUD
      */
-
-    // Bir hissenin fiyatını DOĞRUDAN, habersizce set eder. Admin "Sessiz Fiyat" aracı.
-    setPrice(symbol, exactPriceTL) {
-        const stock = this.state.stocks[symbol];
-        if (!stock) return false;
-        const p = Math.max(0.05, Number(exactPriceTL) || 0);
-        const newPrice = this.round2(p);
-        const up = newPrice >= stock.price;
-        stock.price = newPrice;
-        stock.history.push({ time: Date.now(), price: newPrice });
-        if (stock.history.length > 200) stock.history.shift();
-        const change = this.round2(newPrice - stock.previousClose);
-        stock.change = change;
-        stock.changePct = this.round2((change / stock.previousClose) * 100);
-        this.flashCard(symbol, up);
-        this.saveState();
-        this.renderCommon();
-        return newPrice;
-    },
-
-    // Bir hissenin fiyatını yüzde olarak yukarı/aşağı çarpar (habersizce). pct: -15..+25 vs.
-    bumpPricePercent(symbol, pct) {
-        const stock = this.state.stocks[symbol];
-        if (!stock) return false;
-        const p = Number(pct) || 0;
-        const newPrice = this.round2(Math.max(0.05, stock.price * (1 + p / 100)));
-        return this.setPrice(symbol, newPrice);
-    },
 
     // Admin: yeni hisse ekle. color opsiyonel, atanmazsa rastgele.
     addStock({ symbol, name, price }) {
@@ -251,21 +98,16 @@ const Borsa = {
         const palette = ["#f59e0b", "#10b981", "#3b82f6", "#a855f7", "#ef4444", "#ec4899", "#14b8a6", "#f97316"];
         const color = palette[Object.keys(this.state.stocks).length % palette.length];
         const base = this.round2(p);
-        const history = this._generatePriceHistory(base, 40);
-        const last = history[history.length - 1].price;
-        const first = history[0].price;
-        const change = this.round2(last - first);
-        const changePct = this.round2(first > 0 ? (change / first) * 100 : 0);
         this.state.stocks[symbol] = {
             name,
             symbol,
             color,
-            price: last,
-            previousClose: first,
-            change,
-            changePct,
-            history,
-            shares: Math.floor(100000 + Math.random() * 500000),
+            price: this.round2(p),
+            previousClose: this.round2(p),
+            change: 0,
+            changePct: 0,
+            history: [],
+            shares: 100000,
         };
         if (!this.state.selectedStock) this.state.selectedStock = symbol;
         this.saveState();
@@ -321,40 +163,6 @@ const Borsa = {
         }
         this.saveState();
         return newsItem;
-    },
-
-    randomMarketTick() {
-        // [AYAR] Doğal arka plan dalgalanması — haber olmadan price ne kadar oynar?
-        let changed = false;
-        Object.keys(this.state.stocks).forEach(sym => {
-            // [AYAR] BU HİSSE BU TICK'TE OYNASIN MI?
-            // 0.4 → %40 olasılıkla her hisse hareket eder. 0.2 = daha durağan, 0.8 = daha hareketli.
-            if (Math.random() < 0.4) {
-                const stock = this.state.stocks[sym];
-                // [AYAR] TEK BİR HAREKETİN YÜZDESİ (VOLATİLİTE):
-                // 0.018  → -%0,9 ~ +%0,9  aralığı / tek tick başına
-                // 0.01   → -%0,5 ~ +%0,5  (durgun)
-                // 0.03   → -%1,5 ~ +%1,5  (agresif)
-                // 0.05   → -%2,5 ~ +%2,5  (crypto)
-                const volatility = (Math.random() - 0.5) * 0.018;
-                const oldPrice = stock.price;
-                const newPrice = this.round2(Math.max(0.5, oldPrice * (1 + volatility)));
-                stock.price = newPrice;
-                stock.history.push({ time: Date.now(), price: newPrice });
-                if (stock.history.length > 200) stock.history.shift();
-                const change = this.round2(newPrice - stock.previousClose);
-                stock.change = change;
-                stock.changePct = this.round2((change / stock.previousClose) * 100);
-                changed = true;
-            }
-        });
-        if (changed) {
-            this.saveState();
-            this.renderStocksGrid();
-            this.renderTickerTape();
-            this.renderMarketCap();
-            if (this.state.selectedStock) this.renderChart();
-        }
     },
 
     escapeHtml(str) {
@@ -601,29 +409,11 @@ const Borsa = {
         el.textContent = this.formatDateTime(Date.now());
     },
 
-    startAutoUpdates(enableTicks = true) {
+    startAutoUpdates() {
         if (this._clockInterval) clearInterval(this._clockInterval);
         this.updateClock();
         this._clockInterval = setInterval(() => this.updateClock(), 1000);
 
-        // ============================================================
-        //  UCRETSIZ PLAN OPTIMIZASYONU:
-        //  - Sadece ADMIN PANELINDE tick local olarak calisir ve DB'e
-        //    batch olacak sekilde yazilirlar. (admin.html'de enableTicks=true)
-        //  - Normal kullanici (index.html): enableTicks=false olmalidir.
-        //    Cunku MERKEZILIK MOTOR pg_cron tarafindan 15sn'de bir
-        //    batch_tick_market_prices() calisiyor ve tum clientlar
-        //    Realtime postgres_changes ile YENI fiyatlari DINLIYOR.
-        //    Frontend'in kendi tick yapmasi 8x client = 8x yazma = patlar.
-        // ============================================================
-        if (enableTicks) {
-            if (this._tickInterval) clearInterval(this._tickInterval);
-            // Admin tick araligi: 15 saniye (pg_cron ile ayni frekans)
-            this._tickInterval = setInterval(() => this.randomMarketTick(), 15000);
-        } else if (this._tickInterval) {
-            clearInterval(this._tickInterval);
-            this._tickInterval = null;
-        }
     },
 
     renderCommon({ onStockSelect } = {}) {
@@ -636,10 +426,7 @@ const Borsa = {
     },
 
     ensureInitialized() {
-        if (!this.loadState()) {
-            this.state.stocks = this.initStocks();
-            this.state.news = this.seedNews();
-        }
+        this.loadState();
         const symbols = Object.keys(this.state.stocks);
         if (!this.state.selectedStock || !this.state.stocks[this.state.selectedStock]) {
             this.state.selectedStock = symbols[0];
@@ -651,8 +438,7 @@ const Borsa = {
      * =========================================================
      * - Tek doğruluk kaynağı (SSOT): Supabase stocks tablosu
      * - Clientlar: postgres_changes dinleyicisiyle canlı güncelleme alır
-     * - Admin: randomMarketTick / setPrice / publishNews çalıştırdığında
-     *   değişiklikler Supabase'e de yazılır, diğer clientlar realtime alır.
+    * - Fiyat mutations are committed through Supabase RPCs.
      */
     Realtime: {
         _chan: null,
@@ -662,35 +448,6 @@ const Borsa = {
         _bound: false,
         _enabled: false,
         _lastStatus: null,
-
-        async seedDefaultStocksIfDBEmpty() {
-            const sb = this._sb();
-            if (!sb) return;
-            try {
-                const { data, error } = await sb.from("stocks").select("symbol").limit(1);
-                if (error) return;
-                if (data && data.length > 0) return;
-            } catch (_) { return; }
-            const tmp = (typeof Borsa !== "undefined" && Borsa.initStocks) ? Borsa.initStocks() : null;
-            if (!tmp) return;
-            const symbols = Object.keys(tmp);
-            for (const sym of symbols) {
-                try {
-                    const s = tmp[sym];
-                    const payload = {
-                        symbol: s.symbol,
-                        name: s.name,
-                        color: s.color,
-                        current_price: s.price,
-                        previous_close: s.previousClose,
-                        shares: s.shares,
-                        price_history: (s.history || []).slice(-100),
-                    };
-                    await sb.from("stocks").insert([payload], { onConflict: "symbol" });
-                } catch (_) {}
-            }
-            console.log(`[Realtime] DB boştu, ${symbols.length} varsayılan hisse seed edildi.`);
-        },
 
         _sb() {
             return (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
@@ -711,6 +468,7 @@ const Borsa = {
             const changePct = Number(row.change_pct ?? Borsa.round2(previousClose > 0 ? (change / previousClose) * 100 : 0));
             const color = String(row.color || "#3b82f6").trim();
             const shares = Number(row.shares ?? row.shares_outstanding ?? row.total_shares ?? 100000);
+            const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : Date.now();
             let history = null;
             try {
                 if (row.price_history && Array.isArray(row.price_history) && row.price_history.length > 0) {
@@ -727,15 +485,13 @@ const Borsa = {
                         time: h.recorded_at ? new Date(h.recorded_at).getTime() : Date.now(),
                         price: Borsa.round2(Number(h.price ?? price)),
                     }))
-                    : Borsa._generatePriceHistory(price, 40);
+                    : (Borsa.state.stocks[symbol]?.history || []).slice();
             }
-            if (history.length > 0) {
-                const last = history[history.length - 1];
-                if (Math.abs(Number(last.price) - price) > 0.01) {
-                    history.push({ time: Date.now(), price: Borsa.round2(price) });
-                }
-                if (history.length > 200) history = history.slice(-200);
+            const last = history[history.length - 1];
+            if (!last || Number(last.time) < updatedAt || Math.abs(Number(last.price) - price) > 0.01) {
+                history.push({ time: updatedAt, price: Borsa.round2(price) });
             }
+            if (history.length > 100) history = history.slice(-100);
             return {
                 name,
                 symbol,
@@ -747,7 +503,7 @@ const Borsa = {
                 history,
                 shares: Math.max(1, Math.floor(shares)),
                 _src: "supabase",
-                _updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now(),
+                _updatedAt: updatedAt,
             };
         },
 
@@ -755,7 +511,6 @@ const Borsa = {
             const sb = this._sb();
             if (!sb) return false;
             try {
-                await this.seedDefaultStocksIfDBEmpty();
                 // Yeni: stocks + son 40 price_history satirlarini BIRLIKTE cek
                 // (tek roundtrip, history JSONB yerine ayri tablo)
                 const { data, error } = await sb
@@ -868,69 +623,8 @@ const Borsa = {
             if (!item.title) return;
             Borsa.state.news.unshift(item);
             if (Borsa.state.news.length > 150) Borsa.state.news.pop();
-            if (item.target && Borsa.state.stocks[item.target]) {
-                const impactPct = Number(item.impact) || 0;
-                if (Math.abs(impactPct) > 0.001) {
-                    const stock = Borsa.state.stocks[item.target];
-                    const newPrice = Borsa.round2(Math.max(0.5, stock.price * (1 + impactPct / 100)));
-                    const old = stock.price;
-                    stock.price = newPrice;
-                    stock.history.push({ time: Date.now(), price: newPrice });
-                    if (stock.history.length > 200) stock.history.shift();
-                    const change = Borsa.round2(newPrice - stock.previousClose);
-                    stock.change = change;
-                    stock.changePct = Borsa.round2(stock.previousClose > 0 ? (change / stock.previousClose) * 100 : 0);
-                    Borsa.flashCard(item.target, impactPct >= 0);
-                    if (Borsa.state.selectedStock === item.target) {
-                        try { Borsa.renderChart(); } catch (_) {}
-                    }
-                }
-            }
             try { Borsa.renderNewsFeed(); } catch (_) {}
             try { Borsa.saveState(); } catch (_) {}
-        },
-
-        async _syncStockToDB(symbol) {
-            const sb = this._sb();
-            if (!sb) return false;
-            const stock = Borsa.state.stocks[symbol];
-            if (!stock) return false;
-            try {
-                const payload = {
-                    symbol: stock.symbol,
-                    name: stock.name,
-                    color: stock.color,
-                    current_price: stock.price,
-                    previous_close: stock.previousClose,
-                    shares: stock.shares,
-                    price_history: (stock.history || []).slice(-100),
-                    updated_at: new Date().toISOString(),
-                };
-                const { error } = await sb
-                    .from("stocks")
-                    .upsert([payload], { onConflict: "symbol" });
-                if (error) {
-                    console.debug(`[Realtime] ${symbol} DB sync başarısız:`, error.message);
-                    return false;
-                }
-                return true;
-            } catch (e) {
-                console.debug(`[Realtime] ${symbol} DB sync exception:`, e && e.message || e);
-                return false;
-            }
-        },
-
-        async syncAllLocalStocksToDB() {
-            const sb = this._sb();
-            if (!sb) return;
-            const symbols = Object.keys(Borsa.state.stocks || {});
-            let ok = 0;
-            for (const sym of symbols) {
-                try {
-                    if (await this._syncStockToDB(sym)) ok++;
-                } catch (_) {}
-            }
-            if (ok > 0) console.log(`[Realtime] ${ok}/${symbols.length} hisse DB ile senkronize edildi.`);
         },
 
         updateOneStockFromPayload(stockRow, { flash = true, render = true } = {}) {
@@ -1095,19 +789,6 @@ const Borsa = {
         },
     },
 
-    /* =========================================================
-     *  SETPRICE / BUMP / PUBLISHNEWS / RANDOMMARKETTICK
-     *  Yerel değişiklikleri Realtime sync + DB write ile genişlet
-     * ========================================================= */
-    _rtSyncAfterLocalChange(symbols) {
-        const list = Array.isArray(symbols) ? symbols.slice() : [symbols];
-        try {
-            if (this.Realtime && this.Realtime.isEnabled() && typeof this.Realtime._syncStockToDB === "function") {
-                list.forEach(sym => { if (sym) this.Realtime._syncStockToDB(sym); });
-            }
-        } catch (_) {}
-    },
-
     bumpPricePercent(symbol, percent) {
         const stock = this.state.stocks[symbol];
         if (!stock) return;
@@ -1124,37 +805,11 @@ const Borsa = {
                 p_symbol: symbol,
                 p_impact_pct: Number(impactPct) || 0,
             }).catch(err => {
-                console.warn("[Realtime] admin_apply_news_impact RPC basarisiz, lokal yedek calisiyor:", err && err.message || err);
-                this._applyNewsImpactLocal(symbol, impactPct);
+                console.warn("[Realtime] admin_apply_news_impact RPC başarısız:", err && err.message || err);
             });
             return;
         }
-        this._applyNewsImpactLocal(symbol, impactPct);
-    },
-
-    _applyNewsImpactLocal(symbol, impactPct) {
-        const stock = this.state.stocks[symbol];
-        if (!stock) return;
-        const oldPrice = stock.price;
-        const newPrice = this.round2(Math.max(0.5, oldPrice * (1 + impactPct / 100)));
-        stock.price = newPrice;
-        stock.history.push({
-            time: Date.now(),
-            price: newPrice,
-        });
-        if (stock.history.length > 200) stock.history.shift();
-        const change = this.round2(newPrice - stock.previousClose);
-        stock.change = change;
-        stock.changePct = this.round2((change / stock.previousClose) * 100);
-        this.flashCard(symbol, impactPct >= 0);
-        try {
-            this.renderStocksGrid();
-            this.renderTickerTape();
-            this.renderMarketCap();
-            if (this.state.selectedStock === symbol) this.renderChart();
-            this.saveState();
-        } catch (_) {}
-        this._rtSyncAfterLocalChange(symbol);
+        console.warn("[Realtime] Supabase RPC hazır değil; haber etkisi uygulanmadı.");
     },
 
     setPrice(symbol, exactPriceTL) {
@@ -1165,37 +820,18 @@ const Borsa = {
             const p = Math.max(0.05, Number(exactPriceTL) || 0);
             sb.rpc("admin_set_price", { p_symbol: symbol, p_price: Number(this.round2(p)) })
                 .catch(err => {
-                    console.warn("[Realtime] admin_set_price RPC basarisiz, lokal yedek:", err && err.message || err);
-                    this._setPriceLocal(symbol, exactPriceTL);
+                    console.warn("[Realtime] admin_set_price RPC başarısız:", err && err.message || err);
                 });
             return this.round2(p);
         }
-        return this._setPriceLocal(symbol, exactPriceTL);
-    },
-
-    _setPriceLocal(symbol, exactPriceTL) {
-        const stock = this.state.stocks[symbol];
-        if (!stock) return false;
-        const p = Math.max(0.05, Number(exactPriceTL) || 0);
-        const newPrice = this.round2(p);
-        const up = newPrice >= stock.price;
-        stock.price = newPrice;
-        stock.history.push({ time: Date.now(), price: newPrice });
-        if (stock.history.length > 200) stock.history.shift();
-        const change = this.round2(newPrice - stock.previousClose);
-        stock.change = change;
-        stock.changePct = this.round2((change / stock.previousClose) * 100);
-        this.flashCard(symbol, up);
-        this.saveState();
-        this.renderCommon();
-        this._rtSyncAfterLocalChange(symbol);
-        return newPrice;
+        console.warn("[Realtime] Supabase RPC hazır değil; fiyat değiştirilmedi.");
+        return false;
     },
 
     publishNews({ title, target, impact }) {
         const impactPct = Number(impact) || 0;
         const newsItem = {
-            id: Date.now() + Math.floor(Math.random() * 999),
+            id: Date.now(),
             title: title,
             target: target || null,
             impact: impactPct,
@@ -1213,117 +849,12 @@ const Borsa = {
                 p_symbol: target || null,
                 p_impact_pct: impactPct,
             }).catch(err => {
-                console.warn("[Realtime] admin_publish_news RPC basarisiz, lokal yedek:", err && err.message || err);
-                if (target && this.state.stocks[target]) {
-                    this._applyNewsImpactLocal(target, impactPct);
-                } else if (sb && sb.from) {
-                    sb.from("news_feed").insert([{
-                        id: newsItem.id,
-                        title: String(title || "").slice(0, 280),
-                        stock_symbol: target || null,
-                        impact_pct: impactPct,
-                        created_at: new Date(newsItem.timestamp).toISOString(),
-                    }]).catch(() => {});
-                }
+                console.warn("[Realtime] admin_publish_news RPC başarısız:", err && err.message || err);
             });
             return newsItem;
         }
-        if (target && this.state.stocks[target]) {
-            this.applyNewsImpact(target, impactPct);
-        } else if (sb && sb.from) {
-            sb.from("news_feed").insert([{
-                id: newsItem.id,
-                title: String(title || "").slice(0, 280),
-                stock_symbol: target || null,
-                impact_pct: impactPct,
-                created_at: new Date(newsItem.timestamp).toISOString(),
-            }]).catch(() => {});
-        }
+            console.warn("[Realtime] Supabase RPC hazır değil; haber yayımlanmadı.");
         return newsItem;
-    },
-
-    randomMarketTick() {
-        if (!this.state.stocks) return;
-        // ============================================================
-        //  [OPT 1+2] MERKEZILIK BATCH + 15sn:
-        //  N client x 8 hisse = 8N yazmak yerine, TEK RPC cagrisi.
-        //  pg_cron zaten HER 15 SN calisiyor, admin paneli ekstra zorlama
-        //  olarak RPC cagirir, normal clientlar HIC yazmaz.
-        // ============================================================
-        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
-        if (sb && sb.rpc) {
-            sb.rpc("batch_tick_market_prices")
-                .then(res => {
-                    if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
-                        let selectedChanged = false;
-                        res.data.forEach(row => {
-                            const sym = String(row.symbol || "").toUpperCase();
-                            if (!sym || !this.state.stocks[sym]) return;
-                            const old = this.state.stocks[sym];
-                            const s = this.Realtime._normalizeStockRow(row);
-                            if (!s) return;
-                            const priceChanged = Math.abs(s.price - (old.price || 0)) > 0.01;
-                            this.state.stocks[sym] = Object.assign({}, old, {
-                                price: s.price,
-                                previousClose: s.previousClose,
-                                change: s.change,
-                                changePct: s.changePct,
-                                _updatedAt: Date.now(),
-                            });
-                            if (priceChanged) {
-                                const hist = (this.state.stocks[sym].history || []).slice();
-                                hist.push({ time: Date.now(), price: s.price });
-                                if (hist.length > 200) hist.shift();
-                                this.state.stocks[sym].history = hist;
-                                this.flashCard(sym, s.changePct >= 0);
-                                if (this.state.selectedStock === sym) selectedChanged = true;
-                            }
-                        });
-                        this.renderStocksGrid();
-                        this.renderTickerTape();
-                        this.renderMarketCap();
-                        this.renderStockSelector();
-                        if (selectedChanged) try { this.renderChart(); } catch (_) {}
-                        try { this.saveState(); } catch (_) {}
-                    }
-                })
-                .catch(err => {
-                    console.warn("[borsa-tick] RPC batch_tick_market_prices basarisiz, lokal tick:", err && err.message || err);
-                    this._localFallbackTick();
-                });
-            return;
-        }
-        this._localFallbackTick();
-    },
-
-    _localFallbackTick() {
-        if (!this.state.stocks) return;
-        let changed = false;
-        const changedSymbols = [];
-        Object.keys(this.state.stocks).forEach(sym => {
-            if (Math.random() < 0.4) {
-                const stock = this.state.stocks[sym];
-                const volatility = (Math.random() - 0.5) * 0.018;
-                const oldPrice = stock.price;
-                const newPrice = this.round2(Math.max(0.5, oldPrice * (1 + volatility)));
-                stock.price = newPrice;
-                stock.history.push({ time: Date.now(), price: newPrice });
-                if (stock.history.length > 200) stock.history.shift();
-                const change = this.round2(newPrice - stock.previousClose);
-                stock.change = change;
-                stock.changePct = this.round2((change / stock.previousClose) * 100);
-                changed = true;
-                changedSymbols.push(sym);
-            }
-        });
-        if (changed) {
-            this.saveState();
-            this.renderStocksGrid();
-            this.renderTickerTape();
-            this.renderMarketCap();
-            if (this.state.selectedStock) this.renderChart();
-            this._rtSyncAfterLocalChange(changedSymbols);
-        }
     },
 
     Theme: {
@@ -1442,13 +973,6 @@ const Borsa = {
             }
         } catch (e) {
             console.warn("[Realtime] start() başarısız:", e);
-        }
-        if (!usedDB) {
-            try {
-                if (this.Realtime && typeof this.Realtime.syncAllLocalStocksToDB === "function") {
-                    setTimeout(() => this.Realtime.syncAllLocalStocksToDB(), 2500);
-                }
-            } catch (_) {}
         }
     },
 };

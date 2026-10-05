@@ -13,7 +13,7 @@
 -- =========================================================================
 --  [ADIM 0/6] pg_cron extension yukle (Supabase ucretsiz planda VAR)
 -- =========================================================================
-CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pg_cron;
 GRANT ALL ON SCHEMA cron TO postgres;
 GRANT ALL ON SCHEMA cron TO supabase_admin;
 
@@ -27,6 +27,48 @@ CREATE TABLE IF NOT EXISTS public.price_history (
     price       NUMERIC(18,4) NOT NULL,
     recorded_at TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.stocks
+    ADD COLUMN IF NOT EXISTS change NUMERIC(18,4) NOT NULL DEFAULT 0;
+ALTER TABLE public.stocks
+    ADD COLUMN IF NOT EXISTS change_pct NUMERIC(18,4) NOT NULL DEFAULT 0;
+
+-- Seed fixed opening values in the database; browsers never invent prices.
+INSERT INTO public.stocks
+    (symbol, name, color, current_price, previous_close, shares)
+VALUES
+    ('DEN', 'Deniz',   '#3b82f6', 100, 100, 250000),
+    ('AHM', 'Ahmet',   '#ef4444', 100, 100, 250000),
+    ('AYS', 'Ayşe',    '#f59e0b', 100, 100, 250000),
+    ('MEH', 'Mehmet',  '#10b981', 100, 100, 250000),
+    ('ZEY', 'Zeynep',  '#8b5cf6', 100, 100, 250000),
+    ('CAN', 'Can',     '#ec4899', 100, 100, 250000),
+    ('ELI', 'Elif',    '#14b8a6', 100, 100, 250000),
+    ('BUR', 'Burak',   '#f97316', 100, 100, 250000)
+ON CONFLICT (symbol) DO NOTHING;
+
+INSERT INTO public.price_history (symbol, price, recorded_at)
+SELECT s.symbol, s.current_price, now()
+FROM public.stocks s
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.price_history ph WHERE ph.symbol = s.symbol
+);
+
+DO $$
+BEGIN
+    DELETE FROM public.price_history ph
+    WHERE NOT EXISTS (SELECT 1 FROM public.stocks s WHERE s.symbol = ph.symbol);
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'price_history_symbol_fkey'
+          AND conrelid = 'public.price_history'::regclass
+    ) THEN
+        ALTER TABLE public.price_history
+            ADD CONSTRAINT price_history_symbol_fkey
+            FOREIGN KEY (symbol) REFERENCES public.stocks(symbol) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 ALTER TABLE public.price_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_history REPLICA IDENTITY FULL;
@@ -110,19 +152,16 @@ BEGIN
             updated_at     = now()
         FROM next_prices np
         WHERE s.symbol = np.symbol
-          AND ABS(np.new_price - np.old_price) > 0.0001
         RETURNING s.symbol, s.current_price
     )
-    -- INSERT INTO price_history (YENI fiyatlar icin 1 satir / tick / hisse)
+    -- One history snapshot per symbol and tick; this is one batched INSERT.
     INSERT INTO public.price_history (symbol, price, recorded_at)
     SELECT du.symbol, du.current_price, now()
     FROM do_update du;
 
     GET DIAGNOSTICS _updated_count = ROW_COUNT;
 
-    -- [OPTIMIZASYON 3: SAKLAMA - hisse basi 100 kayit limiti]
-    -- Bu tickte yazilanlari saymayan, 100'den eski kayitlari HEMEN sil.
-    -- (Daha agoradan 24 saat limiti asagida pg_cron ile her 10dk bir)
+    -- Enforce the per-symbol cap on every tick; retention also runs separately.
     DELETE FROM public.price_history ph
     USING (
         SELECT
@@ -294,19 +333,48 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.admin_reset_market_prices()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+    IF lower(coalesce(auth.jwt() ->> 'email', '')) <> 'deniziyit52@gmail.com' THEN
+        RAISE EXCEPTION 'Yetkiniz yok.' USING ERRCODE = '42501';
+    END IF;
+
+    UPDATE public.stocks
+    SET current_price = previous_close,
+        change = 0,
+        change_pct = 0,
+        updated_at = now();
+
+    DELETE FROM public.price_history;
+    INSERT INTO public.price_history (symbol, price, recorded_at)
+    SELECT symbol, current_price, now() FROM public.stocks;
+
+    DELETE FROM public.news_feed;
+    RETURN true;
+END;
+$$;
+
 -- =========================================================================
 --  [ADIM 6/6] pg_cron GUNCELLEME - OPTIMIZASYON 1: HER 15 SANiYE
 --         + retention temizligi HER 10 DAKiKADA bir
 -- =========================================================================
 -- Oncelikle eskiden varsa kaldır (temiz kurulum)
-SELECT cron.unschedule('borsa-every-15s-price-tick')  WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'borsa-every-15s-price-tick');
-SELECT cron.unschedule('borsa-every-10m-retention')    WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'borsa-every-10m-retention');
+SELECT cron.unschedule(jobid)
+FROM cron.job
+WHERE jobname IN (
+    'borsa-every-15s-price-tick',
+    'borsa-every-10m-retention'
+);
 
--- Yeni schedule:
---  [1] 15 SANiYEDE BIR fiyat tick
+-- pg_cron supports interval schedules such as '15 seconds'.
 SELECT cron.schedule(
     'borsa-every-15s-price-tick',
-    '*/15 * * * * *',  -- 6 alan (yıl-dakika-saat-gun-ay-hafta): SANIYE icin 6 kisim kullanilir
+    '15 seconds',
     $$ SELECT public.batch_tick_market_prices(); $$
 );
 
@@ -318,11 +386,13 @@ SELECT cron.schedule(
 );
 
 -- Supabase auth izinleri (RPC'leri cagirabilmek icin)
-GRANT EXECUTE ON FUNCTION public.batch_tick_market_prices() TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_price(VARCHAR(16), NUMERIC) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_apply_news_impact(VARCHAR(16), NUMERIC) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_publish_news(TEXT, VARCHAR(16), NUMERIC) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.purge_price_history_retention() TO pg_database_owner;
+REVOKE EXECUTE ON FUNCTION public.admin_reset_market_prices() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_reset_market_prices() TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.batch_tick_market_prices() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.purge_price_history_retention() FROM PUBLIC, anon, authenticated;
 
 -- =========================================================================
 --  BILGILENDIRME:
@@ -333,3 +403,4 @@ GRANT EXECUTE ON FUNCTION public.purge_price_history_retention() TO pg_database_
 --  Kayit sayisi kontrolu (her hisse basi <= 100 satir olmali):
 --     SELECT symbol, COUNT(*) FROM price_history GROUP BY 1 ORDER BY 1;
 -- =========================================================================
+NOTIFY pgrst, 'reload schema';
