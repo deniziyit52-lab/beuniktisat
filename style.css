@@ -2272,7 +2272,7 @@ body.light-mode .footer-dev { color: #64748b; }
 .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 9998;
     background: rgba(2,6,23,0.65);
     border: 0;
     padding: 0;
@@ -2291,7 +2291,7 @@ body.drawer-open .sidebar-backdrop {
 .sidebar-drawer {
     position: fixed;
     top: 0; left: 0;
-    z-index: 50;
+    z-index: 9999;
     width: min(360px, 84vw);
     height: 100dvh;
     background: linear-gradient(180deg, #0a0f1e 0%, #060913 100%);
@@ -3290,6 +3290,151 @@ body.light-mode .trade-total-row strong { color: var(--text-primary); }
     border-bottom: none;
 }
 .pf-bold { font-weight: 800; }
+.pf-action { text-align: right; }
+.portfolio-sell-btn {
+    min-width: 56px;
+    min-height: 34px;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    border-radius: 7px;
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--red-bright);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.portfolio-sell-btn:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.22);
+    border-color: var(--red-bright);
+}
+.portfolio-sell-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+.portfolio-sell-overlay {
+    z-index: 9200;
+    background: rgba(3, 7, 18, 0.78);
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+}
+.portfolio-sell-dialog {
+    width: min(440px, 94vw);
+    max-width: 440px;
+    padding: 1.5rem;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.96);
+    border-color: rgba(148, 163, 184, 0.24);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55), inset 0 1px rgba(255, 255, 255, 0.04);
+}
+.portfolio-sell-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin: 0 2rem 1.5rem 0;
+}
+.portfolio-sell-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 11px;
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--red-bright);
+    font-size: 1.35rem;
+    font-weight: 800;
+}
+.portfolio-sell-heading h2 {
+    color: var(--text-primary);
+    font-size: 1.12rem;
+    line-height: 1.3;
+}
+.portfolio-sell-heading p {
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+}
+.portfolio-sell-heading strong { color: var(--text-primary); }
+.portfolio-sell-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+.portfolio-sell-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    outline: none;
+    background: rgba(2, 6, 23, 0.68);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 1rem;
+}
+.portfolio-sell-input:focus {
+    border-color: var(--accent-bright);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+.portfolio-sell-input:disabled { opacity: 0.7; }
+.portfolio-sell-limit {
+    margin-top: 0.45rem;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+}
+.portfolio-sell-limit span {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+.portfolio-sell-error {
+    min-height: 1.35rem;
+    margin-top: 0.5rem;
+    color: var(--red-bright);
+    font-size: 0.8rem;
+}
+.portfolio-sell-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    margin-top: 0.85rem;
+}
+.portfolio-sell-cancel,
+.portfolio-sell-confirm {
+    min-height: 40px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 750;
+    cursor: pointer;
+}
+.portfolio-sell-cancel {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+}
+.portfolio-sell-cancel:hover:not(:disabled) {
+    background: rgba(148, 163, 184, 0.08);
+    color: var(--text-primary);
+}
+.portfolio-sell-confirm {
+    border: 1px solid rgba(239, 68, 68, 0.52);
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    color: #fff;
+}
+.portfolio-sell-confirm:hover:not(:disabled) {
+    background: linear-gradient(135deg, #991b1b, #b91c1c);
+}
+.portfolio-sell-cancel:disabled,
+.portfolio-sell-confirm:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
 
 .pf-stock {
     display: flex;
