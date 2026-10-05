@@ -283,7 +283,7 @@ const Borsa = {
 
     renderChart() {
         const canvas = document.getElementById("priceChart");
-        if (!canvas) return;
+        if (!canvas || typeof Chart !== "function") return;
         const ctx = canvas.getContext("2d");
         const sym = this.state.selectedStock || Object.keys(this.state.stocks)[0];
         const stock = this.state.stocks[sym];
@@ -518,10 +518,11 @@ const Borsa = {
                     .select(`
                         symbol, name, color, current_price, previous_close,
                         change, change_pct, shares, updated_at,
-                        price_history(*)
+                        history:price_history(price, recorded_at)
                     `)
                     .order("symbol", { ascending: true })
-                    .order("recorded_at", { ascending: false, foreignTable: "price_history", limit: 60 });
+                    .order("recorded_at", { ascending: false, foreignTable: "history" })
+                    .limit(100, { foreignTable: "history" });
                 if (error) {
                     console.warn("[Realtime] stocks+price_history okunamadi (yeni tablo hazir mi?):", error.message);
                     // FALLBACK: sadece stocks tablosunu cek (JSONB ya da gecici seed)
@@ -551,7 +552,7 @@ const Borsa = {
                     if (!grouped[sym]) {
                         grouped[sym] = Object.assign({}, r, { __history: [] });
                     }
-                    const ph = r.price_history;
+                    const ph = r.history;
                     if (ph && Array.isArray(ph)) {
                         grouped[sym].__history.push(...ph);
                     } else if (ph && typeof ph === "object") {
@@ -789,11 +790,11 @@ const Borsa = {
         },
     },
 
-    bumpPricePercent(symbol, percent) {
+    async bumpPricePercent(symbol, percent) {
         const stock = this.state.stocks[symbol];
         if (!stock) return;
         const newPrice = stock.price * (1 + Number(percent) / 100);
-        return this.setPrice(symbol, newPrice);
+        return await this.setPrice(symbol, newPrice);
     },
 
     applyNewsImpact(symbol, impactPct) {
@@ -812,20 +813,21 @@ const Borsa = {
         console.warn("[Realtime] Supabase RPC hazır değil; haber etkisi uygulanmadı.");
     },
 
-    setPrice(symbol, exactPriceTL) {
+    async setPrice(symbol, exactPriceTL) {
         const stock = this.state.stocks[symbol];
-        if (!stock) return false;
+        if (!stock) throw new Error("Hisse bulunamadı.");
         const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
-        if (sb && sb.rpc) {
-            const p = Math.max(0.05, Number(exactPriceTL) || 0);
-            sb.rpc("admin_set_price", { p_symbol: symbol, p_price: Number(this.round2(p)) })
-                .catch(err => {
-                    console.warn("[Realtime] admin_set_price RPC başarısız:", err && err.message || err);
-                });
-            return this.round2(p);
-        }
-        console.warn("[Realtime] Supabase RPC hazır değil; fiyat değiştirilmedi.");
-        return false;
+        if (!sb || !sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
+        const p = Math.max(0.05, Number(exactPriceTL) || 0);
+        const { data, error } = await sb.rpc("admin_set_price", {
+            p_symbol: symbol,
+            p_price: Number(this.round2(p)),
+        });
+        if (error) throw error;
+        const updated = Array.isArray(data) ? data[0] : data;
+        if (!updated) throw new Error("Fiyat güncellendi yanıtı alınamadı.");
+        this.Realtime.updateOneStockFromPayload(updated);
+        return this.round2(Number(updated.current_price));
     },
 
     publishNews({ title, target, impact }) {
