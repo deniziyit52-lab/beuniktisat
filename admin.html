@@ -179,7 +179,7 @@
         })();
     </script>
     <script>
-        (function i(){window._scriptErrors=[];window.addEventListener('error',function(e){var m="[SYNTAX ERROR] "+(e.message||String(e.error||""))+" @ "+(e.filename||"?")+":"+(e.lineno||"?");console.error(m);window._scriptErrors.push(m);},true);function f(el,s){var m="❌ Script yüklenemedi (404/Network/CORS): "+s;console.error(m);window._scriptErrors.push(m);function s2(){if(!document.body)return setTimeout(s2,30);var d=document.createElement('div');d.style.cssText="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#991b1b;color:#fff;font-weight:700;font-family:sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:92vw;";d.textContent=m;document.body.appendChild(d);}s2();}window._hookScriptFail=function(src){return function(){f(this,src);};})();
+        (function i(){window._scriptErrors=[];window.addEventListener('error',function(e){var m="[SYNTAX ERROR] "+(e.message||String(e.error||""))+" @ "+(e.filename||"?")+":"+(e.lineno||"?");console.error(m);window._scriptErrors.push(m);},true);function f(el,s){var m="❌ Script yüklenemedi (404/Network/CORS): "+s;console.error(m);window._scriptErrors.push(m);function s2(){if(!document.body)return setTimeout(s2,30);var d=document.createElement('div');d.style.cssText="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#991b1b;color:#fff;font-weight:700;font-family:sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:92vw;";d.textContent=m;document.body.appendChild(d);}s2();}window._hookScriptFail=function(src){return function(){f(this,src);};};})();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
@@ -720,7 +720,7 @@
             }, 2500);
         }
 
-        function submitNews(e) {
+        async function submitNews(e) {
             e.preventDefault();
             const titleEl = document.getElementById("newsTitle");
             const targetEl = document.getElementById("targetPerson");
@@ -728,29 +728,34 @@
             const title = titleEl.value.trim();
             const target = targetEl.value;
             const impact = Number(impactEl.value);
-            if (!title || !target || isNaN(impact)) return;
-
-            Borsa.publishNews({ title, target, impact });
-
-            Borsa.renderStocksGrid();
-            Borsa.renderTickerTape();
-            Borsa.renderNewsFeed();
-            Borsa.renderMarketCap();
-            if (Borsa.state.selectedStock === target || !Borsa.state.selectedStock) {
-                Borsa.state.selectedStock = target;
-                const sel = document.getElementById("stockSelector");
-                if (sel) sel.value = target;
+            if (!title || !target || !Number.isFinite(impact)) {
+                showErr("Haber başlığı, hedef hisse ve geçerli bir etki girin.");
+                return;
             }
-            Borsa.renderChart();
 
-            const stockName = (Borsa.state.stocks[target] || {}).name || target;
-            const dir = impact >= 0 ? "📈 yükseltildi" : "📉 düşürüldü";
-            showToast(`${stockName} %${Math.abs(impact)} ${dir} — "${title}"`);
+            try {
+                await Borsa.publishNews({ title, target, impact });
+                Borsa.renderStocksGrid();
+                Borsa.renderTickerTape();
+                Borsa.renderNewsFeed();
+                Borsa.renderMarketCap();
+                if (Borsa.state.selectedStock === target || !Borsa.state.selectedStock) {
+                    Borsa.state.selectedStock = target;
+                    const sel = document.getElementById("stockSelector");
+                    if (sel) sel.value = target;
+                }
+                Borsa.renderChart();
 
-            titleEl.value = "";
-            impactEl.value = "";
-            targetEl.value = "";
-            titleEl.focus();
+                const stockName = (Borsa.state.stocks[target] || {}).name || target;
+                const dir = impact >= 0 ? "📈 yükseltildi" : "📉 düşürüldü";
+                showToast(`${stockName} %${Math.abs(impact)} ${dir} — "${title}"`);
+                titleEl.value = "";
+                impactEl.value = "";
+                targetEl.value = "";
+                titleEl.focus();
+            } catch (err) {
+                showErr(err.message || "Haber yayımlanamadı.");
+            }
         }
 
         function refreshAdminUserNav(user, doc) {
@@ -1253,10 +1258,13 @@
 
             document.getElementById("newsForm").addEventListener("submit", submitNews);
             document.getElementById("resetBtn").addEventListener("click", async () => {
-                if (await Borsa.resetMarket()) {
+                try {
+                    if (!(await Borsa.resetMarket())) throw new Error("Piyasa sıfırlanamadı.");
                     Borsa.renderCommon();
                     showToast("Piyasa başlangıç durumuna sıfırlandı");
                     refreshSymbolDropdowns();
+                } catch (err) {
+                    showErr(err.message || "Piyasa sıfırlanamadı.");
                 }
             });
             document.getElementById("logoutBtn").addEventListener("click", () => {
