@@ -834,20 +834,28 @@
         }
 
         function sbPushStock(stock, mode = "upsert") {
-            if (!window.sb || !window.sb.from) return Promise.resolve(null);
+            if (!window.sb || !window.sb.from) return Promise.reject(new Error("Supabase bağlantısı hazır değil."));
             const sb = window.sb;
             const row = {
                 symbol: stock.symbol,
                 name: stock.name,
                 color: stock.color || "#3b82f6",
-                price: Number(stock.price || 0),
+                current_price: Number(stock.price || 0),
+                previous_close: Number(stock.previousClose || stock.price || 0),
+                change: Number(stock.change || 0),
                 change_pct: Number(stock.changePct || 0),
-                history: stock.history || [],
+                shares: Number(stock.shares || 100000),
             };
             if (mode === "delete") {
-                return sb.from("stocks").delete().eq("symbol", stock.symbol).then(r => { if (r.error) console.warn("[SB] stocks delete:", r.error); return r; });
+                return sb.from("stocks").delete().eq("symbol", stock.symbol).then(r => {
+                    if (r.error) throw r.error;
+                    return r;
+                });
             }
-            return sb.from("stocks").upsert([row], { onConflict: "symbol" }).then(r => { if (r.error) console.warn("[SB] stocks upsert:", r.error); return r; });
+            return sb.from("stocks").upsert([row], { onConflict: "symbol" }).then(r => {
+                if (r.error) throw r.error;
+                return r;
+            });
         }
 
         function showErr(message) {
@@ -998,26 +1006,31 @@
 
             document.getElementById("silentSymbol").addEventListener("change", refreshSymbolDropdowns);
 
-            function applySilent(sym, { exact, pct }) {
+            async function applySilent(sym, { exact, pct }) {
                 if (!sym || !Borsa.state.stocks[sym]) { showErr("Hisse seçin."); return null; }
                 const before = Borsa.state.stocks[sym].price;
-                let after = before;
                 let mode = "";
-                if (exact !== null && exact !== undefined && exact !== "") {
-                    after = Borsa.setPrice(sym, Number(exact));
-                    mode = `tam fiyat ${BorsaFirebase.formatTL(after)}`;
-                } else if (pct !== null && pct !== undefined && pct !== "") {
-                    after = Borsa.bumpPricePercent(sym, Number(pct));
-                    mode = `%${Number(pct) >= 0 ? "+" : ""}${Number(pct)}`;
-                } else {
-                    showErr("Tam fiyat veya yüzde girin.");
+                try {
+                    let after;
+                    if (exact !== null && exact !== undefined && exact !== "") {
+                        after = await Borsa.setPrice(sym, Number(exact));
+                        mode = `tam fiyat ${BorsaFirebase.formatTL(after)}`;
+                    } else if (pct !== null && pct !== undefined && pct !== "") {
+                        after = await Borsa.bumpPricePercent(sym, Number(pct));
+                        mode = `%${Number(pct) >= 0 ? "+" : ""}${Number(pct)}`;
+                    } else {
+                        showErr("Tam fiyat veya yüzde girin.");
+                        return null;
+                    }
+                    const diff = Number(after) - Number(before);
+                    const diffPct = before > 0 ? (diff / before * 100) : 0;
+                    showToast(`${sym} güncellendi — ${mode} — fark ${diff >= 0 ? "▲" : "▼"} ${BorsaFirebase.formatTL(Math.abs(diff))} (${diffPct >= 0 ? "+" : ""}${diffPct.toFixed(2)}%)`);
+                    refreshSymbolDropdowns();
+                    return after;
+                } catch (err) {
+                    showErr(err.message || "Fiyat güncellenemedi.");
                     return null;
                 }
-                const diff = Number(after) - Number(before);
-                const diffPct = before > 0 ? (diff / before * 100) : 0;
-                showToast(`${sym} sessizce güncellendi — ${mode} — fark ${diff >= 0 ? "▲" : "▼"} ${BorsaFirebase.formatTL(Math.abs(diff))} (${diffPct >= 0 ? "+" : ""}${diffPct.toFixed(2)}%)`);
-                refreshSymbolDropdowns();
-                return after;
             }
 
             document.getElementById("silentPriceForm").addEventListener("submit", async (e) => {
@@ -1026,22 +1039,16 @@
                 const exactVal = document.getElementById("silentExactPrice").value;
                 const pctVal = document.getElementById("silentPct").value;
                 if (exactVal === "" && pctVal === "") { showErr("Lütfen tam fiyat veya yüzde girin."); return; }
-                const after = applySilent(sym, { exact: exactVal, pct: pctVal });
-                if (after !== null) {
-                    const cur = Borsa.state.stocks[sym];
-                    await sbPushStock(cur, "upsert");
-                }
+                await applySilent(sym, { exact: exactVal, pct: pctVal });
             });
 
             document.getElementById("silentBumpUp").addEventListener("click", async () => {
                 const sym = document.getElementById("silentSymbol").value;
-                const after = applySilent(sym, { pct: 5 });
-                if (after !== null) await sbPushStock(Borsa.state.stocks[sym], "upsert");
+                await applySilent(sym, { pct: 5 });
             });
             document.getElementById("silentBumpDown").addEventListener("click", async () => {
                 const sym = document.getElementById("silentSymbol").value;
-                const after = applySilent(sym, { pct: -5 });
-                if (after !== null) await sbPushStock(Borsa.state.stocks[sym], "upsert");
+                await applySilent(sym, { pct: -5 });
             });
 
             // =====================================================================
