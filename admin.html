@@ -418,6 +418,20 @@
                     </form>
                 </div>
 
+                <div class="panel-section admin-card admin-card--user-delete">
+                    <div class="section-header">
+                        <h2>Kullanıcı Sil</h2>
+                    </div>
+                    <p class="admin-delete-user-copy">Kullanıcının hesabı, portföyü ve işlem geçmişi kalıcı olarak silinir.</p>
+                    <form id="deleteUserForm" class="news-form">
+                        <div class="form-group">
+                            <label for="deleteUserEmail">Kullanıcı e-posta adresi</label>
+                            <input id="deleteUserEmail" type="email" maxlength="254" autocomplete="off" placeholder="ornek@eposta.com" required>
+                        </div>
+                        <button id="deleteUserOpenConfirmBtn" type="submit" class="reset-btn admin-delete-user-trigger">Kullanıcı Sil</button>
+                    </form>
+                </div>
+
                 <div class="panel-section admin-card admin-card--silent">
                     <div class="section-header">
                         <h2>🎛 Sessiz Fiyat Manipülasyonu</h2>
@@ -530,6 +544,19 @@
                 </div>
             </div>
         </footer>
+        <div id="deleteUserConfirmModal" class="modal-backdrop admin-delete-user-overlay" style="display:none;" aria-hidden="true">
+            <div class="modal-card admin-delete-user-modal" role="dialog" aria-modal="true" aria-labelledby="deleteUserConfirmTitle" aria-describedby="deleteUserConfirmDescription">
+                <button id="deleteUserConfirmCloseBtn" type="button" class="modal-close" aria-label="Kapat">×</button>
+                <div class="admin-delete-user-mark" aria-hidden="true">!</div>
+                <h2 id="deleteUserConfirmTitle">Kullanıcı kalıcı olarak silinsin mi?</h2>
+                <p id="deleteUserConfirmDescription">Bu işlem geri alınamaz. Hesap, portföy ve işlem geçmişi silinecek.</p>
+                <div class="admin-delete-user-target" id="deleteUserConfirmEmail"></div>
+                <div class="admin-delete-user-actions">
+                    <button id="deleteUserCancelBtn" type="button" class="btn btn--ghost">İptal</button>
+                    <button id="deleteUserConfirmBtn" type="button" class="reset-btn">Evet, kalıcı olarak sil</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- KVKK / Aydınlatma Metni Modal -->
@@ -1268,6 +1295,80 @@
                     showErr(err.message || "Piyasa sıfırlanamadı.");
                 }
             });
+
+            const deleteUserForm = document.getElementById("deleteUserForm");
+            const deleteUserModal = document.getElementById("deleteUserConfirmModal");
+            const deleteUserEmailInput = document.getElementById("deleteUserEmail");
+            const deleteUserConfirmEmail = document.getElementById("deleteUserConfirmEmail");
+            const deleteUserConfirmBtn = document.getElementById("deleteUserConfirmBtn");
+            const deleteUserCancelBtn = document.getElementById("deleteUserCancelBtn");
+            const deleteUserCloseBtn = document.getElementById("deleteUserConfirmCloseBtn");
+            let pendingDeleteUserEmail = "";
+
+            function closeDeleteUserModal() {
+                if (!deleteUserModal || deleteUserConfirmBtn?.disabled) return;
+                deleteUserModal.style.display = "none";
+                deleteUserModal.setAttribute("aria-hidden", "true");
+                pendingDeleteUserEmail = "";
+            }
+
+            if (deleteUserForm) {
+                deleteUserForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    if (!deleteUserForm.reportValidity()) return;
+                    pendingDeleteUserEmail = deleteUserEmailInput.value.trim().toLowerCase();
+                    if (!pendingDeleteUserEmail) return;
+                    deleteUserConfirmEmail.textContent = pendingDeleteUserEmail;
+                    deleteUserModal.style.display = "flex";
+                    deleteUserModal.setAttribute("aria-hidden", "false");
+                    deleteUserConfirmBtn.focus();
+                });
+            }
+
+            if (deleteUserCancelBtn) deleteUserCancelBtn.addEventListener("click", closeDeleteUserModal);
+            if (deleteUserCloseBtn) deleteUserCloseBtn.addEventListener("click", closeDeleteUserModal);
+            if (deleteUserModal) {
+                deleteUserModal.addEventListener("click", (e) => {
+                    if (e.target === deleteUserModal) closeDeleteUserModal();
+                });
+            }
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && deleteUserModal?.style.display === "flex") {
+                    closeDeleteUserModal();
+                }
+            });
+
+            if (deleteUserConfirmBtn) {
+                deleteUserConfirmBtn.addEventListener("click", async () => {
+                    if (!pendingDeleteUserEmail || deleteUserConfirmBtn.disabled) return;
+                    const email = pendingDeleteUserEmail;
+                    deleteUserConfirmBtn.disabled = true;
+                    if (deleteUserCancelBtn) deleteUserCancelBtn.disabled = true;
+                    if (deleteUserCloseBtn) deleteUserCloseBtn.disabled = true;
+                    try {
+                        if (!window.sb || !window.sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
+                        const { data, error } = await window.sb.rpc("admin_delete_user", {
+                            p_user_email: email,
+                        });
+                        if (error) throw error;
+                        if (!data || data.deleted !== true) throw new Error("Silme işlemi tamamlandı yanıtı alınamadı.");
+
+                        deleteUserModal.style.display = "none";
+                        deleteUserModal.setAttribute("aria-hidden", "true");
+                        pendingDeleteUserEmail = "";
+                        deleteUserForm.reset();
+                        showToast(`${email} hesabı ve ilişkili verileri kalıcı olarak silindi.`);
+                    } catch (err) {
+                        console.error("[Admin] Kullanıcı silme RPC hatası:", err);
+                        showErr(err.message || "Kullanıcı silinemedi.");
+                    } finally {
+                        deleteUserConfirmBtn.disabled = false;
+                        if (deleteUserCancelBtn) deleteUserCancelBtn.disabled = false;
+                        if (deleteUserCloseBtn) deleteUserCloseBtn.disabled = false;
+                    }
+                });
+            }
+
             document.getElementById("logoutBtn").addEventListener("click", () => {
                 // YÖNETİCİ PANELİNDEN ÇIKIŞ:
                 // - Supabase Auth (kullanıcı oturumu) ASLA dokunulmuyor.
