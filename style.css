@@ -268,10 +268,9 @@ body.light-mode .btn--danger:hover {
     color: #f8fafc;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    line-height: 1;
+    gap: 0.6rem;
+    line-height: 1.1;
     flex-wrap: nowrap;
-    white-space: nowrap;
 }
 .logo-symbol {
     display: inline-flex;
@@ -286,13 +285,23 @@ body.light-mode .btn--danger:hover {
     box-shadow: 0 4px 12px -3px rgba(16, 185, 129, 0.6);
     flex-shrink: 0;
 }
+.logo-text-wrap {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
 .logo-text {
     display: inline;
     font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 .logo-sub {
     display: inline;
-    margin-left: 0.5rem;
     padding-left: 0.7rem;
     border-left: 1px solid rgba(148, 163, 184, 0.3);
     font-size: 0.78rem;
@@ -300,6 +309,7 @@ body.light-mode .btn--danger:hover {
     letter-spacing: 0.2px;
     color: #94a3b8;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 body.light-mode .logo     { color: #0f172a; }
 body.light-mode .logo-sub { color: #475569; border-color: rgba(15, 23, 42, 0.2); }
@@ -1052,6 +1062,17 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
 
 .stock-card.down::before {
     background: linear-gradient(90deg, var(--red), var(--red-bright));
+}
+
+/* --- Stock card iç yapısı (masaüstü varsayılan: blok alt alta) --- */
+.stock-body {
+    display: block;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.stock-price-row {
+    display: block;
+    width: 100%;
 }
 
 .stock-avatar {
@@ -4172,5 +4193,498 @@ img, svg, canvas, video {
     display: block;
 }
 .w-full, .full-width { width: 100% !important; }
+
+/* ============================================================
+ *  RESPONSIVE REVAMP — Tam Mobil Uyumluluk
+ *  Tüm breakpoint'ler: 960 / 820 / 768 / 680 / 560 / 440 px
+ * ============================================================ */
+
+/* --- GLOBAL: Hiçbir durumda yatay kaydırma OLMASIN --- */
+html, body {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+}
+body {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* --- Ana container: Her zaman %100, güvenli padding --- */
+.main-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    box-sizing: border-box;
+}
+
+/* --- Footer: Alt padding (tarayıcı bar / home bar) --- */
+.footer {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    margin-top: 1.75rem;
+}
+
+/* --- Section Header (Canlı Piyasa + Piyasa Hacmi) her zaman wrap olsun --- */
+.section-header {
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 0.6rem;
+    column-gap: 0.8rem;
+}
+.section-header h2 {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.section-header .market-cap {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* --- ≤ 960px — Küçük masaüstü / Büyük tablet: Logo alt başlığı gizle --- */
+@media (max-width: 960px) {
+    .header-inner {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+        gap: 1rem;
+    }
+    .logo-sub {
+        display: none !important;
+    }
+    .logo-text-wrap {
+        gap: 0;
+    }
+    .logo {
+        gap: 0.5rem;
+    }
+}
+
+/* --- ≤ 820px — Tablet: Logo başlığı 2 satıra düşür; 3 kolon header 2 satıra --- */
+@media (max-width: 820px) {
+    .header-inner {
+        flex-wrap: wrap;
+        min-height: auto;
+        padding: 0.9rem 1rem;
+        row-gap: 0.7rem;
+        column-gap: 0.8rem;
+    }
+    .header-left {
+        flex: 1 1 100%;
+        width: 100%;
+        justify-content: flex-start;
+    }
+    .header-right {
+        flex: 1 1 auto;
+        justify-content: flex-end;
+    }
+    .header-center {
+        flex: 0 0 100%;
+        width: 100%;
+        order: 3;
+        justify-content: center;
+    }
+    .logo-text-wrap {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    .logo-sub {
+        display: block !important;
+        border-left: none;
+        padding-left: 0;
+        font-size: 0.72rem;
+        letter-spacing: 0.3px;
+    }
+    .logo-text {
+        font-size: 1.15rem;
+    }
+    .logo {
+        font-size: 1.15rem;
+        line-height: 1.15;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+    .logo-symbol {
+        width: 38px;
+        height: 38px;
+        margin-top: 1px;
+    }
+    .user-chip {
+        max-width: 240px;
+    }
+    .header-right-group {
+        gap: 0.6rem;
+    }
+}
+
+/* --- ≤ 768px — Küçük tablet / Büyük telefon: Header grid + hisse kartları daha kompakt --- */
+@media (max-width: 768px) {
+    .main-container {
+        padding: 0.9rem 0.85rem 1rem;
+        gap: 0.9rem;
+    }
+    .left-panel,
+    .right-panel {
+        gap: 0.9rem;
+    }
+    .panel-section {
+        padding: 0.95rem 0.85rem;
+        border-radius: 12px;
+    }
+    .stock-card {
+        padding: 0.9rem 0.85rem;
+    }
+    .stock-price {
+        font-size: 1.15rem;
+    }
+    .chart-container {
+        height: 260px;
+    }
+    .ticker-tape {
+        font-size: 0.72rem;
+    }
+    .market-status {
+        font-size: 0.72rem;
+        padding: 5px 12px;
+        min-height: 38px;
+        height: 38px;
+        gap: 8px;
+    }
+}
+
+/* --- ≤ 680px — Telefon: Hisse kartları YATAY (avatar sol + içerik sağ) --- */
+@media (max-width: 680px) {
+    .stock-card {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.8rem 0.85rem;
+        min-height: 80px;
+    }
+    .stock-card::before {
+        top: 0; left: 0; right: 0; height: 3px;
+        transform-origin: left;
+    }
+    .stock-avatar {
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    .stock-body {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+    .stock-name {
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+    .stock-symbol {
+        font-size: 0.7rem;
+        margin-bottom: 0.4rem;
+    }
+    .stock-price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+    .stock-price {
+        font-size: 1.05rem;
+        margin-bottom: 0;
+    }
+    .stock-change {
+        font-size: 0.78rem;
+        padding: 0.2rem 0.5rem;
+    }
+}
+
+/* --- ≤ 560px — Orta telefon: Header tamamen reorganize et; nav elemanları wrap --- */
+@media (max-width: 560px) {
+    html, body {
+        overflow-x: hidden;
+    }
+    .logo-text {
+        font-size: 1rem;
+    }
+    .logo-symbol {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    .logo-sub {
+        font-size: 0.68rem;
+    }
+    .header-inner {
+        padding: 0.8rem 0.8rem 0.85rem;
+        row-gap: 0.6rem;
+    }
+    .header-right {
+        width: 100%;
+        flex: 0 0 100%;
+        justify-content: center;
+    }
+    .header-right-group {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        row-gap: 0.55rem;
+    }
+    .nav-block {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        row-gap: 0.55rem;
+        height: auto;
+    }
+    .user-meta .user-email {
+        display: none;
+    }
+    .user-chip {
+        max-width: 200px;
+    }
+    .user-balance {
+        padding: 4px 10px;
+    }
+    .user-balance .balance-value {
+        font-size: 0.9rem;
+    }
+    .logout-btn,
+    .portfolio-btn {
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+        min-height: 40px !important;
+        height: 40px !important;
+    }
+    .login-cta.btn--primary {
+        padding: 8px 14px;
+        font-size: 0.82rem;
+    }
+    .main-container {
+        padding: 0.7rem 0.7rem 1rem;
+    }
+    .stocks-grid {
+        gap: 0.55rem;
+    }
+    .stock-card {
+        padding: 0.7rem 0.75rem;
+        gap: 0.7rem;
+    }
+    .stock-avatar {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        font-size: 1rem;
+    }
+    .stock-name {
+        font-size: 0.88rem;
+    }
+    .stock-symbol {
+        font-size: 0.68rem;
+        margin-bottom: 0.3rem;
+    }
+    .stock-price {
+        font-size: 0.98rem;
+    }
+    .panel-section {
+        padding: 0.8rem 0.7rem;
+    }
+    .chart-container {
+        height: 230px;
+        padding: 0.75rem;
+    }
+    .section-header h2 {
+        font-size: 0.98rem;
+    }
+    .market-cap {
+        font-size: 0.78rem;
+        padding: 0.3rem 0.6rem;
+    }
+    .ticker-content {
+        padding: 0.5rem 0;
+        font-size: 0.7rem;
+    }
+    .footer-inner {
+        padding: 0.75rem 0.8rem;
+        gap: 0.6rem;
+    }
+    .footer-copy {
+        font-size: 0.75rem;
+    }
+    .footer-dev {
+        font-size: 0.65rem;
+    }
+}
+
+/* --- ≤ 440px — Küçük telefon (iPhone SE / eski): Tam kompakt --- */
+@media (max-width: 440px) {
+    .logo-text {
+        font-size: 0.88rem;
+        letter-spacing: -0.2px;
+    }
+    .logo-sub {
+        font-size: 0.64rem;
+        letter-spacing: 0.15px;
+    }
+    .logo {
+        gap: 0.45rem;
+    }
+    .logo-symbol {
+        width: 34px;
+        height: 34px;
+        font-size: 0.95rem;
+    }
+    .sidebar-hamburger {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        margin-right: 0.5rem;
+    }
+    .header-inner {
+        padding: 0.75rem 0.65rem 0.8rem;
+    }
+    .header-right-group {
+        gap: 0.4rem;
+        row-gap: 0.5rem;
+    }
+    .user-balance {
+        padding: 4px 9px;
+        min-height: 38px;
+        height: 38px;
+    }
+    .user-balance .balance-value {
+        font-size: 0.85rem;
+    }
+    .user-balance .balance-label {
+        font-size: 0.6rem;
+    }
+    .user-chip {
+        max-width: 175px;
+        padding: 4px 8px 4px 4px;
+        gap: 8px;
+    }
+    .user-meta {
+        min-height: auto;
+        max-width: 120px;
+    }
+    .user-meta .user-name {
+        font-size: 0.78rem;
+    }
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+    .theme-toggle,
+    .header-icon-btn {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+    }
+    .logout-btn,
+    .portfolio-btn {
+        padding: 6px 10px !important;
+        font-size: 0.76rem !important;
+        min-height: 38px !important;
+        height: 38px !important;
+    }
+    .stocks-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem;
+    }
+    .stock-card {
+        padding: 0.75rem 0.8rem;
+        min-height: 76px;
+        gap: 0.75rem;
+    }
+    .stock-avatar {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+    .stock-name {
+        font-size: 0.92rem;
+    }
+    .stock-symbol {
+        font-size: 0.66rem;
+        letter-spacing: 1.3px;
+    }
+    .stock-price {
+        font-size: 1rem;
+    }
+    .stock-change {
+        font-size: 0.75rem;
+    }
+    .main-container {
+        padding: 0.6rem 0.6rem 1rem;
+        gap: 0.75rem;
+    }
+    .left-panel,
+    .right-panel {
+        gap: 0.75rem;
+    }
+    .panel-section {
+        padding: 0.75rem 0.65rem;
+        border-radius: 10px;
+    }
+    .section-header {
+        margin-bottom: 0.85rem;
+    }
+    .section-header h2 {
+        font-size: 0.92rem;
+    }
+    .market-cap {
+        font-size: 0.72rem;
+        padding: 0.28rem 0.55rem;
+    }
+    .market-status {
+        font-size: 0.68rem;
+        padding: 5px 10px;
+        min-height: 36px;
+        height: 36px;
+        gap: 6px;
+    }
+    .market-status .status-dot {
+        width: 8px;
+        height: 8px;
+    }
+    .chart-container {
+        height: 210px;
+        padding: 0.65rem;
+    }
+    .modal-backdrop {
+        padding: 0.35rem;
+    }
+    .modal-card {
+        padding: 1rem 0.9rem;
+        border-radius: 12px;
+    }
+    .portfolio-modal {
+        width: 98vw !important;
+    }
+    .kvkk-modal {
+        width: 96vw !important;
+    }
+    .footer-inner {
+        padding: 0.65rem 0.7rem;
+    }
+    .footer-copy {
+        font-size: 0.7rem;
+    }
+    .footer-dev {
+        font-size: 0.62rem;
+    }
+}
 
 
