@@ -815,6 +815,11 @@ window.BorsaMaintenance = (function () {
     const LEGACY_FLAG_KEY  = "borsa_admin_session";  // eski versiyonlardan kalma, her zaman sil
     const ADMIN_FILENAME   = "admin.html";
     const MAINT_FILENAME   = "maintenance.html";
+    // SessionStorage'da tutulan GARANTİLİ bypass bayrağı (30dk TTL):
+    // Admin Yönetici Paneline Git butonuna basınca VEYA admin.html her açılınca SET EDİLİR.
+    // Bu bayrak VARSA hiç bakım kontrolü ÇALIŞMAZ (döngü tamamen kırılır).
+    const BYPASS_KEY       = "borsa_admin_maintenance_bypass";
+    const BYPASS_TTL_MS    = 30 * 60 * 1000; // 30 dakika
 
     function _isAdminPage() {
         try {
@@ -834,14 +839,61 @@ window.BorsaMaintenance = (function () {
     }
 
     /**
+     * Admin bakım bypass bayrağını OKU. (SENKRON / 0 API)
+     * 30dk TTL var, süresi dolmuşsa temizler ve false döndürür.
+     * @returns {boolean}
+     */
+    function hasAdminBypassFlag() {
+        try {
+            const raw = sessionStorage.getItem(BYPASS_KEY);
+            if (!raw) return false;
+            const exp = parseInt(raw, 10);
+            if (isNaN(exp)) return false;
+            if (Date.now() > exp) {
+                try { sessionStorage.removeItem(BYPASS_KEY); } catch (_) {}
+                return false;
+            }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Admin bakım bypass bayrağını YAZ / YENİLE. (30dk TTL)
+     */
+    function setAdminBypassFlag() {
+        try {
+            sessionStorage.setItem(BYPASS_KEY, String(Date.now() + BYPASS_TTL_MS));
+            window.__borsa_admin_bypass_set_at = Date.now();
+        } catch (e) {}
+    }
+
+    /**
+     * Admin bakım bypass bayrağını TEMİZLE (çıkış yapıldığında vs).
+     */
+    function clearAdminBypassFlag() {
+        try {
+            sessionStorage.removeItem(BYPASS_KEY);
+            try { delete window.__borsa_admin_bypass_set_at; } catch (_) {}
+        } catch (e) {}
+    }
+
+    /**
      * (SENKRON / 0 API) Admin bypass kontrolü.
-     * Sadece local session cache'ten email okur, Supabase sunucusuna HİÇ erişmez.
+     * Sırasıyla: (1) SessionStorage bypass flag (EN GÜVENİLİR, 0 gecikme),
+     *            (2) sb.auth.currentUser, (3) sb.auth.session() eski sync, (4) cache email
      * @returns {boolean}
      */
     function _isAdminBypassedSync() {
+        // ---------- ÖNCELİK 1: SessionStorage GARANTİLİ bypass bayrağı ----------
+        // Admin "Yönetici Paneline Git" butonuna bastığında VEYA admin.html açıldığında
+        // bu bayrak 30dk için SET EDİLİR. Bu bayrak VARSA HİÇBİR KOŞULDA YÖNLENDİRME YOK.
+        if (hasAdminBypassFlag()) return true;
+
         try { sessionStorage.removeItem(LEGACY_FLAG_KEY); } catch (e) {}
         try {
-            // YÖNTEM 1: sb.auth.currentUser (Supabase v2 sync getter, en güvenilir)
+            // ---------- ÖNCELİK 2: sb.auth.currentUser (Supabase v2 sync getter) ----------
             if (window.sb && window.sb.auth && typeof window.sb.auth !== "undefined") {
                 const u = window.sb.auth.currentUser;
                 if (u && u.email) {
@@ -849,7 +901,7 @@ window.BorsaMaintenance = (function () {
                     if (email === ADMIN_EMAIL.toLowerCase()) return true;
                 }
             }
-            // YÖNTEM 2: Eski uyumluluk — .session() senkron (bazı eski SDK sürümleri)
+            // ---------- ÖNCELİK 3: Eski uyumluluk — .session() senkron ----------
             if (window.sb && window.sb.auth) {
                 const fn = window.sb.auth.session;
                 if (typeof fn === "function") {
@@ -862,7 +914,7 @@ window.BorsaMaintenance = (function () {
                     } catch (_) {}
                 }
             }
-            // YÖNTEM 3: getSession() promise sonrası atanan cache
+            // ---------- ÖNCELİK 4: getSession() promise sonrası atanan cache ----------
             if (window.__borsa_admin_email) {
                 const e = (window.__borsa_admin_email || "").toString().trim().toLowerCase();
                 if (e === ADMIN_EMAIL.toLowerCase()) return true;
@@ -1011,6 +1063,26 @@ window.BorsaMaintenance = (function () {
 
     // Tüm sayfalarda otomatik çalıştır:
     function _auto() {
+        // ---- ADMIN MUAFFİYETİ EN BAŞTA (EN ÖNEMLİ, DÖNGÜYÜ KIRAN NOKTA) ----
+        // SessionStorage'da admin bypass bayrağı VARSA (Yönetici Paneline Git butonu
+        // tıklanmış veya admin.html açılmış) → HİÇBİR BAKIM KONTROLÜ ÇALIŞMAZ.
+        // DB'ye SELECT atılmaz, Realtime bağlanmaz, yönlendirme YAPILMAZ.
+        if (hasAdminBypassFlag()) {
+            // SESSION BYPASS AKTİF: Çıkış dinleyicisine bayrak temizleme ekle, sonra RETURN.
+            try {
+                if (window.sb && window.sb.auth && typeof window.sb.auth.onAuthStateChange === "function") {
+                    window.sb.auth.onAuthStateChange(function (ev) {
+                        if (ev === "SIGNED_OUT" || (typeof ev === "object" && ev && ev.event === "SIGNED_OUT")) {
+                            clearAdminBypassFlag();
+                        }
+                    });
+                }
+            } catch (_) {}
+            return; // ====> BAKIM SİSTEMİ TAMAMEN DEVRE DIŞI (bu noktada çık)
+        }
+        // Admin HTML URL'sindeysek ama bayrak henüz yazılmamışsa (nadir durum) → return
+        if (_isAdminPage()) return;
+
         // 1) SAYFA YÜKLENİRKEN SADECE 1 KERE check (1 adet SELECT sorgusu)
         const runOnce = () => setTimeout(() => {
             checkAndRedirect().catch(() => {});
@@ -1022,6 +1094,15 @@ window.BorsaMaintenance = (function () {
         } else {
             runOnce();
         }
+        // ---- ÇIKIŞ YAPILDIĞINDA BYPASS BAYRAĞINI TEMİZLE (güvenlik) ----
+        try {
+            if (window.sb && window.sb.auth && typeof window.sb.auth.onAuthStateChange === "function") {
+                window.sb.auth.onAuthStateChange(function (ev) {
+                    var eventName = (typeof ev === "object" && ev && ev.event) ? ev.event : ev;
+                    if (eventName === "SIGNED_OUT") clearAdminBypassFlag();
+                });
+            }
+        } catch (_) {}
         // ÖNEMLİ: POLLING YOK. 30sn setInterval SİLİNDİ -> API limitleri korunur.
         // (Uzun açık kalan sekmeler bile Supabase Realtime bağlantısı canlı tutar,
         //  ama Supabase Realtime kendi bağlantı sürüm yönetimini yapar.)
@@ -1033,5 +1114,8 @@ window.BorsaMaintenance = (function () {
         setMaintenanceMode,
         checkAndRedirect,
         subscribeRealtime: _subscribeRealtime,
+        hasAdminBypassFlag,
+        setAdminBypassFlag,
+        clearAdminBypassFlag,
     };
 })();

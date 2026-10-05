@@ -173,6 +173,24 @@
     <script src="shared.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
 </head>
 <body id="adminBody">
+    <!-- ============================================================
+         ADMIN MAINTENANCE BYPASS (EN USTTE, Hemen İLK SIRADA)
+         - Admin.html HER AÇILIŞINDA sessionStorage'a 30dk TTL'li
+           garanti bypass bayrağı YAZAR. Böylece supabase-config.js
+           yüklenmeden / auth hydrated olmadan bile BAKIM KONTROLÜ
+           BAŞLAMADAN bayrak vardır.
+         - Döngü TAMAMEN KIRILIR.
+         ============================================================ -->
+    <script>
+        (function setAdminBypassImmediately() {
+            try {
+                var KEY = "borsa_admin_maintenance_bypass";
+                var TTL = 30 * 60 * 1000; // 30 dakika
+                sessionStorage.setItem(KEY, String(Date.now() + TTL));
+                window.__borsa_admin_bypass_set_at = Date.now();
+            } catch (e) {}
+        })();
+    </script>
 
     <div id="gateScreen" class="auth-screen" aria-live="polite">
         <div class="auth-card">

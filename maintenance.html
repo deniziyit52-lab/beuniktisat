@@ -51,10 +51,10 @@
                     </div>
                 </div>
                 <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-                    <a id="btnGotoAdmin" href="admin.html" class="btn btn--primary" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700;">
+                    <a id="btnGotoAdmin" href="admin.html" class="btn btn--primary" onclick="try{sessionStorage.setItem('borsa_admin_maintenance_bypass', String(Date.now()+1800000));window.__borsa_admin_bypass_set_at=Date.now();}catch(e){}" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700;">
                         ⚡ Yönetici Paneline Git
                     </a>
-                    <a id="btnGotoIndex" href="index.html" class="btn btn--ghost" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:600;">
+                    <a id="btnGotoIndex" href="index.html" class="btn btn--ghost" onclick="try{sessionStorage.setItem('borsa_admin_maintenance_bypass', String(Date.now()+1800000));window.__borsa_admin_bypass_set_at=Date.now();}catch(e){}" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:600;">
                         👀 Siteyi Normal Görüntüle
                     </a>
                 </div>
