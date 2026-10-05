@@ -798,161 +798,62 @@ window.BorsaFirebase = {
 };
 
 /* =========================================================
- *  BORSA MAINTENANCE MOD (Bakım Modu Sistemi)
- *  - Supabase public.app_settings tablosundan okur.
- *  - Admin panel (admin.html) + bakım sayfası (maintenance.html)
- *    hiçbir zaman yönlendirmeye alınmaz.
- *
- *  (SIFIR API ISRIFI) ADMIN BYPASS KURALI:
- *  1) Eski sessionStorage static şifre flag KULLANILMIYOR, TEMİZLENİR.
- *  2) Supabase JS SDK local session cache (sb.auth.session())
- *     SENKRON okunur → email === deniziyit52@gmail.com ise bypass verilir.
- *  3) getUser() / getSession() async API çağrısı YOK — herhangi bir Supabase
- *     REST isteklerine dokunulmaz, API limit bozulmaz.
+ *  BORSA MAINTENANCE MOD
+ *  Otomatik yönlendirme / reload / realtime abonelik YOK.
+ *  Admin panel yalnızca fetch/set ile DB bayrağını okur/yazar.
  * ========================================================= */
 window.BorsaMaintenance = (function () {
-    /* ============================================================
-     *  ACIL KILL SWITCH (ONCELIK: EN YUKSEK)
-     *  Bu bayraklar TRUE ise BAKIM SISTEMI TAMAMEN DEVRE DISI.
-     *  - Hic yonlendirme YOK
-     *  - Hic DB SELECT YOK
-     *  - Hic Realtime ABONELIGI YOK
-     *  - Admin ve tum kullanicilar siteye NORMAL erisebilir.
-     *  Ayarlamak icin 3 secenek var:
-     *    1) HTML basina: <script>window.__BORSA_DISABLE_MAINTENANCE__ = true;</script>
-     *    2) Console: window.__BORSA_DISABLE_MAINTENANCE__ = true
-     *    3) sessionStorage['borsa_maint_disabled'] = '1'
-     * ============================================================ */
-    function _maintIsDisabled() {
+    // true olduğu sürece bakım asla kullanıcıları başka sayfaya atmaz.
+    // Tekrar açmak için bu sabiti false yapın VE aşağıdaki
+    // checkAndRedirect gövdesini bilinçli olarak geri yazın.
+    const MAINTENANCE_DISABLED = true;
+
+    window.__BORSA_DISABLE_MAINTENANCE__ = true;
+    window.__BORSA_KILL_MAINT__ = true;
+    try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (_) {}
+    try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (_) {}
+
+    const BYPASS_KEY = "borsa_admin_maintenance_bypass";
+    const BYPASS_TTL_MS = 30 * 60 * 1000;
+
+    function isDisabled() {
+        if (MAINTENANCE_DISABLED === true) return true;
         try {
             if (window.__BORSA_DISABLE_MAINTENANCE__ === true) return true;
             if (window.__BORSA_KILL_MAINT__ === true) return true;
-            var s = null;
-            try { s = sessionStorage.getItem("borsa_maint_disabled"); } catch (_) {}
-            if (s === "1") return true;
-            try { s = localStorage.getItem("borsa_maint_disabled"); } catch (_) {}
-            if (s === "1") return true;
-        } catch (e) {}
+            if (sessionStorage.getItem("borsa_maint_disabled") === "1") return true;
+            if (localStorage.getItem("borsa_maint_disabled") === "1") return true;
+        } catch (_) {}
         return false;
     }
-    // ===> BAKIM SISTEMINI KALICI OLARAK SIMDILIK KAPATIYORUZ (ACIL DURUM)
-    try {
-        if (!_maintIsDisabled()) {
-            window.__BORSA_DISABLE_MAINTENANCE__ = true;
-            try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (_) {}
-        }
-    } catch (_) {}
 
-    const ADMIN_EMAIL      = "deniziyit52@gmail.com";
-    const LEGACY_FLAG_KEY  = "borsa_admin_session";  // eski versiyonlardan kalma, her zaman sil
-    const ADMIN_FILENAME   = "admin.html";
-    const MAINT_FILENAME   = "maintenance.html";
-    // SessionStorage'da tutulan GARANTİLİ bypass bayrağı (30dk TTL):
-    // Admin Yönetici Paneline Git butonuna basınca VEYA admin.html her açılınca SET EDİLİR.
-    // Bu bayrak VARSA hiç bakım kontrolü ÇALIŞMAZ (döngü tamamen kırılır).
-    const BYPASS_KEY       = "borsa_admin_maintenance_bypass";
-    const BYPASS_TTL_MS    = 30 * 60 * 1000; // 30 dakika
-
-    function _isAdminPage() {
-        try {
-            return (
-                location.pathname.endsWith("/" + ADMIN_FILENAME) ||
-                location.href.indexOf(ADMIN_FILENAME) !== -1
-            );
-        } catch (e) { return false; }
-    }
-    function _isMaintenancePage() {
-        try {
-            return (
-                location.pathname.endsWith("/" + MAINT_FILENAME) ||
-                location.href.indexOf(MAINT_FILENAME) !== -1
-            );
-        } catch (e) { return false; }
-    }
-
-    /**
-     * Admin bakım bypass bayrağını OKU. (SENKRON / 0 API)
-     * 30dk TTL var, süresi dolmuşsa temizler ve false döndürür.
-     * @returns {boolean}
-     */
     function hasAdminBypassFlag() {
         try {
             const raw = sessionStorage.getItem(BYPASS_KEY);
             if (!raw) return false;
             const exp = parseInt(raw, 10);
-            if (isNaN(exp)) return false;
-            if (Date.now() > exp) {
+            if (isNaN(exp) || Date.now() > exp) {
                 try { sessionStorage.removeItem(BYPASS_KEY); } catch (_) {}
                 return false;
             }
             return true;
-        } catch (e) {
+        } catch (_) {
             return false;
         }
     }
 
-    /**
-     * Admin bakım bypass bayrağını YAZ / YENİLE. (30dk TTL)
-     */
     function setAdminBypassFlag() {
         try {
             sessionStorage.setItem(BYPASS_KEY, String(Date.now() + BYPASS_TTL_MS));
             window.__borsa_admin_bypass_set_at = Date.now();
-        } catch (e) {}
+        } catch (_) {}
     }
 
-    /**
-     * Admin bakım bypass bayrağını TEMİZLE (çıkış yapıldığında vs).
-     */
     function clearAdminBypassFlag() {
         try {
             sessionStorage.removeItem(BYPASS_KEY);
             try { delete window.__borsa_admin_bypass_set_at; } catch (_) {}
-        } catch (e) {}
-    }
-
-    /**
-     * (SENKRON / 0 API) Admin bypass kontrolü.
-     * Sırasıyla: (1) SessionStorage bypass flag (EN GÜVENİLİR, 0 gecikme),
-     *            (2) sb.auth.currentUser, (3) sb.auth.session() eski sync, (4) cache email
-     * @returns {boolean}
-     */
-    function _isAdminBypassedSync() {
-        // ---------- ÖNCELİK 1: SessionStorage GARANTİLİ bypass bayrağı ----------
-        // Admin "Yönetici Paneline Git" butonuna bastığında VEYA admin.html açıldığında
-        // bu bayrak 30dk için SET EDİLİR. Bu bayrak VARSA HİÇBİR KOŞULDA YÖNLENDİRME YOK.
-        if (hasAdminBypassFlag()) return true;
-
-        try { sessionStorage.removeItem(LEGACY_FLAG_KEY); } catch (e) {}
-        try {
-            // ---------- ÖNCELİK 2: sb.auth.currentUser (Supabase v2 sync getter) ----------
-            if (window.sb && window.sb.auth && typeof window.sb.auth !== "undefined") {
-                const u = window.sb.auth.currentUser;
-                if (u && u.email) {
-                    const email = (u.email || "").toString().trim().toLowerCase();
-                    if (email === ADMIN_EMAIL.toLowerCase()) return true;
-                }
-            }
-            // ---------- ÖNCELİK 3: Eski uyumluluk — .session() senkron ----------
-            if (window.sb && window.sb.auth) {
-                const fn = window.sb.auth.session;
-                if (typeof fn === "function") {
-                    try {
-                        const sess = fn.call(window.sb.auth);
-                        if (sess && sess.user && sess.user.email) {
-                            const email = (sess.user.email || "").toString().trim().toLowerCase();
-                            if (email === ADMIN_EMAIL.toLowerCase()) return true;
-                        }
-                    } catch (_) {}
-                }
-            }
-            // ---------- ÖNCELİK 4: getSession() promise sonrası atanan cache ----------
-            if (window.__borsa_admin_email) {
-                const e = (window.__borsa_admin_email || "").toString().trim().toLowerCase();
-                if (e === ADMIN_EMAIL.toLowerCase()) return true;
-            }
-        } catch (e) {}
-        return false;
+        } catch (_) {}
     }
 
     async function fetchMaintenanceMode() {
@@ -979,7 +880,6 @@ window.BorsaMaintenance = (function () {
             throw new Error("Supabase yapılandırılmamış.");
         }
         const val = !!nextBool;
-        // Tek satırlı singleton (id = 1) tablosuna UPSERT
         const { error } = await window.sb.from("app_settings").upsert(
             [{ id: 1, maintenance_mode: val }],
             { onConflict: "id" }
@@ -988,175 +888,29 @@ window.BorsaMaintenance = (function () {
         return val;
     }
 
-    async function checkAndRedirect(overrideMode /* optional bool | null */) {
-        // ============= ACIL KILL SWITCH =============
-        // Bakim sistemi KALICI olarak DEVRE DISI. Hic yonlendirme YOK.
-        if (_maintIsDisabled()) {
-            console.log("[Bakım] ⛔ ACIL KILL SWITCH AKTIF: Bakım sistemi devre dışı.");
-            return;
-        }
-        // ---- ADMIN MUAFFİYETİ (ÖNCE, EN ÜSTTE) ----
-        if (_isAdminBypassedSync()) return;    // Admin ise HİÇBİR ZAMAN yönlendirme YOK
-        if (_isAdminPage()) return;            // Admin panel URL'deyse de bloke etme
-
-        // ---- DÖNGÜ KORUMASI (SAME-PAGE RELOAD ÖNLEME) ----
-        // Zaten maintenance sayfasındaysak YENİDEN yönlendirme (location.href = MAINT_FILENAME)
-        // TARAYICI SAME-PAGE ASSIGN = SAYFAYI YENİLER (refresh döngüsü). Önle!
-        const alreadyOnMaintenance = _isMaintenancePage();
-
-        // Eğer gerçek zamanlı event'ten overrideMode geldiyse ekstra DB isteği AT (sıfır API harcaması)
-        let on;
-        if (typeof overrideMode === "boolean") {
-            on = overrideMode;
-        } else {
-            on = await fetchMaintenanceMode();
-        }
-
-        if (on) {
-            // ---- BAKIM AÇIK ----
-            if (alreadyOnMaintenance) {
-                // Zaten doğru sayfadayız: HİÇBİR ŞEY YAPMA (reload döngüsünü KIR)
-                return;
-            }
-            // ====== ACIL DURUM: YONLENDIRME YAPMA (kullanıcı acilsin) ======
-            // Normalde burasi maintenance.html'e yonlendirirdi.
-            // ACIL durumda KALICI olarak BU KOD BLOGU DEVRE DISI:
-            console.log("[Bakım] ⚠️  Bakım modu ACİK ama ACIL KILL SWITCH nedeniyle yönlendirme YAPILMIYOR.");
-            return;
-            // Normal (aktif) durumda yonlendirme:
-            // try {
-            //   const dest = MAINT_FILENAME;
-            //   if (!(location.pathname.endsWith("/" + dest))) location.href = dest;
-            // } catch (e) { location.href = MAINT_FILENAME; }
-        } else {
-            // ---- BAKIM KAPALI ----
-            // Eğer maintenance sayfasındaysak ve bakım kapatıldıysa → index/login'e yönlendir.
-            if (alreadyOnMaintenance) {
-                try {
-                    // Session var mı kontrol et (admin/user girişliyse index.html, değilse login)
-                    if (window.sb && window.sb.auth && typeof window.sb.auth.getSession === "function") {
-                        try {
-                            const res = await window.sb.auth.getSession();
-                            const sess = res && res.data && res.data.session;
-                            if (sess && sess.user) {
-                                location.href = "index.html";
-                            } else {
-                                location.href = "login.html";
-                            }
-                        } catch (_) {
-                            location.href = "index.html";
-                        }
-                    } else {
-                        location.href = "index.html";
-                    }
-                } catch (_) {
-                    location.href = "index.html";
-                }
-            }
-        }
+    // Kasıtlı no-op: location.href / reload / assign YOK.
+    // Eski sürümde bakım açık/kapalı okuma hatası index <-> maintenance
+    // arasında sonsuz yenileme üretiyordu.
+    async function checkAndRedirect() {
+        return;
     }
 
-    // SUPABASE REALTIME: admin toggle ettiği ANINDA yönlendirme (POLLING YOK, API LIMIT BOŞALTMAZ)
-    let _maintChannel = null;
-    function _subscribeRealtime() {
-        // ===== ACIL KILL SWITCH: Realtime ABONELIGINI YAPMA =====
-        if (_maintIsDisabled()) {
-            console.log("[Bakım] ⛔ ACIL KILL SWITCH: Realtime bakım aboneliği atlandı.");
-            return;
-        }
-        if (!window.sb || !window.sb.channel) return;
-        if (_maintChannel) return; // tek seferlik abonelik
-        try {
-            _maintChannel = window.sb
-                .channel("borsa-app-settings-channel", {
-                    config: { broadcast: { self: false } },
-                })
-                .on(
-                    "postgres_changes",
-                    {
-                        event: "*",
-                        schema: "public",
-                        table: "app_settings",
-                        filter: "id=eq.1",
-                    },
-                    (payload) => {
-                        // ===== ACIL KILL SWITCH: Realtime event GELSE bile hicbir sey YAPMA =====
-                        if (_maintIsDisabled()) return;
-
-                        const row = payload.new || payload.old || {};
-                        const mode = typeof row.maintenance_mode === "boolean"
-                            ? row.maintenance_mode
-                            : null;
-                        if (mode === null) return;
-
-                        // ---- YÖNLENDİRME ÖNCESİ EK GÜVENLİK KATMANI ----
-                        if (_isAdminBypassedSync()) return;
-                        if (_isAdminPage()) return;
-
-                        checkAndRedirect(mode).catch(() => {});
-                    }
-                )
-                .subscribe((status) => {
-                    console.log("[Bakım] Realtime abonelik durumu:", status);
-                });
-        } catch (e) {
-            console.warn("[Bakım] Realtime abonelik hatası:", e);
-        }
+    function subscribeRealtime() {
+        return;
     }
 
-    // Tüm sayfalarda otomatik çalıştır:
-    function _auto() {
-        // ============= ACIL KILL SWITCH (EN ONCELIKLI) =============
-        // Bu bayrak VARSA BAKIM SISTEMI TAMAMEN DEVRE DISI. Hicbir sey yapma.
-        if (_maintIsDisabled()) {
-            console.log("[Bakım] ⛔ ACIL KILL SWITCH AKTIF. _auto() return. Bakım sistemi kapalı.");
-            return;
-        }
-        // ---- ADMIN MUAFFİYETİ EN BAŞTA ----
-        if (hasAdminBypassFlag()) {
-            try {
-                if (window.sb && window.sb.auth && typeof window.sb.auth.onAuthStateChange === "function") {
-                    window.sb.auth.onAuthStateChange(function (ev) {
-                        if (ev === "SIGNED_OUT" || (typeof ev === "object" && ev && ev.event === "SIGNED_OUT")) {
-                            clearAdminBypassFlag();
-                        }
-                    });
-                }
-            } catch (_) {}
-            return;
-        }
-        if (_isAdminPage()) return;
-
-        // 1) SAYFA YÜKLENİRKEN SADECE 1 KERE check (1 adet SELECT sorgusu)
-        const runOnce = () => setTimeout(() => {
-            checkAndRedirect().catch(() => {});
-            // 2) Realtime aboneliğini bağla (SONRAKİ değişiklikler TEKRAR SORGU YAPMADAN gelir)
-            _subscribeRealtime();
-        }, 250);
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", runOnce, { once: true });
-        } else {
-            runOnce();
-        }
-        // ---- ÇIKIŞ YAPILDIĞINDA BYPASS BAYRAĞINI TEMİZLE (güvenlik) ----
-        try {
-            if (window.sb && window.sb.auth && typeof window.sb.auth.onAuthStateChange === "function") {
-                window.sb.auth.onAuthStateChange(function (ev) {
-                    var eventName = (typeof ev === "object" && ev && ev.event) ? ev.event : ev;
-                    if (eventName === "SIGNED_OUT") clearAdminBypassFlag();
-                });
-            }
-        } catch (_) {}
+    if (isDisabled()) {
+        console.log("[Bakım] Pasif: otomatik yönlendirme ve realtime kapalı.");
     }
-    _auto();
 
     return {
         fetchMaintenanceMode,
         setMaintenanceMode,
         checkAndRedirect,
-        subscribeRealtime: _subscribeRealtime,
+        subscribeRealtime,
         hasAdminBypassFlag,
         setAdminBypassFlag,
         clearAdminBypassFlag,
+        isDisabled,
     };
 })();

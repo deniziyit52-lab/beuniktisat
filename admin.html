@@ -350,9 +350,9 @@
                         <span id="maintStatusPill" class="status-pill status-pill--off">Bakım: Kapalı</span>
                     </div>
                     <div class="panel-sub maintenance-hint">
-                        Bu anahtarı açtığınızda YÖNETİCİ (admin şifresi doğrulanmış tarayıcı) haricindeki tüm
-                        üyeler <code>maintenance.html</code> sayfasına otomatik yönlendirilir. Piyasayı geçici
-                        olarak kapatmak / güncelleme yapmak için kullanın.
+                        Bu anahtar veritabanındaki bakım bayrağını günceller. Otomatik sayfa yönlendirmesi
+                        şu an kodda kapalıdır; üyeler <code>index.html</code> üzerinde kalır. Bakım ekranı
+                        yalnızca <code>maintenance.html</code> adresine elle gidilirse görünür.
                     </div>
                     <div class="maintenance-toggle-row">
                         <label class="switch-toggle">
@@ -873,6 +873,19 @@
             const lastStatus = document.getElementById("maintLastStatus");
             if (!toggle || !window.BorsaMaintenance) {
                 if (lastStatus) lastStatus.textContent = "Son durum: Yüklenemedi.";
+                return;
+            }
+            if (typeof BorsaMaintenance.isDisabled === "function" && BorsaMaintenance.isDisabled()) {
+                toggle.checked = false;
+                toggle.disabled = true;
+                if (pill) {
+                    pill.textContent = "Bakım: Kodda kapalı";
+                    pill.classList.add("status-pill--off");
+                    pill.classList.remove("status-pill--on");
+                }
+                if (lastStatus) {
+                    lastStatus.textContent = "Otomatik yönlendirme pasif — site açık kalır.";
+                }
                 return;
             }
 
