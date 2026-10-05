@@ -956,8 +956,9 @@
             };
 
             async function bootBorsa() {
+                let firstLoadLocalDone = false;
                 if (window.sb && typeof window.sb.channel === "function") {
-                    try { await Borsa.ensureInitializedWithRealtime(); }
+                    try { await Borsa.ensureInitializedWithRealtime(); firstLoadLocalDone = true; }
                     catch (e) { Borsa.ensureInitialized(); }
                 } else {
                     Borsa.ensureInitialized();
@@ -966,7 +967,19 @@
                     }, { once: true });
                 }
                 Borsa.renderCommon();
-                Borsa.startAutoUpdates(true);
+                // =========================================================
+                //  MERKEZILIK FIYAT MOTORU (pg_cron 15sn) AKTIF OLDUGU ICIN
+                //  index.html NORMAL KULLANICILARDA: enableTicks=false
+                //  Sadece saat gosterilsin, fiyatlar REALTIME DINLENECEK.
+                // =========================================================
+                Borsa.startAutoUpdates(false);
+                if (typeof Borsa.Realtime !== "undefined" &&
+                    typeof Borsa.Realtime.syncAllLocalStocksToDB === "function") {
+                    // Tek seferlik senkron (ilk acilista). Sonraki yazmalar YOK.
+                    if (!firstLoadLocalDone) {
+                        setTimeout(() => Borsa.Realtime.syncAllLocalStocksToDB(), 2500);
+                    }
+                }
             }
             bootBorsa();
 
