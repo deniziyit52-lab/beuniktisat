@@ -606,13 +606,23 @@ const Borsa = {
         this.updateClock();
         this._clockInterval = setInterval(() => this.updateClock(), 1000);
 
+        // ============================================================
+        //  UCRETSIZ PLAN OPTIMIZASYONU:
+        //  - Sadece ADMIN PANELINDE tick local olarak calisir ve DB'e
+        //    batch olacak sekilde yazilirlar. (admin.html'de enableTicks=true)
+        //  - Normal kullanici (index.html): enableTicks=false olmalidir.
+        //    Cunku MERKEZILIK MOTOR pg_cron tarafindan 15sn'de bir
+        //    batch_tick_market_prices() calisiyor ve tum clientlar
+        //    Realtime postgres_changes ile YENI fiyatlari DINLIYOR.
+        //    Frontend'in kendi tick yapmasi 8x client = 8x yazma = patlar.
+        // ============================================================
         if (enableTicks) {
             if (this._tickInterval) clearInterval(this._tickInterval);
-            // [AYAR] ARKA PLAN FİYAT GÜNCELLEME HIZI (ms):
-            // 4000  → 4 saniyede bir tick
-            // 2000  → 2 sn (agresif)
-            // 10000 → 10 sn (çok sakin)
-            this._tickInterval = setInterval(() => this.randomMarketTick(), 4000);
+            // Admin tick araligi: 15 saniye (pg_cron ile ayni frekans)
+            this._tickInterval = setInterval(() => this.randomMarketTick(), 15000);
+        } else if (this._tickInterval) {
+            clearInterval(this._tickInterval);
+            this._tickInterval = null;
         }
     },
 
@@ -697,13 +707,13 @@ const Borsa = {
             const name = String(row.name || row.stock_name || symbol).trim();
             const price = Number(row.current_price ?? row.price ?? 0);
             const previousClose = Number(row.previous_close ?? row.open_price ?? price);
-            const change = Borsa.round2(price - previousClose);
-            const changePct = Borsa.round2(previousClose > 0 ? (change / previousClose) * 100 : 0);
+            const change = Number(row.change ?? Borsa.round2(price - previousClose));
+            const changePct = Number(row.change_pct ?? Borsa.round2(previousClose > 0 ? (change / previousClose) * 100 : 0));
             const color = String(row.color || "#3b82f6").trim();
             const shares = Number(row.shares ?? row.shares_outstanding ?? row.total_shares ?? 100000);
-            let history;
+            let history = null;
             try {
-                if (row.price_history && Array.isArray(row.price_history)) {
+                if (row.price_history && Array.isArray(row.price_history) && row.price_history.length > 0) {
                     history = row.price_history.map(h => ({
                         time: Number(h.time ?? h.t ?? Date.now()),
                         price: Borsa.round2(Number(h.price ?? h.p ?? price)),
@@ -711,13 +721,20 @@ const Borsa = {
                 }
             } catch (_) { history = null; }
             if (!history || history.length === 0) {
-                history = Borsa._generatePriceHistory(price, 40);
+                // Eski JSONB kolonu bossa yeni price_history (ROW tablosundan) cek
+                history = (row.__history && Array.isArray(row.__history))
+                    ? row.__history.map(h => ({
+                        time: h.recorded_at ? new Date(h.recorded_at).getTime() : Date.now(),
+                        price: Borsa.round2(Number(h.price ?? price)),
+                    }))
+                    : Borsa._generatePriceHistory(price, 40);
             }
             if (history.length > 0) {
                 const last = history[history.length - 1];
                 if (Math.abs(Number(last.price) - price) > 0.01) {
                     history.push({ time: Date.now(), price: Borsa.round2(price) });
                 }
+                if (history.length > 200) history = history.slice(-200);
             }
             return {
                 name,
@@ -725,8 +742,8 @@ const Borsa = {
                 color,
                 price: Borsa.round2(price),
                 previousClose: Borsa.round2(previousClose),
-                change,
-                changePct,
+                change: Borsa.round2(change),
+                changePct: Borsa.round2(changePct),
                 history,
                 shares: Math.max(1, Math.floor(shares)),
                 _src: "supabase",
@@ -739,17 +756,63 @@ const Borsa = {
             if (!sb) return false;
             try {
                 await this.seedDefaultStocksIfDBEmpty();
+                // Yeni: stocks + son 40 price_history satirlarini BIRLIKTE cek
+                // (tek roundtrip, history JSONB yerine ayri tablo)
                 const { data, error } = await sb
                     .from("stocks")
-                    .select("*")
-                    .order("symbol", { ascending: true });
+                    .select(`
+                        symbol, name, color, current_price, previous_close,
+                        change, change_pct, shares, updated_at,
+                        price_history(*)
+                    `)
+                    .order("symbol", { ascending: true })
+                    .order("recorded_at", { ascending: false, foreignTable: "price_history", limit: 60 });
                 if (error) {
-                    console.warn("[Realtime] stocks tablosu okunamadı (tablo yok veya RLS?):", error.message);
-                    return false;
+                    console.warn("[Realtime] stocks+price_history okunamadi (yeni tablo hazir mi?):", error.message);
+                    // FALLBACK: sadece stocks tablosunu cek (JSONB ya da gecici seed)
+                    const fb = await sb.from("stocks").select("*").order("symbol");
+                    if (fb.error || !fb.data) return false;
+                    const normalizedFb = {};
+                    fb.data.forEach(row => {
+                        const s = this._normalizeStockRow(row);
+                        if (s) normalizedFb[s.symbol] = s;
+                    });
+                    if (Object.keys(normalizedFb).length === 0) return false;
+                    Borsa.state.stocks = normalizedFb;
+                    Borsa.state.news = Borsa.state.news || Borsa.seedNews();
+                    await this._loadInitialNewsFromDB();
+                    const symsFb = Object.keys(normalizedFb);
+                    if (!Borsa.state.selectedStock || !Borsa.state.stocks[Borsa.state.selectedStock]) {
+                        Borsa.state.selectedStock = symsFb[0];
+                    }
+                    console.log(`[Realtime] DB+fallback: ${symsFb.length} hisse yuklendi.`);
+                    return true;
                 }
                 if (!data || !Array.isArray(data) || data.length === 0) return false;
+                const grouped = {};
+                data.forEach(r => {
+                    const sym = String(r.symbol || "").toUpperCase();
+                    if (!sym) return;
+                    if (!grouped[sym]) {
+                        grouped[sym] = Object.assign({}, r, { __history: [] });
+                    }
+                    const ph = r.price_history;
+                    if (ph && Array.isArray(ph)) {
+                        grouped[sym].__history.push(...ph);
+                    } else if (ph && typeof ph === "object") {
+                        grouped[sym].__history.push(ph);
+                    }
+                });
                 const normalized = {};
-                data.forEach(row => {
+                Object.keys(grouped).forEach(sym => {
+                    const row = grouped[sym];
+                    // __history'i zamana gore sirala (ascending)
+                    if (row.__history && row.__history.length > 0) {
+                        row.__history.sort(
+                            (a, b) => (a.recorded_at ? new Date(a.recorded_at).getTime() : 0)
+                                    - (b.recorded_at ? new Date(b.recorded_at).getTime() : 0)
+                        );
+                    }
                     const s = this._normalizeStockRow(row);
                     if (s) normalized[s.symbol] = s;
                 });
@@ -761,10 +824,10 @@ const Borsa = {
                 if (!Borsa.state.selectedStock || !Borsa.state.stocks[Borsa.state.selectedStock]) {
                     Borsa.state.selectedStock = symbols[0];
                 }
-                console.log(`[Realtime] DB'den ${symbols.length} hisse yüklendi: ${symbols.join(", ")}`);
+                console.log(`[Realtime] DB'den ${symbols.length} hisse yuklendi + price_history tablosu.`);
                 return true;
             } catch (e) {
-                console.warn("[Realtime] İlk hisse yükleme hatası:", e && e.message || e);
+                console.warn("[Realtime] Ilk hisse yukleme hatasi:", e && e.message || e);
                 return false;
             }
         },
@@ -1045,7 +1108,31 @@ const Borsa = {
         } catch (_) {}
     },
 
+    bumpPricePercent(symbol, percent) {
+        const stock = this.state.stocks[symbol];
+        if (!stock) return;
+        const newPrice = stock.price * (1 + Number(percent) / 100);
+        return this.setPrice(symbol, newPrice);
+    },
+
     applyNewsImpact(symbol, impactPct) {
+        const stock = this.state.stocks[symbol];
+        if (!stock) return;
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (sb && sb.rpc) {
+            sb.rpc("admin_apply_news_impact", {
+                p_symbol: symbol,
+                p_impact_pct: Number(impactPct) || 0,
+            }).catch(err => {
+                console.warn("[Realtime] admin_apply_news_impact RPC basarisiz, lokal yedek calisiyor:", err && err.message || err);
+                this._applyNewsImpactLocal(symbol, impactPct);
+            });
+            return;
+        }
+        this._applyNewsImpactLocal(symbol, impactPct);
+    },
+
+    _applyNewsImpactLocal(symbol, impactPct) {
         const stock = this.state.stocks[symbol];
         if (!stock) return;
         const oldPrice = stock.price;
@@ -1073,6 +1160,22 @@ const Borsa = {
     setPrice(symbol, exactPriceTL) {
         const stock = this.state.stocks[symbol];
         if (!stock) return false;
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (sb && sb.rpc) {
+            const p = Math.max(0.05, Number(exactPriceTL) || 0);
+            sb.rpc("admin_set_price", { p_symbol: symbol, p_price: Number(this.round2(p)) })
+                .catch(err => {
+                    console.warn("[Realtime] admin_set_price RPC basarisiz, lokal yedek:", err && err.message || err);
+                    this._setPriceLocal(symbol, exactPriceTL);
+                });
+            return this.round2(p);
+        }
+        return this._setPriceLocal(symbol, exactPriceTL);
+    },
+
+    _setPriceLocal(symbol, exactPriceTL) {
+        const stock = this.state.stocks[symbol];
+        if (!stock) return false;
         const p = Math.max(0.05, Number(exactPriceTL) || 0);
         const newPrice = this.round2(p);
         const up = newPrice >= stock.price;
@@ -1090,36 +1193,111 @@ const Borsa = {
     },
 
     publishNews({ title, target, impact }) {
+        const impactPct = Number(impact) || 0;
         const newsItem = {
-            id: Date.now(),
+            id: Date.now() + Math.floor(Math.random() * 999),
             title: title,
             target: target || null,
-            impact: Number(impact) || 0,
+            impact: impactPct,
             timestamp: Date.now(),
         };
         this.state.news.unshift(newsItem);
         if (this.state.news.length > 150) this.state.news.pop();
-        if (target && this.state.stocks[target]) {
-            this.applyNewsImpact(target, Number(impact) || 0);
-        }
         this.saveState();
         try { this.renderNewsFeed(); } catch (_) {}
-        try {
-            const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
-            if (sb && sb.from) {
-                sb.from("news_feed").insert([{
-                    id: newsItem.id,
-                    title: String(title || "").slice(0, 280),
-                    stock_symbol: target || null,
-                    impact_pct: Number(impact) || 0,
-                    created_at: new Date(newsItem.timestamp).toISOString(),
-                }]).catch(() => {});
-            }
-        } catch (_) {}
+
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (sb && sb.rpc) {
+            sb.rpc("admin_publish_news", {
+                p_title: String(title || "").slice(0, 280),
+                p_symbol: target || null,
+                p_impact_pct: impactPct,
+            }).catch(err => {
+                console.warn("[Realtime] admin_publish_news RPC basarisiz, lokal yedek:", err && err.message || err);
+                if (target && this.state.stocks[target]) {
+                    this._applyNewsImpactLocal(target, impactPct);
+                } else if (sb && sb.from) {
+                    sb.from("news_feed").insert([{
+                        id: newsItem.id,
+                        title: String(title || "").slice(0, 280),
+                        stock_symbol: target || null,
+                        impact_pct: impactPct,
+                        created_at: new Date(newsItem.timestamp).toISOString(),
+                    }]).catch(() => {});
+                }
+            });
+            return newsItem;
+        }
+        if (target && this.state.stocks[target]) {
+            this.applyNewsImpact(target, impactPct);
+        } else if (sb && sb.from) {
+            sb.from("news_feed").insert([{
+                id: newsItem.id,
+                title: String(title || "").slice(0, 280),
+                stock_symbol: target || null,
+                impact_pct: impactPct,
+                created_at: new Date(newsItem.timestamp).toISOString(),
+            }]).catch(() => {});
+        }
         return newsItem;
     },
 
     randomMarketTick() {
+        if (!this.state.stocks) return;
+        // ============================================================
+        //  [OPT 1+2] MERKEZILIK BATCH + 15sn:
+        //  N client x 8 hisse = 8N yazmak yerine, TEK RPC cagrisi.
+        //  pg_cron zaten HER 15 SN calisiyor, admin paneli ekstra zorlama
+        //  olarak RPC cagirir, normal clientlar HIC yazmaz.
+        // ============================================================
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (sb && sb.rpc) {
+            sb.rpc("batch_tick_market_prices")
+                .then(res => {
+                    if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+                        let selectedChanged = false;
+                        res.data.forEach(row => {
+                            const sym = String(row.symbol || "").toUpperCase();
+                            if (!sym || !this.state.stocks[sym]) return;
+                            const old = this.state.stocks[sym];
+                            const s = this.Realtime._normalizeStockRow(row);
+                            if (!s) return;
+                            const priceChanged = Math.abs(s.price - (old.price || 0)) > 0.01;
+                            this.state.stocks[sym] = Object.assign({}, old, {
+                                price: s.price,
+                                previousClose: s.previousClose,
+                                change: s.change,
+                                changePct: s.changePct,
+                                _updatedAt: Date.now(),
+                            });
+                            if (priceChanged) {
+                                const hist = (this.state.stocks[sym].history || []).slice();
+                                hist.push({ time: Date.now(), price: s.price });
+                                if (hist.length > 200) hist.shift();
+                                this.state.stocks[sym].history = hist;
+                                this.flashCard(sym, s.changePct >= 0);
+                                if (this.state.selectedStock === sym) selectedChanged = true;
+                            }
+                        });
+                        this.renderStocksGrid();
+                        this.renderTickerTape();
+                        this.renderMarketCap();
+                        this.renderStockSelector();
+                        if (selectedChanged) try { this.renderChart(); } catch (_) {}
+                        try { this.saveState(); } catch (_) {}
+                    }
+                })
+                .catch(err => {
+                    console.warn("[borsa-tick] RPC batch_tick_market_prices basarisiz, lokal tick:", err && err.message || err);
+                    this._localFallbackTick();
+                });
+            return;
+        }
+        this._localFallbackTick();
+    },
+
+    _localFallbackTick() {
+        if (!this.state.stocks) return;
         let changed = false;
         const changedSymbols = [];
         Object.keys(this.state.stocks).forEach(sym => {
