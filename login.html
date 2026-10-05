@@ -45,7 +45,7 @@
             }
             document.currentScript && document.currentScript.setAttribute('data-role','error-catcher');
             // Sıradaki scriptler onerrore izleyiciyle bağlanır:
-            window._hookScriptFail = function(src){ return function(){ _onScriptFail(this, src); };
+            window._hookScriptFail = function(src){ return function(){ _onScriptFail(this, src); }; };
         })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
@@ -85,8 +85,8 @@
             </div>
 
             <div id="configWarning" class="auth-error" style="display:none;">
-                ⚠ Firebase yapılandırılmamış. Lütfen <code>firebase.js</code> içindeki
-                <code>FIREBASE_CONFIG</code> alanlarını doldurun.
+                ⚠ Supabase yapılandırılmamış. Lütfen <code>supabase-config.js</code> içindeki
+                <code>SUPABASE_CONFIG</code> alanlarını (URL ve anon key) doldurun.
             </div>
 
             <div id="authFeedback" style="display:none; margin-bottom:1rem; padding:0.65rem 0.9rem; border-radius:8px; text-align:center; font-size:0.85rem;"></div>
@@ -218,38 +218,6 @@
         //  engellemek için: (1) typeof check (2) polling + event fallback.
         // ============================================================
         let _authListenersAttached = false;
-        function _attachAuthListeners() {
-            if (_authListenersAttached) return;
-            if (typeof window.BorsaFirebase === "undefined" ||
-                typeof window.BorsaFirebase.onChange !== "function") return false;
-            _authListenersAttached = true;
-
-            // 1) Auth state değişince yönlendir (signIn promise resolve'dan bağımsız)
-            BorsaFirebase.onChange((user, doc) => {
-                if (user) {
-                    setFeedback("success", "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz...");
-                    setTimeout(() => { window.location.href = "index.html"; }, 800);
-                }
-            });
-
-            // 2) SDK + config hazır olunca subscribeAuth başlat
-            _startSubscribeAuthWhenReady();
-            return true;
-        }
-        // Poll 50ms x 600 = 30 sn (gerçekten emin olmak için)
-        (function _pollAttach() {
-            if (_attachAuthListeners()) return;
-            let t = 0;
-            const iv = setInterval(() => {
-                t++;
-                if (_attachAuthListeners() || t > 600) clearInterval(iv);
-            }, 50);
-            window.addEventListener("borsa:supabase-ready", () => {
-                _attachAuthListeners();
-                clearInterval(iv);
-            }, { once: true });
-        })();
-
         let _subscribeAuthStarted = false;
         async function _startSubscribeAuthWhenReady() {
             if (_subscribeAuthStarted) return;
@@ -282,6 +250,38 @@
                 setFeedback("error", "Auth başlatılamadı: " + (e && e.message ? e.message : e));
             }
         }
+        function _attachAuthListeners() {
+            if (_authListenersAttached) return;
+            if (typeof window.BorsaFirebase === "undefined" ||
+                typeof window.BorsaFirebase.onChange !== "function") return false;
+            _authListenersAttached = true;
+
+            // 1) Auth state değişince yönlendir (signIn promise resolve'dan bağımsız)
+            BorsaFirebase.onChange((user, doc) => {
+                if (user) {
+                    setFeedback("success", "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz...");
+                    setTimeout(() => { window.location.href = "index.html"; }, 800);
+                }
+            });
+
+            // 2) SDK + config hazır olunca subscribeAuth başlat
+            _startSubscribeAuthWhenReady();
+            return true;
+        }
+        // Poll 50ms x 600 = 30 sn (gerçekten emin olmak için)
+        (function _pollAttach() {
+            if (_attachAuthListeners()) return;
+            let t = 0;
+            const iv = setInterval(() => {
+                t++;
+                if (_attachAuthListeners() || t > 600) clearInterval(iv);
+            }, 50);
+            window.addEventListener("borsa:supabase-ready", () => {
+                _attachAuthListeners();
+                clearInterval(iv);
+            }, { once: true });
+        })();
+
         // Fallback: supabase hazır olunca yine tetiklenir (listener attach öncesi gelirse)
         window.addEventListener("borsa:supabase-ready", _startSubscribeAuthWhenReady, { once: true });
 

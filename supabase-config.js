@@ -16,8 +16,33 @@
 
 const SUPABASE_CONFIG = {
     url: "https://zhjdbpokoyitvwlkncdd.supabase.co",
-    anonKey: "sb_publishable_6HAQTaMsrRy6t945u0kjSA_Y7vXf8fd",
+    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoamRicG9rb3lpdHZ3bGtuY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExODYyMzEsImV4cCI6MjEwNjc2MjIzMX0.Za4vf8mDR2xOKxXSKAipO0_-21Yk_vHiVUm5nlH1ZnY",
 };
+
+const SUPABASE_AUTH_STORAGE_KEY = "borsa-supabase-auth-session";
+
+function migrateLegacyAuthStorage() {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    try {
+        const keysToRemove = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+            const k = window.localStorage.key(i);
+            if (!k) continue;
+            const lk = k.toLowerCase();
+            if (lk.startsWith("sb-") && (lk.includes("-auth-token") || lk.includes("-auth-"))) {
+                keysToRemove.push(k);
+            }
+        }
+        keysToRemove.forEach(k => {
+            try { window.localStorage.removeItem(k); } catch (e) {}
+        });
+        if (keysToRemove.length > 0) {
+            console.log("[Borsa] Eski localStorage auth sessionları temizlendi (" + keysToRemove.length + " adet) — artık her sekme bağımsız sessionStorage kullanıyor.");
+        }
+    } catch (e) {
+        console.warn("[Borsa] Legacy auth migration başarısız:", e && e.message || e);
+    }
+}
 
 (function initSupabaseLifecycle() {
     let attempts = 0;
@@ -50,7 +75,8 @@ const SUPABASE_CONFIG = {
                 {
                     auth: {
                         persistSession: true,
-                        storage: window.localStorage,
+                        storage: window.sessionStorage,
+                        storageKey: SUPABASE_AUTH_STORAGE_KEY,
                         autoRefreshToken: true,
                         detectSessionInUrl: true,
                     },
@@ -66,7 +92,7 @@ const SUPABASE_CONFIG = {
             // Hafif bir sağlık kontrolü: SDK yaratıldıysa auth nesnesi vardır.
             if (window.sb && typeof window.sb.auth !== "undefined") {
                 _healthOk = true;
-                // Dışarıya bildir (bekleyen kodlar bu event üzerinde uyanabilir)
+                try { migrateLegacyAuthStorage(); } catch (e) {}
                 try {
                     window.dispatchEvent(new CustomEvent("borsa:supabase-ready", { detail: { attempts } }));
                 } catch (e) {}
@@ -470,7 +496,20 @@ window.BorsaFirebase = {
 
     async signOut() {
         if (!this.auth()) return;
-        await this.auth().signOut();
+        try { await this.auth().signOut(); } catch (e) {}
+        try {
+            if (window.sessionStorage && SUPABASE_AUTH_STORAGE_KEY) {
+                window.sessionStorage.removeItem(SUPABASE_AUTH_STORAGE_KEY);
+            }
+            migrateLegacyAuthStorage();
+        } catch (e) {}
+        this._user = null;
+        this._userDoc = null;
+        if (this._profileListener) {
+            try { this._profileListener.unsubscribe(); } catch (e) {}
+            this._profileListener = null;
+        }
+        this._listeners.forEach(fn => { try { fn(null, null); } catch (e) {} });
     },
 
     _stockPrice(symbol) {

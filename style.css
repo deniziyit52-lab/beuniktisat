@@ -135,9 +135,9 @@ a.btn {
     border: 1px solid transparent;
     border-radius: 10px;
     background: transparent;
-    color: var(--text);
+    color: var(--text-primary);
     font-family: inherit;
-    font-size: 0.875rem;     /* 14px */
+    font-size: 0.875rem;
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0.1px;
@@ -1128,11 +1128,13 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     border: 1px solid var(--border);
     padding: 0.5rem 1rem;
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     outline: none;
     transition: border-color 0.2s;
+    min-height: 44px;
+    font-family: inherit;
 }
 
 .stock-select:focus {
@@ -1164,20 +1166,23 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
     background: var(--bg-card);
     color: var(--text-primary);
     border: 1px solid var(--border);
     padding: 0.7rem 1rem;
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    min-height: 44px;
     outline: none;
     transition: all 0.2s;
     font-family: inherit;
 }
 
 .form-group input:focus,
-.form-group select:focus {
+.form-group select:focus,
+.form-group textarea:focus {
     border-color: var(--accent-bright);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
