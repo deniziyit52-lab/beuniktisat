@@ -1374,6 +1374,64 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     background: rgba(239, 68, 68, 0.12);
     color: var(--red-bright);
 }
+.admin-delete-user-copy {
+    margin: -0.35rem 0 0.9rem;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+.admin-delete-user-trigger { width: 100%; }
+.admin-delete-user-overlay { z-index: 12000; }
+.admin-delete-user-modal {
+    width: min(460px, 94vw);
+    max-width: 460px;
+    border-color: rgba(248, 113, 113, 0.32);
+    background: rgba(17, 24, 39, 0.98);
+}
+.admin-delete-user-modal h2 {
+    margin: 0.85rem 2rem 0.45rem 0;
+    color: var(--text-primary);
+    font-size: 1.12rem;
+}
+.admin-delete-user-modal p {
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+.admin-delete-user-mark {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+    border-radius: 12px;
+    background: rgba(185, 28, 28, 0.2);
+    color: #fca5a5;
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+.admin-delete-user-target {
+    margin-top: 0.85rem;
+    padding: 0.65rem 0.75rem;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.45);
+    color: var(--text-primary);
+    font-family: Consolas, monospace;
+    font-size: 0.85rem;
+}
+.admin-delete-user-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+}
+.admin-delete-user-actions button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
 
 .footer {
     background: var(--bg-secondary);
