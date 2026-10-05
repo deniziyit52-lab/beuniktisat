@@ -811,6 +811,38 @@ window.BorsaFirebase = {
  *     REST isteklerine dokunulmaz, API limit bozulmaz.
  * ========================================================= */
 window.BorsaMaintenance = (function () {
+    /* ============================================================
+     *  ACIL KILL SWITCH (ONCELIK: EN YUKSEK)
+     *  Bu bayraklar TRUE ise BAKIM SISTEMI TAMAMEN DEVRE DISI.
+     *  - Hic yonlendirme YOK
+     *  - Hic DB SELECT YOK
+     *  - Hic Realtime ABONELIGI YOK
+     *  - Admin ve tum kullanicilar siteye NORMAL erisebilir.
+     *  Ayarlamak icin 3 secenek var:
+     *    1) HTML basina: <script>window.__BORSA_DISABLE_MAINTENANCE__ = true;</script>
+     *    2) Console: window.__BORSA_DISABLE_MAINTENANCE__ = true
+     *    3) sessionStorage['borsa_maint_disabled'] = '1'
+     * ============================================================ */
+    function _maintIsDisabled() {
+        try {
+            if (window.__BORSA_DISABLE_MAINTENANCE__ === true) return true;
+            if (window.__BORSA_KILL_MAINT__ === true) return true;
+            var s = null;
+            try { s = sessionStorage.getItem("borsa_maint_disabled"); } catch (_) {}
+            if (s === "1") return true;
+            try { s = localStorage.getItem("borsa_maint_disabled"); } catch (_) {}
+            if (s === "1") return true;
+        } catch (e) {}
+        return false;
+    }
+    // ===> BAKIM SISTEMINI KALICI OLARAK SIMDILIK KAPATIYORUZ (ACIL DURUM)
+    try {
+        if (!_maintIsDisabled()) {
+            window.__BORSA_DISABLE_MAINTENANCE__ = true;
+            try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (_) {}
+        }
+    } catch (_) {}
+
     const ADMIN_EMAIL      = "deniziyit52@gmail.com";
     const LEGACY_FLAG_KEY  = "borsa_admin_session";  // eski versiyonlardan kalma, her zaman sil
     const ADMIN_FILENAME   = "admin.html";
@@ -957,6 +989,12 @@ window.BorsaMaintenance = (function () {
     }
 
     async function checkAndRedirect(overrideMode /* optional bool | null */) {
+        // ============= ACIL KILL SWITCH =============
+        // Bakim sistemi KALICI olarak DEVRE DISI. Hic yonlendirme YOK.
+        if (_maintIsDisabled()) {
+            console.log("[Bakım] ⛔ ACIL KILL SWITCH AKTIF: Bakım sistemi devre dışı.");
+            return;
+        }
         // ---- ADMIN MUAFFİYETİ (ÖNCE, EN ÜSTTE) ----
         if (_isAdminBypassedSync()) return;    // Admin ise HİÇBİR ZAMAN yönlendirme YOK
         if (_isAdminPage()) return;            // Admin panel URL'deyse de bloke etme
@@ -980,13 +1018,16 @@ window.BorsaMaintenance = (function () {
                 // Zaten doğru sayfadayız: HİÇBİR ŞEY YAPMA (reload döngüsünü KIR)
                 return;
             }
-            // Normal ziyaretçi, bakım açık, maintenance'da değil → YÖNLENDİR (SADECE 1 KEZ)
-            try {
-                const dest = MAINT_FILENAME;
-                if (!(location.pathname.endsWith("/" + dest))) location.href = dest;
-            } catch (e) {
-                location.href = MAINT_FILENAME;
-            }
+            // ====== ACIL DURUM: YONLENDIRME YAPMA (kullanıcı acilsin) ======
+            // Normalde burasi maintenance.html'e yonlendirirdi.
+            // ACIL durumda KALICI olarak BU KOD BLOGU DEVRE DISI:
+            console.log("[Bakım] ⚠️  Bakım modu ACİK ama ACIL KILL SWITCH nedeniyle yönlendirme YAPILMIYOR.");
+            return;
+            // Normal (aktif) durumda yonlendirme:
+            // try {
+            //   const dest = MAINT_FILENAME;
+            //   if (!(location.pathname.endsWith("/" + dest))) location.href = dest;
+            // } catch (e) { location.href = MAINT_FILENAME; }
         } else {
             // ---- BAKIM KAPALI ----
             // Eğer maintenance sayfasındaysak ve bakım kapatıldıysa → index/login'e yönlendir.
@@ -1018,6 +1059,11 @@ window.BorsaMaintenance = (function () {
     // SUPABASE REALTIME: admin toggle ettiği ANINDA yönlendirme (POLLING YOK, API LIMIT BOŞALTMAZ)
     let _maintChannel = null;
     function _subscribeRealtime() {
+        // ===== ACIL KILL SWITCH: Realtime ABONELIGINI YAPMA =====
+        if (_maintIsDisabled()) {
+            console.log("[Bakım] ⛔ ACIL KILL SWITCH: Realtime bakım aboneliği atlandı.");
+            return;
+        }
         if (!window.sb || !window.sb.channel) return;
         if (_maintChannel) return; // tek seferlik abonelik
         try {
@@ -1034,6 +1080,9 @@ window.BorsaMaintenance = (function () {
                         filter: "id=eq.1",
                     },
                     (payload) => {
+                        // ===== ACIL KILL SWITCH: Realtime event GELSE bile hicbir sey YAPMA =====
+                        if (_maintIsDisabled()) return;
+
                         const row = payload.new || payload.old || {};
                         const mode = typeof row.maintenance_mode === "boolean"
                             ? row.maintenance_mode
@@ -1041,16 +1090,10 @@ window.BorsaMaintenance = (function () {
                         if (mode === null) return;
 
                         // ---- YÖNLENDİRME ÖNCESİ EK GÜVENLİK KATMANI ----
-                        // Admin kendi toggle'ında KENDİNİ maintenance page'e atmasın.
-                        // Admin page URL'de isek, admin girişli isek (currentUser admin)
-                        // veya bakım modunu AÇTIĞIMIZDA zaten maintenance'day isek: ATLA.
                         if (_isAdminBypassedSync()) return;
                         if (_isAdminPage()) return;
 
-                        // Admin anında toggle ettiği anda YÖNLENDİR (ekstra sorgu yok)
                         checkAndRedirect(mode).catch(() => {});
-                        // Bakım modu "kapatıldı" ise, zaten maintenance page'de değilsek bi şey yapma.
-                        // Bakım modu "açıldı" ise yukarıdaki checkAndRedirect() redirect yapar.
                     }
                 )
                 .subscribe((status) => {
@@ -1063,12 +1106,14 @@ window.BorsaMaintenance = (function () {
 
     // Tüm sayfalarda otomatik çalıştır:
     function _auto() {
-        // ---- ADMIN MUAFFİYETİ EN BAŞTA (EN ÖNEMLİ, DÖNGÜYÜ KIRAN NOKTA) ----
-        // SessionStorage'da admin bypass bayrağı VARSA (Yönetici Paneline Git butonu
-        // tıklanmış veya admin.html açılmış) → HİÇBİR BAKIM KONTROLÜ ÇALIŞMAZ.
-        // DB'ye SELECT atılmaz, Realtime bağlanmaz, yönlendirme YAPILMAZ.
+        // ============= ACIL KILL SWITCH (EN ONCELIKLI) =============
+        // Bu bayrak VARSA BAKIM SISTEMI TAMAMEN DEVRE DISI. Hicbir sey yapma.
+        if (_maintIsDisabled()) {
+            console.log("[Bakım] ⛔ ACIL KILL SWITCH AKTIF. _auto() return. Bakım sistemi kapalı.");
+            return;
+        }
+        // ---- ADMIN MUAFFİYETİ EN BAŞTA ----
         if (hasAdminBypassFlag()) {
-            // SESSION BYPASS AKTİF: Çıkış dinleyicisine bayrak temizleme ekle, sonra RETURN.
             try {
                 if (window.sb && window.sb.auth && typeof window.sb.auth.onAuthStateChange === "function") {
                     window.sb.auth.onAuthStateChange(function (ev) {
@@ -1078,9 +1123,8 @@ window.BorsaMaintenance = (function () {
                     });
                 }
             } catch (_) {}
-            return; // ====> BAKIM SİSTEMİ TAMAMEN DEVRE DIŞI (bu noktada çık)
+            return;
         }
-        // Admin HTML URL'sindeysek ama bayrak henüz yazılmamışsa (nadir durum) → return
         if (_isAdminPage()) return;
 
         // 1) SAYFA YÜKLENİRKEN SADECE 1 KERE check (1 adet SELECT sorgusu)
@@ -1103,9 +1147,6 @@ window.BorsaMaintenance = (function () {
                 });
             }
         } catch (_) {}
-        // ÖNEMLİ: POLLING YOK. 30sn setInterval SİLİNDİ -> API limitleri korunur.
-        // (Uzun açık kalan sekmeler bile Supabase Realtime bağlantısı canlı tutar,
-        //  ama Supabase Realtime kendi bağlantı sürüm yönetimini yapar.)
     }
     _auto();
 

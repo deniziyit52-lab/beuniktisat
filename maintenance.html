@@ -8,6 +8,61 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script>
+        /* ============================================================
+         *  ACIL KILL SWITCH — BAKIM SISTEMINI KALICI DEVRE DISI BIRAKIR
+         *  Boylece maintenance.html acik olsa bile YONLENDIRME YOK,
+         *  SAYFA YENILEME YOK, DONGU YOK. Kullanici butona basincaya kadar
+         *  statik olarak ekranda kalir.
+         * ============================================================ */
+        (function disableMaintenance() {
+            try {
+                window.__BORSA_DISABLE_MAINTENANCE__ = true;
+                window.__BORSA_KILL_MAINT__ = true;
+                try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
+                try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
+                window.__borsa_admin_maintenance_bypass_set = true;
+            } catch (e) {}
+        })();
+        /* ============================================================
+         *  EMNIYET SAGLIGI: HERHANGI BIR location.href / location.reload
+         *  YAPILMASINI ONLE (sadece KULLANICI butona TIKLAYINCA gitsin)
+         *  (BeforeUnload oncesi buton disi yonlendirmeleri iptal et.)
+         * ============================================================ */
+        try {
+            window.__borsa_guard_count = 0;
+            var _origAssign = window.location.assign;
+            var _origReplace = window.location.replace;
+            Object.defineProperty(window.location, "assign", {
+                configurable: true,
+                value: function(u) {
+                    // Sadece <a> etiketi ile tiklayinca gitsin: a href tiklamasi zaten browser native
+                    // JS tarafli location.href atama yada assign/replace cagrisi: 1.kez izin ver (buton href) yoksa blok
+                    window.__borsa_guard_count++;
+                    if (window.__borsa_allow_next_nav === true) {
+                        window.__borsa_allow_next_nav = false;
+                        return _origAssign.call(this, u);
+                    }
+                    console.warn("[Bakım-Guard] location.assign BLOKLANDI:", String(u || ""));
+                    throw new Error("[Bakım-Guard] Otomatik yönlendirme BLOKLANDI.");
+                },
+                writable: true
+            });
+            Object.defineProperty(window.location, "replace", {
+                configurable: true,
+                value: function(u) {
+                    window.__borsa_guard_count++;
+                    if (window.__borsa_allow_next_nav === true) {
+                        window.__borsa_allow_next_nav = false;
+                        return _origReplace.call(this, u);
+                    }
+                    console.warn("[Bakım-Guard] location.replace BLOKLANDI:", String(u || ""));
+                    throw new Error("[Bakım-Guard] Otomatik yönlendirme BLOKLANDI.");
+                },
+                writable: true
+            });
+        } catch (_) {}
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
 </head>
@@ -141,17 +196,20 @@
                 return false;
             }
 
-            // Hemen dene (SDK hazırsa)
+            // Hemen dene (SDK hazirsa) — SETINTERVAL YOK (sonsuz dongu riski)
             if (!checkNow()) {
-                // SDK henüz hazır değilse 250ms x 240 (60sn) poll + borsa:supabase-ready event
-                var cnt = 0;
-                var t = setInterval(function () {
-                    cnt += 1;
-                    if (checkNow() || cnt > 240) {
-                        clearInterval(t);
-                    }
-                }, 250);
+                // SDK hazir degilse SADECE 5 kere (250/500/1s/2s/4s) 1 kez dene, sonra dur.
+                [250, 500, 1000, 2000, 4000].forEach(function (ms) {
+                    setTimeout(checkNow, ms);
+                });
+                // borsa:supabase-ready eventi gelince 1 kez daha dene
                 window.addEventListener("borsa:supabase-ready", checkNow, { once: true });
+                // window.load tamamlaninca da 1 kez dene
+                if (document.readyState === "complete") {
+                    setTimeout(checkNow, 300);
+                } else {
+                    window.addEventListener("load", function () { setTimeout(checkNow, 300); }, { once: true });
+                }
             }
         })();
     </script>
