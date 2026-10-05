@@ -648,9 +648,39 @@ const Borsa = {
         _chan: null,
         _statusChan: null,
         _appSettingsChan: null,
+        _newsChan: null,
         _bound: false,
         _enabled: false,
         _lastStatus: null,
+
+        async seedDefaultStocksIfDBEmpty() {
+            const sb = this._sb();
+            if (!sb) return;
+            try {
+                const { data, error } = await sb.from("stocks").select("symbol").limit(1);
+                if (error) return;
+                if (data && data.length > 0) return;
+            } catch (_) { return; }
+            const tmp = (typeof Borsa !== "undefined" && Borsa.initStocks) ? Borsa.initStocks() : null;
+            if (!tmp) return;
+            const symbols = Object.keys(tmp);
+            for (const sym of symbols) {
+                try {
+                    const s = tmp[sym];
+                    const payload = {
+                        symbol: s.symbol,
+                        name: s.name,
+                        color: s.color,
+                        current_price: s.price,
+                        previous_close: s.previousClose,
+                        shares: s.shares,
+                        price_history: (s.history || []).slice(-100),
+                    };
+                    await sb.from("stocks").insert([payload], { onConflict: "symbol" });
+                } catch (_) {}
+            }
+            console.log(`[Realtime] DB boştu, ${symbols.length} varsayılan hisse seed edildi.`);
+        },
 
         _sb() {
             return (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
@@ -708,6 +738,7 @@ const Borsa = {
             const sb = this._sb();
             if (!sb) return false;
             try {
+                await this.seedDefaultStocksIfDBEmpty();
                 const { data, error } = await sb
                     .from("stocks")
                     .select("*")
@@ -726,6 +757,7 @@ const Borsa = {
                 if (symbols.length === 0) return false;
                 Borsa.state.stocks = normalized;
                 Borsa.state.news = Borsa.state.news || Borsa.seedNews();
+                await this._loadInitialNewsFromDB();
                 if (!Borsa.state.selectedStock || !Borsa.state.stocks[Borsa.state.selectedStock]) {
                     Borsa.state.selectedStock = symbols[0];
                 }
@@ -735,6 +767,64 @@ const Borsa = {
                 console.warn("[Realtime] İlk hisse yükleme hatası:", e && e.message || e);
                 return false;
             }
+        },
+
+        async _loadInitialNewsFromDB() {
+            const sb = this._sb();
+            if (!sb) return;
+            try {
+                const { data, error } = await sb
+                    .from("news_feed")
+                    .select("id, title, stock_symbol, impact_pct, created_at")
+                    .order("created_at", { ascending: false })
+                    .limit(50);
+                if (error || !data || !Array.isArray(data)) return;
+                const mapped = data.map(n => ({
+                    id: Number(n.id || Date.now()),
+                    title: String(n.title || ""),
+                    target: String(n.stock_symbol || "").trim() || null,
+                    impact: Number(n.impact_pct || 0),
+                    timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
+                }));
+                if (mapped.length > 0) {
+                    Borsa.state.news = mapped.concat(Borsa.state.news || []).slice(0, 150);
+                }
+            } catch (_) {}
+        },
+
+        _handleNewsEvent(evt) {
+            if (!evt || evt.eventType !== "INSERT" || !evt.new) return;
+            const n = evt.new;
+            const item = {
+                id: Number(n.id || Date.now()),
+                title: String(n.title || ""),
+                target: String(n.stock_symbol || "").trim() || null,
+                impact: Number(n.impact_pct || 0),
+                timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
+            };
+            if (!item.title) return;
+            Borsa.state.news.unshift(item);
+            if (Borsa.state.news.length > 150) Borsa.state.news.pop();
+            if (item.target && Borsa.state.stocks[item.target]) {
+                const impactPct = Number(item.impact) || 0;
+                if (Math.abs(impactPct) > 0.001) {
+                    const stock = Borsa.state.stocks[item.target];
+                    const newPrice = Borsa.round2(Math.max(0.5, stock.price * (1 + impactPct / 100)));
+                    const old = stock.price;
+                    stock.price = newPrice;
+                    stock.history.push({ time: Date.now(), price: newPrice });
+                    if (stock.history.length > 200) stock.history.shift();
+                    const change = Borsa.round2(newPrice - stock.previousClose);
+                    stock.change = change;
+                    stock.changePct = Borsa.round2(stock.previousClose > 0 ? (change / stock.previousClose) * 100 : 0);
+                    Borsa.flashCard(item.target, impactPct >= 0);
+                    if (Borsa.state.selectedStock === item.target) {
+                        try { Borsa.renderChart(); } catch (_) {}
+                    }
+                }
+            }
+            try { Borsa.renderNewsFeed(); } catch (_) {}
+            try { Borsa.saveState(); } catch (_) {}
         },
 
         async _syncStockToDB(symbol) {
@@ -911,6 +1001,17 @@ const Borsa = {
                 console.warn("[Realtime] transactions kanalı açılamadı:", e);
             }
             try {
+                this._newsChan = sb
+                    .channel("borsa-news-public")
+                    .on("postgres_changes",
+                        { event: "INSERT", schema: "public", table: "news_feed" },
+                        (payload) => this._handleNewsEvent(payload)
+                    )
+                    .subscribe();
+            } catch (e) {
+                console.warn("[Realtime] news_feed kanalı açılamadı:", e);
+            }
+            try {
                 window.addEventListener("beforeunload", () => this.stop(), { once: true });
             } catch (_) {}
         },
@@ -918,7 +1019,7 @@ const Borsa = {
         stop() {
             const sb = this._sb();
             if (!sb || typeof sb.removeChannel !== "function") return;
-            [this._chan, this._statusChan, this._appSettingsChan].forEach(c => {
+            [this._chan, this._statusChan, this._appSettingsChan, this._newsChan].forEach(c => {
                 if (!c) return;
                 try { sb.removeChannel(c); } catch (_) {}
             });
@@ -959,6 +1060,13 @@ const Borsa = {
         stock.change = change;
         stock.changePct = this.round2((change / stock.previousClose) * 100);
         this.flashCard(symbol, impactPct >= 0);
+        try {
+            this.renderStocksGrid();
+            this.renderTickerTape();
+            this.renderMarketCap();
+            if (this.state.selectedStock === symbol) this.renderChart();
+            this.saveState();
+        } catch (_) {}
         this._rtSyncAfterLocalChange(symbol);
     },
 
@@ -995,6 +1103,7 @@ const Borsa = {
             this.applyNewsImpact(target, Number(impact) || 0);
         }
         this.saveState();
+        try { this.renderNewsFeed(); } catch (_) {}
         try {
             const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
             if (sb && sb.from) {
