@@ -390,11 +390,15 @@ const Borsa = {
                 <div class="stock-avatar" style="background: linear-gradient(135deg, ${s.color}, ${s.color}aa);">
                     ${s.name.charAt(0).toUpperCase()}
                 </div>
-                <div class="stock-name">${s.name}</div>
-                <div class="stock-symbol">${s.symbol}</div>
-                <div class="stock-price">${this.formatCurrency(s.price)}</div>
-                <div class="stock-change ${isUp ? "up" : "down"}">
-                    ${isUp ? "▲" : "▼"} ${Math.abs(s.changePct).toFixed(2)}% (${isUp ? "+" : ""}${s.change.toFixed(2)})
+                <div class="stock-body">
+                    <div class="stock-name">${s.name}</div>
+                    <div class="stock-symbol">${s.symbol}</div>
+                    <div class="stock-price-row">
+                        <div class="stock-price">${this.formatCurrency(s.price)}</div>
+                        <div class="stock-change ${isUp ? "up" : "down"}">
+                            ${isUp ? "▲" : "▼"} ${Math.abs(s.changePct).toFixed(2)}%
+                        </div>
+                    </div>
                 </div>
             `;
             card.addEventListener("click", () => {
