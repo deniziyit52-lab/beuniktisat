@@ -1213,8 +1213,16 @@
             }
         }
 
-        function startApp() {
-            Borsa.ensureInitialized();
+        async function startApp() {
+            if (window.sb && typeof window.sb.channel === "function") {
+                try { await Borsa.ensureInitializedWithRealtime(); }
+                catch (e) { Borsa.ensureInitialized(); }
+            } else {
+                Borsa.ensureInitialized();
+                window.addEventListener("borsa:supabase-ready", async () => {
+                    try { await Borsa.ensureInitializedWithRealtime(); } catch (_) {}
+                }, { once: true });
+            }
             Borsa.renderCommon();
             Borsa.startAutoUpdates(true);
             Borsa.Theme.bindToggle("themeToggle");

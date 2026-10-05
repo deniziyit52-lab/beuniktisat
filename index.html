@@ -955,9 +955,20 @@
                 });
             };
 
-            Borsa.ensureInitialized();
-            Borsa.renderCommon();
-            Borsa.startAutoUpdates(true);
+            async function bootBorsa() {
+                if (window.sb && typeof window.sb.channel === "function") {
+                    try { await Borsa.ensureInitializedWithRealtime(); }
+                    catch (e) { Borsa.ensureInitialized(); }
+                } else {
+                    Borsa.ensureInitialized();
+                    window.addEventListener("borsa:supabase-ready", async () => {
+                        try { await Borsa.ensureInitializedWithRealtime(); } catch (_) {}
+                    }, { once: true });
+                }
+                Borsa.renderCommon();
+                Borsa.startAutoUpdates(true);
+            }
+            bootBorsa();
 
             // (SIFIR API ÇAĞRISI) index.html YÖNETİCİ BUTONU İLK STATE:
             // Sayfa ilk yüklenirken session önbelleğinden bak, buton göster/gizle.
