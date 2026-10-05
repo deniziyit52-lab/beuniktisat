@@ -165,6 +165,20 @@
         }
     </style>
     <script>
+        /* ============================================================
+         *  ACIL KILL SWITCH — BAKIM SISTEMINI KALICI DEVRE DISI BIRAKIR
+         * ============================================================ */
+        (function disableMaintenance() {
+            try {
+                window.__BORSA_DISABLE_MAINTENANCE__ = true;
+                window.__BORSA_KILL_MAINT__ = true;
+                try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
+                try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
+                window.__borsa_admin_maintenance_bypass_set = true;
+            } catch (e) {}
+        })();
+    </script>
+    <script>
         (function i(){window._scriptErrors=[];window.addEventListener('error',function(e){var m="[SYNTAX ERROR] "+(e.message||String(e.error||""))+" @ "+(e.filename||"?")+":"+(e.lineno||"?");console.error(m);window._scriptErrors.push(m);},true);function f(el,s){var m="❌ Script yüklenemedi (404/Network/CORS): "+s;console.error(m);window._scriptErrors.push(m);function s2(){if(!document.body)return setTimeout(s2,30);var d=document.createElement('div');d.style.cssText="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#991b1b;color:#fff;font-weight:700;font-family:sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:92vw;";d.textContent=m;document.body.appendChild(d);}s2();}window._hookScriptFail=function(src){return function(){f(this,src);};})();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>

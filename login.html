@@ -6,6 +6,20 @@
     <title>Giriş / Kayıt Ol - ZBEÜ İktisat Topluluğu</title>
     <link rel="stylesheet" href="style.css">
     <script>
+        /* ============================================================
+         *  ACIL KILL SWITCH — BAKIM SISTEMINI KALICI DEVRE DISI BIRAKIR
+         * ============================================================ */
+        (function disableMaintenance() {
+            try {
+                window.__BORSA_DISABLE_MAINTENANCE__ = true;
+                window.__BORSA_KILL_MAINT__ = true;
+                try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
+                try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
+                window.__borsa_admin_maintenance_bypass_set = true;
+            } catch (e) {}
+        })();
+    </script>
+    <script>
         // Script yüklenme hatalarını (404 / CORS / Network) VISIBLE hale getir.
         // Bu script başta çalışır, herhangi bir <script src> hatasını yakalar.
         (function installScriptErrorCatcher(){
