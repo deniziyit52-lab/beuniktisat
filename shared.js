@@ -661,14 +661,23 @@ const Borsa = {
                     impact: Number(n.impact_pct || 0),
                     timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
                 }));
-                if (mapped.length > 0) {
-                    Borsa.state.news = mapped.concat(Borsa.state.news || []).slice(0, 150);
-                }
-            } catch (_) {}
+                Borsa.state.news = mapped.slice(0, 50);
+                Borsa.renderNewsFeed();
+                Borsa.saveState();
+            } catch (e) {
+                console.warn("[Realtime] Haber akışı yüklenemedi:", e && e.message || e);
+            }
         },
 
         _handleNewsEvent(evt) {
-            if (!evt || evt.eventType !== "INSERT" || !evt.new) return;
+            if (!evt) return;
+            if (evt.eventType === "DELETE") {
+                Borsa.state.news = [];
+                try { Borsa.renderNewsFeed(); } catch (_) {}
+                try { Borsa.saveState(); } catch (_) {}
+                return;
+            }
+            if (evt.eventType !== "INSERT" || !evt.new) return;
             const n = evt.new;
             const item = {
                 id: Number(n.id || Date.now()),
@@ -819,7 +828,7 @@ const Borsa = {
                 this._newsChan = sb
                     .channel("borsa-news-public")
                     .on("postgres_changes",
-                        { event: "INSERT", schema: "public", table: "news_feed" },
+                        { event: "*", schema: "public", table: "news_feed" },
                         (payload) => this._handleNewsEvent(payload)
                     )
                     .subscribe();
