@@ -16,10 +16,12 @@ import {
 import { useEffect } from "react";
 
 function formatPrice(p: number): string {
-  return p.toLocaleString("tr-TR", {
+  return new Intl.NumberFormat("tr-TR", {
+    style: "currency",
+    currency: "TRY",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  }).format(p);
 }
 
 function getChange(stock: Stock): { value: number; percent: number } {
@@ -35,9 +37,16 @@ function formatVolume(v: number): string {
 }
 
 function formatMCap(m: number): string {
-  if (m >= 1_000_000_000) return `₺${(m / 1_000_000_000).toFixed(2)}B`;
-  if (m >= 1_000_000) return `₺${(m / 1_000_000).toFixed(2)}M`;
-  return `₺${m.toFixed(0)}`;
+  const tryFmt = (n: number, fractionDigits: number = 2) =>
+    new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(n);
+  if (m >= 1_000_000_000) return `${tryFmt(m / 1_000_000_000)}B`;
+  if (m >= 1_000_000) return `${tryFmt(m / 1_000_000)}M`;
+  return tryFmt(m, 0);
 }
 
 interface CustomTooltipProps {
@@ -55,7 +64,7 @@ function CustomTooltip({ active, payload, color }: CustomTooltipProps) {
           {payload[0].payload.time}
         </p>
         <p className="font-mono font-bold text-sm" style={{ color }}>
-          ₺{formatPrice(payload[0].value)}
+          {formatPrice(payload[0].value)}
         </p>
       </div>
     );
@@ -100,6 +109,13 @@ export function StockDetailModal() {
   const lastPrice = stock.currentPrice;
   const minPrice = Math.min(...stock.priceHistory.map((p) => p.price), stock.dayLow);
   const maxPrice = Math.max(...stock.priceHistory.map((p) => p.price), stock.dayHigh);
+  const shortFmt = (v: number) =>
+    new Intl.NumberFormat("tr-TR", {
+      style: "currency",
+      currency: "TRY",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(v);
 
   return (
     <div
@@ -153,7 +169,7 @@ export function StockDetailModal() {
               </p>
               <div className="mt-2 flex items-baseline gap-3">
                 <span className="font-mono text-2xl sm:text-4xl font-black text-gray-50">
-                  ₺{formatPrice(stock.currentPrice)}
+                  {formatPrice(stock.currentPrice)}
                 </span>
                 <span
                   className={`font-mono text-sm sm:text-base font-bold ${
@@ -215,8 +231,8 @@ export function StockDetailModal() {
                   tickLine={false}
                   axisLine={{ stroke: "#1f2937" }}
                   domain={[Math.floor(minPrice * 0.995), Math.ceil(maxPrice * 1.005)]}
-                  width={55}
-                  tickFormatter={(v) => `₺${v.toFixed(0)}`}
+                  width={60}
+                  tickFormatter={(v) => shortFmt(v)}
                 />
                 <Tooltip
                   content={<CustomTooltip color={chartColor} />}
@@ -242,14 +258,14 @@ export function StockDetailModal() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Açılış", value: `₺${formatPrice(stock.openPrice)}` },
-              { label: "Önceki Kapanış", value: `₺${formatPrice(stock.previousClose)}` },
-              { label: "Gün Yüksek", value: `₺${formatPrice(stock.dayHigh)}`, accent: "#00ff88" },
-              { label: "Gün Düşük", value: `₺${formatPrice(stock.dayLow)}`, accent: "#ff3b5c" },
+              { label: "Açılış", value: formatPrice(stock.openPrice) },
+              { label: "Önceki Kapanış", value: formatPrice(stock.previousClose) },
+              { label: "Gün Yüksek", value: formatPrice(stock.dayHigh), accent: "#00ff88" },
+              { label: "Gün Düşük", value: formatPrice(stock.dayLow), accent: "#ff3b5c" },
               { label: "Hacim", value: formatVolume(stock.volume) },
               { label: "Piyasa Değeri", value: formatMCap(stock.marketCap) },
-              { label: "Grafik Başlangıç", value: `₺${formatPrice(firstPrice)}` },
-              { label: "Son Fiyat", value: `₺${formatPrice(lastPrice)}`, accent: chartColor },
+              { label: "Grafik Başlangıç", value: formatPrice(firstPrice) },
+              { label: "Son Fiyat", value: formatPrice(lastPrice), accent: chartColor },
             ].map((stat) => (
               <div
                 key={stat.label}
