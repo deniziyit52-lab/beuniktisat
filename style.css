@@ -3777,3 +3777,395 @@ body.light-mode .whisper-toast--fake .whisper-t-close:hover {
     overflow: hidden !important;
 }
 
+/* ============================================================
+ *  MOBİL RESPONSIVE — EKSTRA KAPSAMLI DÜZELTMELER
+ *  iPhone dynamic island / home bar safe-area,
+ *  yatay taşan tablolar, buton dokunma alanları 44px,
+ *  taşan metinler için ellipsis, admin grid tek kolon.
+ * ============================================================ */
+
+/* ---------- iOS SAFE AREA (iPhone X+, home bar / dynamic island) ---------- */
+html, body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+header,
+.header,
+.ticker-tape,
+.whisper-toast-stack,
+.sidebar-overlay,
+.sidebar-drawer,
+.modal-backdrop,
+.auth-screen,
+#gateScreen,
+footer,
+.footer {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+.ticker-tape {
+    padding-left: calc(env(safe-area-inset-left, 0px) + 0.5rem);
+    padding-right: calc(env(safe-area-inset-right, 0px) + 0.5rem);
+}
+.whisper-toast-stack {
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+footer,
+.footer {
+    padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* ---------- YATAY TAŞMA (TABLOLAR & KARTLAR) ---------- */
+.table-scroll,
+.portfolio-table-wrap,
+.portfolio-table-wrapper,
+#portfolioTableWrapper,
+.transaction-table-wrapper,
+.news-feed-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    scrollbar-width: thin;
+}
+.table-scroll::-webkit-scrollbar,
+.portfolio-table-wrapper::-webkit-scrollbar,
+.transaction-table-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+table {
+    width: 100%;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+th, td {
+    white-space: nowrap;
+    word-break: keep-all;
+}
+.his-table td,
+.portfolio-table td,
+.transaction-table td {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.6rem;
+}
+
+/* ---------- METİN TAŞMA ÖNLEME (ELLIPSIS) ---------- */
+.ellipsis {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100%;
+    display: inline-block;
+}
+.stock-card .stock-name,
+.modal-title,
+.trade-name,
+.leader-name,
+.sidebar-title {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* ---------- MINIMUM DOKUNMA HEDİF (44px Apple HIG) ---------- */
+button,
+input,
+select,
+textarea,
+.btn,
+.submit-btn,
+.tab-btn,
+.modal-close,
+.theme-toggle,
+.sidebar-hamburger,
+.admin-gate-back {
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+input, select, textarea {
+    font-size: 16px !important; /* iOS 16px altında otomatik zoom yapar */
+    padding: 0.55rem 0.8rem !important;
+}
+
+/* ============================================================
+ *  ≤ 768px — Tablet ve Telefon
+ * ============================================================ */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+    .main-container,
+    .main-container--admin,
+    .admin-main {
+        padding: 1rem 0.85rem 3rem;
+        max-width: 100%;
+        gap: 0.85rem;
+    }
+    .section-header {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+    .section-header-actions {
+        width: 100%;
+        flex: 1 0 100%;
+        justify-content: flex-start;
+    }
+    .section-header-actions .btn {
+        flex: 1 1 auto;
+        min-width: 44%;
+    }
+    .panel-section {
+        padding: 0.95rem 0.9rem;
+    }
+    /* Admin üst grafik + canlı piyasa 1 kolon */
+    .admin-top-grid {
+        grid-template-columns: 1fr !important;
+    }
+    /* Admin kart grid 1 kolon */
+    .admin-controls-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+    /* Ana grid (piyasa kartları + sağ kolon) 1 kolon */
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .right-sidebar {
+        order: -1;
+    }
+    /* Butonlar mobilde tam genişlik + yığ */
+    .btn-row,
+    .form-row--split {
+        flex-direction: column !important;
+        gap: 0.7rem !important;
+    }
+    .btn-row .btn,
+    .form-row--split .btn,
+    .form-row--split input,
+    .form-row--split select {
+        width: 100% !important;
+    }
+    /* Login / auth kart tam ekran hissi */
+    .auth-card {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+    .tabs {
+        grid-template-columns: 1fr 1fr;
+    }
+    .tab-btn {
+        padding: 0.9rem 0.5rem;
+    }
+    /* Trade / al-sat modal genişlet */
+    .trade-modal {
+        width: 96vw !important;
+    }
+    .trade-grid,
+    .trade-info-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .side-by-side {
+        grid-template-columns: 1fr !important;
+    }
+    /* Leaderboard / sidebar 92vw */
+    .sidebar-drawer {
+        width: 92vw !important;
+        max-width: 92vw;
+    }
+    /* Chart height dengesi */
+    .chart-card {
+        padding: 0.8rem !important;
+    }
+    .chart-card canvas {
+        min-height: 260px;
+    }
+    /* Whisper toastları full-width */
+    .whisper-toast {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
+/* ============================================================
+ *  ≤ 560px — Orta boy telefon
+ * ============================================================ */
+@media (max-width: 560px) {
+    :root {
+        --px: 0.85rem;
+    }
+    html, body {
+        overflow-x: hidden;
+    }
+    .main-container,
+    .main-container--admin {
+        padding: 0.8rem 0.7rem 2.5rem;
+    }
+    .panel-section {
+        padding: 0.8rem 0.75rem;
+        border-radius: 10px;
+    }
+    .stocks-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+    .stock-card {
+        padding: 0.75rem;
+    }
+    .stock-card .stock-price {
+        font-size: 1rem;
+    }
+    .stock-card .sparkline {
+        height: 32px !important;
+    }
+    .section-title,
+    .section-header h2 {
+        font-size: 1.02rem;
+    }
+    /* Header içindeki bakiye / kullanıcı kartlarını alt alta */
+    .balance-chip,
+    .user-chip,
+    .admin-banner-chip,
+    .header-icon-btn {
+        min-height: 40px;
+    }
+    .header-right-group {
+        flex-wrap: wrap;
+    }
+    /* Ticker bant font küçült */
+    .ticker-tape {
+        font-size: 0.7rem;
+    }
+    /* Tablolar min-width 600px ki 100% zoom ile kaysın */
+    .portfolio-table,
+    .transaction-table,
+    table.responsive {
+        min-width: 560px;
+    }
+    /* Leaderboard satır sıkıştır */
+    .leaderboard-list li {
+        padding: 0.55rem 0.65rem;
+    }
+    /* Admin gate / splash screen küçült */
+    #gateScreen .auth-card {
+        padding: 1.2rem 1rem;
+    }
+    /* Market status yatay kayma olmasın */
+    .market-status {
+        flex-wrap: wrap;
+        height: auto !important;
+        min-height: 40px;
+    }
+    /* Whisper form */
+    .whisper-form textarea {
+        min-height: 90px;
+    }
+    /* Modal buttonlar tam genişlik */
+    .modal-footer {
+        flex-direction: column;
+    }
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* ============================================================
+ *  ≤ 440px — Küçük telefon (iPhone SE / eski cihazlar)
+ * ============================================================ */
+@media (max-width: 440px) {
+    .stocks-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.65rem;
+    }
+    .stock-card .stock-row-head {
+        flex-wrap: nowrap;
+    }
+    .logo-text {
+        font-size: 1rem;
+    }
+    .balance-chip,
+    .user-chip {
+        font-size: 0.72rem;
+        padding: 0.35rem 0.55rem;
+    }
+    .btn {
+        font-size: 0.82rem;
+        padding: 0.65rem 0.8rem;
+    }
+    .tab-btn {
+        font-size: 0.85rem;
+        padding: 0.8rem 0.4rem;
+    }
+    .form-group label,
+    .form-label {
+        font-size: 0.82rem;
+    }
+    input, select, textarea {
+        font-size: 16px !important;
+        padding: 0.6rem 0.75rem !important;
+    }
+    .trade-tabs {
+        grid-template-columns: 1fr 1fr;
+    }
+    /* Admin inline grid 1 kolon zorla */
+    .inline-admin-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .news-card {
+        padding: 0.75rem;
+    }
+    .news-title {
+        font-size: 0.9rem;
+    }
+}
+
+/* ============================================================
+ *  YATAY DÖNDÜRÜLMÜŞ TELEFON (Landscape, ≤ 768px YÜKSEKLİK)
+ * ============================================================ */
+@media (max-height: 560px) and (orientation: landscape) {
+    .header-inner {
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+        row-gap: 0.35rem !important;
+    }
+    .modal-card,
+    .auth-card,
+    #gateScreen .auth-card {
+        max-height: 92dvh !important;
+        padding: 1rem 1rem;
+    }
+    .portfolio-modal,
+    .trade-modal {
+        width: 94vw !important;
+    }
+    .stocks-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+    .sidebar-drawer {
+        width: 380px !important;
+        max-width: 88vw;
+    }
+}
+
+/* ============================================================
+ *  EKRAN KONUM (Standing / sitting) ve DARKMODE görünmez
+ *  öğeler için son güvenlik — taşan hiçbir şey görünmesin
+ * ============================================================ */
+* {
+    -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+}
+img, svg, canvas, video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+.w-full, .full-width { width: 100% !important; }
+
+

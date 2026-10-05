@@ -839,19 +839,36 @@ window.BorsaMaintenance = (function () {
      * @returns {boolean}
      */
     function _isAdminBypassedSync() {
-        // Eski static şifre flag'ini TEMİZLE
         try { sessionStorage.removeItem(LEGACY_FLAG_KEY); } catch (e) {}
-        if (!window.sb || !window.sb.auth) return false;
         try {
-            const fn = window.sb.auth.session;
-            if (typeof fn !== "function") return false;
-            const sess = fn.call(window.sb.auth);
-            if (!sess || !sess.user || !sess.user.email) return false;
-            const email = (sess.user.email || "").toString().trim().toLowerCase();
-            return email === ADMIN_EMAIL.toLowerCase();
-        } catch (e) {
-            return false;
-        }
+            // YÖNTEM 1: sb.auth.currentUser (Supabase v2 sync getter, en güvenilir)
+            if (window.sb && window.sb.auth && typeof window.sb.auth !== "undefined") {
+                const u = window.sb.auth.currentUser;
+                if (u && u.email) {
+                    const email = (u.email || "").toString().trim().toLowerCase();
+                    if (email === ADMIN_EMAIL.toLowerCase()) return true;
+                }
+            }
+            // YÖNTEM 2: Eski uyumluluk — .session() senkron (bazı eski SDK sürümleri)
+            if (window.sb && window.sb.auth) {
+                const fn = window.sb.auth.session;
+                if (typeof fn === "function") {
+                    try {
+                        const sess = fn.call(window.sb.auth);
+                        if (sess && sess.user && sess.user.email) {
+                            const email = (sess.user.email || "").toString().trim().toLowerCase();
+                            if (email === ADMIN_EMAIL.toLowerCase()) return true;
+                        }
+                    } catch (_) {}
+                }
+            }
+            // YÖNTEM 3: getSession() promise sonrası atanan cache
+            if (window.__borsa_admin_email) {
+                const e = (window.__borsa_admin_email || "").toString().trim().toLowerCase();
+                if (e === ADMIN_EMAIL.toLowerCase()) return true;
+            }
+        } catch (e) {}
+        return false;
     }
 
     async function fetchMaintenanceMode() {
@@ -888,9 +905,14 @@ window.BorsaMaintenance = (function () {
     }
 
     async function checkAndRedirect(overrideMode /* optional bool | null */) {
-        if (_isMaintenancePage()) return; // loop koruması
-        if (_isAdminPage()) return;       // admin paneli hiçbir zaman bloklanmaz
-        if (_isAdminBypassedSync()) return; // (SENKRON / 0 API) admin email: bypass
+        // ---- ADMIN MUAFFİYETİ (ÖNCE, EN ÜSTTE) ----
+        if (_isAdminBypassedSync()) return;    // Admin ise HİÇBİR ZAMAN yönlendirme YOK
+        if (_isAdminPage()) return;            // Admin panel URL'deyse de bloke etme
+
+        // ---- DÖNGÜ KORUMASI (SAME-PAGE RELOAD ÖNLEME) ----
+        // Zaten maintenance sayfasındaysak YENİDEN yönlendirme (location.href = MAINT_FILENAME)
+        // TARAYICI SAME-PAGE ASSIGN = SAYFAYI YENİLER (refresh döngüsü). Önle!
+        const alreadyOnMaintenance = _isMaintenancePage();
 
         // Eğer gerçek zamanlı event'ten overrideMode geldiyse ekstra DB isteği AT (sıfır API harcaması)
         let on;
@@ -899,12 +921,44 @@ window.BorsaMaintenance = (function () {
         } else {
             on = await fetchMaintenanceMode();
         }
+
         if (on) {
+            // ---- BAKIM AÇIK ----
+            if (alreadyOnMaintenance) {
+                // Zaten doğru sayfadayız: HİÇBİR ŞEY YAPMA (reload döngüsünü KIR)
+                return;
+            }
+            // Normal ziyaretçi, bakım açık, maintenance'da değil → YÖNLENDİR (SADECE 1 KEZ)
             try {
                 const dest = MAINT_FILENAME;
                 if (!(location.pathname.endsWith("/" + dest))) location.href = dest;
             } catch (e) {
                 location.href = MAINT_FILENAME;
+            }
+        } else {
+            // ---- BAKIM KAPALI ----
+            // Eğer maintenance sayfasındaysak ve bakım kapatıldıysa → index/login'e yönlendir.
+            if (alreadyOnMaintenance) {
+                try {
+                    // Session var mı kontrol et (admin/user girişliyse index.html, değilse login)
+                    if (window.sb && window.sb.auth && typeof window.sb.auth.getSession === "function") {
+                        try {
+                            const res = await window.sb.auth.getSession();
+                            const sess = res && res.data && res.data.session;
+                            if (sess && sess.user) {
+                                location.href = "index.html";
+                            } else {
+                                location.href = "login.html";
+                            }
+                        } catch (_) {
+                            location.href = "index.html";
+                        }
+                    } else {
+                        location.href = "index.html";
+                    }
+                } catch (_) {
+                    location.href = "index.html";
+                }
             }
         }
     }
@@ -933,6 +987,14 @@ window.BorsaMaintenance = (function () {
                             ? row.maintenance_mode
                             : null;
                         if (mode === null) return;
+
+                        // ---- YÖNLENDİRME ÖNCESİ EK GÜVENLİK KATMANI ----
+                        // Admin kendi toggle'ında KENDİNİ maintenance page'e atmasın.
+                        // Admin page URL'de isek, admin girişli isek (currentUser admin)
+                        // veya bakım modunu AÇTIĞIMIZDA zaten maintenance'day isek: ATLA.
+                        if (_isAdminBypassedSync()) return;
+                        if (_isAdminPage()) return;
+
                         // Admin anında toggle ettiği anda YÖNLENDİR (ekstra sorgu yok)
                         checkAndRedirect(mode).catch(() => {});
                         // Bakım modu "kapatıldı" ise, zaten maintenance page'de değilsek bi şey yapma.

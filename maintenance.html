@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Sistem Bakımda | ZBEÜ İktisat Topluluğu Borsası</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,6 +38,28 @@
                     Durum: <strong>Bakım Çalışması Sürüyor</strong>
                 </div>
             </div>
+
+            <!-- ADMIN MUAFFIYETI: SADECE ADMIN GIRISI YAPILMISSA GORUNUR -->
+            <div id="adminBypassBox" class="admin-bypass-box" style="display:none; margin-top:1.4rem; padding:1rem 1.1rem; border-radius:12px; border:1px solid rgba(0,255,136,0.25); background:linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,255,136,0.02)); box-shadow:0 0 0 1px rgba(0,255,136,0.08) inset;">
+                <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.65rem;">
+                    <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, #00ff8833, #00ff8855); display:flex; align-items:center; justify-content:center; color:#00ff88; font-weight:900; border:1px solid #00ff8855;">
+                        🔐
+                    </div>
+                    <div>
+                        <div style="font-weight:800; color:#e5e7eb; font-size:0.95rem;">Yönetici Oturumu Algılandı</div>
+                        <div style="font-size:0.76rem; color:#9ca3af;">Sen bakım modunu yönetiyorsun — normal üyeler şu anda erişemiyor.</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                    <a id="btnGotoAdmin" href="admin.html" class="btn btn--primary" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700;">
+                        ⚡ Yönetici Paneline Git
+                    </a>
+                    <a id="btnGotoIndex" href="index.html" class="btn btn--ghost" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:600;">
+                        👀 Siteyi Normal Görüntüle
+                    </a>
+                </div>
+            </div>
+
             <div class="maintenance-footer">
                 <div class="maintenance-copy">© 2026 Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu - Tüm Hakları Saklıdır.</div>
                 <div class="maintenance-dev">Designed &amp; Developed by <span class="maintenance-dev-names">Deniz İyit &amp; Ahmet Yavuz Karaköse</span></div>
@@ -54,111 +76,82 @@
         })();
 
         /* =========================================================
-         *  MAINTENANCE PAGE REALTIME CIKIS (POLLING YOK)
-         *  - Admin bakim modunu KAPATTIGI ANDA maintenance.html'den
-         *    otomatik olarak cikis yapilir.
-         *  - SETINTERVAL / CONTINUOUS POLLING YOKTUR.
-         *    (Yalnizca 1 kez DOMContentLoaded'da 1 SELECT atar,
-         *     sonraki degisiklikler Supabase Realtime WebSocket uzerinden gelir.)
+         *  MAINTENANCE.HTML — ADMIN MUAFFIYETI
+         *  - Admin (deniziyit52@gmail.com) olarak giriş yapılmışsa
+         *    bakım ekranını GÖSTERME, admin paneline/siteye
+         *    erişebilsin.
+         *  - Normal üyeler ise sayfada kalır (refresh döngüsü YOK).
+         *  - Supabase Realtime ve 1. yükleme kontrolü
+         *    window.BorsaMaintenance (supabase-config.js)
+         *    tarafından ZATEN yapıldığı için:
+         *    BURADA TEKRAR initialCheck / subscribeRealtime YOK.
+         *    (Aksi takdirde 2 ayrı dinleyici çift yönlendirme yapar
+         *     → SAME-PAGE reload = sonsuz refresh döngüsü.)
          * ========================================================= */
-        (function maintenanceExit() {
-            var channel = null;
-            var subscribed = false;
+        (function adminBypass() {
+            const ADMIN_EMAIL = "deniziyit52@gmail.com".toLowerCase();
 
-            function redirectHome() {
-                // Oturum kontrolu: giris yapmissa index.html, yapmamissa login.html
-                Promise.resolve()
-                    .then(function tryGetSession() {
-                        try {
-                            if (window.sb && window.sb.auth && typeof window.sb.auth.getSession === "function") {
-                                return window.sb.auth.getSession();
-                            }
-                            return { data: { session: null } };
-                        } catch (e) {
-                            return { data: { session: null } };
-                        }
-                    })
-                    .then(function (res) {
-                        var session = res && res.data && res.data.session;
-                        if (session && session.user) {
-                            location.href = "index.html";
-                        } else {
-                            location.href = "login.html";
-                        }
-                    })
-                    .catch(function () {
-                        location.href = "index.html";
-                    });
+            function isAdmin(user) {
+                if (!user || !user.email) return false;
+                const e = (user.email || "").toString().trim().toLowerCase();
+                return e === ADMIN_EMAIL;
             }
 
-            function initialCheck() {
-                // Ilk yuklemede YALNIZCA 1 KERE kontrol (1 adet SELECT)
-                Promise.resolve()
-                    .then(function () {
-                        if (!window.sb || !window.sb.from) return false;
-                        return window.sb
-                            .from("app_settings")
-                            .select("maintenance_mode")
-                            .limit(1)
-                            .maybeSingle()
-                            .then(function (r) {
-                                if (r.error) return false;
-                                return !!(r.data && r.data.maintenance_mode === false);
-                            })
-                            .catch(function () { return false; });
-                    })
-                    .then(function (shouldExit) {
-                        if (shouldExit) redirectHome();
-                    })
-                    .catch(function () {});
-            }
-
-            function subscribeRealtime() {
-                if (subscribed) return;
-                if (!window.sb || !window.sb.channel) return;
-                subscribed = true;
+            function showAdminBox(email) {
                 try {
-                    channel = window.sb
-                        .channel("maintenance-page-exit-channel", {
-                            config: { broadcast: { self: false } },
-                        })
-                        .on(
-                            "postgres_changes",
-                            {
-                                event: "UPDATE",
-                                schema: "public",
-                                table: "app_settings",
-                                filter: "id=eq.1",
-                            },
-                            function onUpdate(payload) {
-                                var row = (payload && payload.new) || {};
-                                var mode = row.maintenance_mode;
-                                if (mode === false) {
-                                    // Bakim modu KAPATILDI -> ANINDA cikis (polling yok)
-                                    redirectHome();
-                                }
-                            }
-                        )
-                        .subscribe(function (status) {
-                            console.log("[Maintenance] Realtime cikis aboneligi:", status);
-                        });
-                } catch (e) {
-                    console.warn("[Maintenance] Realtime abonelik hatasi:", e);
+                    const box = document.getElementById("adminBypassBox");
+                    if (!box) return;
+                    box.style.display = "block";
+                    window.__borsa_admin_email = (email || ADMIN_EMAIL).toString().trim().toLowerCase();
+                } catch (e) {}
+            }
+
+            function checkNow() {
+                let user = null;
+                try {
+                    if (window.sb && window.sb.auth) user = window.sb.auth.currentUser;
+                } catch (e) {}
+
+                if (isAdmin(user)) {
+                    const email = user && user.email;
+                    showAdminBox(email);
+                    return true; // admin bulundu, çık
                 }
+
+                // Async fallback: currentUser yoksa getSession() promise dene
+                if (window.sb && window.sb.auth && typeof window.sb.auth.getSession === "function") {
+                    window.sb.auth.getSession()
+                        .then(function (res) {
+                            const sess = res && res.data && res.data.session;
+                            if (sess && sess.user && isAdmin(sess.user)) {
+                                showAdminBox(sess.user.email);
+                            }
+                        })
+                        .catch(function () {});
+                }
+
+                // Cache kontrol
+                try {
+                    const cached = window.__borsa_admin_email;
+                    if (cached && cached.toString().trim().toLowerCase() === ADMIN_EMAIL) {
+                        showAdminBox(cached);
+                    }
+                } catch (e) {}
+
+                return false;
             }
 
-            function boot() {
-                // Supabase client hazir olana kadar kisa bir bekleme (250ms)
-                setTimeout(function () {
-                    initialCheck();
-                    subscribeRealtime();
+            // Hemen dene (SDK hazırsa)
+            if (!checkNow()) {
+                // SDK henüz hazır değilse 250ms x 240 (60sn) poll + borsa:supabase-ready event
+                var cnt = 0;
+                var t = setInterval(function () {
+                    cnt += 1;
+                    if (checkNow() || cnt > 240) {
+                        clearInterval(t);
+                    }
                 }, 250);
-            }
-
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", boot, { once: true });
-            } else {
-                boot();
+                window.addEventListener("borsa:supabase-ready", checkNow, { once: true });
             }
         })();
     </script>
