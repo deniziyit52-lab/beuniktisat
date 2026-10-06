@@ -6,20 +6,6 @@
     <title>Giriş / Kayıt Ol - ZBEÜ İktisat Topluluğu</title>
     <link rel="stylesheet" href="style.css">
     <script>
-        /* ============================================================
-         *  ACIL KILL SWITCH — BAKIM SISTEMINI KALICI DEVRE DISI BIRAKIR
-         * ============================================================ */
-        (function disableMaintenance() {
-            try {
-                window.__BORSA_DISABLE_MAINTENANCE__ = true;
-                window.__BORSA_KILL_MAINT__ = true;
-                try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
-                try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
-                window.__borsa_admin_maintenance_bypass_set = true;
-            } catch (e) {}
-        })();
-    </script>
-    <script>
         // Script yüklenme hatalarını (404 / CORS / Network) VISIBLE hale getir.
         // Bu script başta çalışır, herhangi bir <script src> hatasını yakalar.
         (function installScriptErrorCatcher(){
@@ -259,8 +245,7 @@
             // 1) Auth state değişince yönlendir (signIn promise resolve'dan bağımsız)
             BorsaFirebase.onChange((user, doc) => {
                 if (user) {
-                    setFeedback("success", "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz...");
-                    setTimeout(() => { window.location.href = "index.html"; }, 800);
+                    _redirectAfterLogin(user);
                 }
             });
 
@@ -299,10 +284,18 @@
             return null;
         }
 
-        function _redirectToIndex(user) {
+        function _redirectAfterLogin(user) {
             if (!user) return;
-            setFeedback("success", "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz...");
-            setTimeout(() => { window.location.href = "index.html"; }, 800);
+            const isAdmin = String(user.email || "").trim().toLowerCase() === "deniziyit52@gmail.com";
+            setFeedback(
+                "success",
+                isAdmin
+                    ? "✅ Yönetici girişi başarılı! Kontrol paneline yönlendiriliyorsunuz..."
+                    : "✅ Giriş başarılı! Piyasaya yönlendiriliyorsunuz..."
+            );
+            setTimeout(() => {
+                window.location.href = isAdmin ? "admin.html" : "index.html";
+            }, 800);
         }
 
         // ============ Form listenerlarını da AYNI ŞEKİLDE güvenle bağla ============
@@ -329,7 +322,7 @@
                         setFeedback("error", "Oturum açılamadı — lütfen tekrar deneyin.");
                         return;
                     }
-                    _redirectToIndex(user);
+                    _redirectAfterLogin(user);
                 } catch (err) {
                     console.error("[Login] signIn hatası:", {
                         code:    err && err.code,
@@ -391,7 +384,7 @@
                         return;
                     }
                     // Auto-signIn başarılı (email confirm kapalı veya otomatik onay)
-                    if (user) _redirectToIndex(user);
+                    if (user) _redirectAfterLogin(user);
                 } catch (err) {
                     console.error("[SignUp] signUp hatası:", {
                         code:    err && err.code,

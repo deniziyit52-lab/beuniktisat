@@ -845,32 +845,16 @@ window.BorsaFirebase = {
 };
 
 /* =========================================================
- *  BORSA MAINTENANCE MOD
- *  Otomatik yönlendirme / reload / realtime abonelik YOK.
- *  Admin panel yalnızca fetch/set ile DB bayrağını okur/yazar.
+ *  BORSA MAINTENANCE MODE
  * ========================================================= */
 window.BorsaMaintenance = (function () {
-    // true olduğu sürece bakım asla kullanıcıları başka sayfaya atmaz.
-    // Tekrar açmak için bu sabiti false yapın VE aşağıdaki
-    // checkAndRedirect gövdesini bilinçli olarak geri yazın.
-    const MAINTENANCE_DISABLED = true;
-
-    window.__BORSA_DISABLE_MAINTENANCE__ = true;
-    window.__BORSA_KILL_MAINT__ = true;
-    try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (_) {}
-    try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (_) {}
-
     const BYPASS_KEY = "borsa_admin_maintenance_bypass";
-    const BYPASS_TTL_MS = 30 * 60 * 1000;
+    const ADMIN_EMAIL = "deniziyit52@gmail.com";
+    let _authSubscription = null;
+    let _checkPromise = null;
+    let _supabaseReadyHandlerInstalled = false;
 
     function isDisabled() {
-        if (MAINTENANCE_DISABLED === true) return true;
-        try {
-            if (window.__BORSA_DISABLE_MAINTENANCE__ === true) return true;
-            if (window.__BORSA_KILL_MAINT__ === true) return true;
-            if (sessionStorage.getItem("borsa_maint_disabled") === "1") return true;
-            if (localStorage.getItem("borsa_maint_disabled") === "1") return true;
-        } catch (_) {}
         return false;
     }
 
@@ -878,22 +862,22 @@ window.BorsaMaintenance = (function () {
         try {
             const raw = sessionStorage.getItem(BYPASS_KEY);
             if (!raw) return false;
-            const exp = parseInt(raw, 10);
-            if (isNaN(exp) || Date.now() > exp) {
-                try { sessionStorage.removeItem(BYPASS_KEY); } catch (_) {}
-                return false;
-            }
-            return true;
+            if (raw === "1") return true;
+            sessionStorage.removeItem(BYPASS_KEY);
+            return false;
         } catch (_) {
+            console.warn("[Bakım] Bypass durumu sessionStorage'dan okunamadı.");
             return false;
         }
     }
 
     function setAdminBypassFlag() {
         try {
-            sessionStorage.setItem(BYPASS_KEY, String(Date.now() + BYPASS_TTL_MS));
+            sessionStorage.setItem(BYPASS_KEY, "1");
             window.__borsa_admin_bypass_set_at = Date.now();
-        } catch (_) {}
+        } catch (e) {
+            console.warn("[Bakım] Bypass sessionStorage'a kaydedilemedi:", e && e.message || e);
+        }
     }
 
     function clearAdminBypassFlag() {
@@ -904,22 +888,17 @@ window.BorsaMaintenance = (function () {
     }
 
     async function fetchMaintenanceMode() {
-        if (!window.sb || !window.sb.from) return false;
-        try {
-            const { data, error } = await window.sb
-                .from("app_settings")
-                .select("maintenance_mode")
-                .limit(1)
-                .maybeSingle();
-            if (error) {
-                console.warn("[Bakım] app_settings okuma hatası:", error.message);
-                return false;
-            }
-            return !!(data && data.maintenance_mode);
-        } catch (e) {
-            console.warn("[Bakım] beklenmedik hata:", e);
-            return false;
+        if (!window.sb || !window.sb.from) throw new Error("Supabase bağlantısı hazır değil.");
+        const { data, error } = await window.sb
+            .from("app_settings")
+            .select("maintenance_mode")
+            .eq("id", 1)
+            .maybeSingle();
+        if (error) throw new Error(error.message || "Bakım durumu okunamadı.");
+        if (!data || typeof data.maintenance_mode !== "boolean") {
+            throw new Error("app_settings id=1 bakım durumu bulunamadı.");
         }
+        return data.maintenance_mode;
     }
 
     async function setMaintenanceMode(nextBool) {
@@ -935,20 +914,107 @@ window.BorsaMaintenance = (function () {
         return val;
     }
 
-    // Kasıtlı no-op: location.href / reload / assign YOK.
-    // Eski sürümde bakım açık/kapalı okuma hatası index <-> maintenance
-    // arasında sonsuz yenileme üretiyordu.
+    function captureEmergencyBypass() {
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get("bypass") !== "admin") return false;
+            setAdminBypassFlag();
+            url.searchParams.delete("bypass");
+            window.history.replaceState(window.history.state, "", url.toString());
+            return true;
+        } catch (e) {
+            console.warn("[Bakım] URL bypass parametresi işlenemedi:", e && e.message || e);
+            return false;
+        }
+    }
+
+    function isMaintenancePage() {
+        return window.location.pathname.toLowerCase().endsWith("/maintenance.html");
+    }
+
+    function isAdminUser(user) {
+        if (!user) return false;
+        const email = String(user.email || "").trim().toLowerCase();
+        const appRole = String(user.app_metadata?.role || "").trim().toLowerCase();
+        const appRoles = Array.isArray(user.app_metadata?.roles)
+            ? user.app_metadata.roles.map(role => String(role).toLowerCase())
+            : [];
+        return email === ADMIN_EMAIL || appRole === "admin" || appRoles.includes("admin");
+    }
+
     async function checkAndRedirect() {
-        return;
+        if (captureEmergencyBypass() || hasAdminBypassFlag()) return false;
+
+        const page = window.location.pathname.toLowerCase();
+        const isAdminPage = page.endsWith("/admin.html");
+        const isLoginPage = page.endsWith("/login.html");
+        const maintenancePage = isMaintenancePage();
+        if (isAdminPage) return false;
+
+        if (_checkPromise) return _checkPromise;
+        _checkPromise = (async () => {
+            try {
+                const auth = window.sb && window.sb.auth;
+                if (!auth || typeof auth.getSession !== "function") return false;
+
+                // Wait for Supabase auth hydration before deciding whether the
+                // visitor is an admin or should be redirected.
+                const { data, error } = await auth.getSession();
+                if (error) throw new Error(error.message || "Oturum doğrulanamadı.");
+                const user = data?.session?.user || null;
+                if (isAdminUser(user)) {
+                    if (maintenancePage) {
+                        const adminUrl = new URL("admin.html", window.location.href);
+                        window.location.replace(adminUrl.toString());
+                    }
+                    return false;
+                }
+                if (hasAdminBypassFlag() || isLoginPage || maintenancePage) return false;
+
+                const maintenanceActive = await fetchMaintenanceMode();
+                if (!maintenanceActive) return false;
+
+                const maintenanceUrl = new URL("maintenance.html", window.location.href);
+                window.location.replace(maintenanceUrl.toString());
+                return true;
+            } catch (e) {
+                console.error("[Bakım] Bakım durumu denetlenemedi; yönlendirme yapılmadı:", e && e.message || e);
+                return false;
+            }
+        })();
+
+        try {
+            return await _checkPromise;
+        } finally {
+            _checkPromise = null;
+        }
     }
 
     function subscribeRealtime() {
-        return;
+        const auth = window.sb && window.sb.auth;
+        if (auth && !_authSubscription && typeof auth.onAuthStateChange === "function") {
+            const { data } = auth.onAuthStateChange((event) => {
+                if (event !== "INITIAL_SESSION" && event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
+                window.setTimeout(() => {
+                    checkAndRedirect();
+                }, 0);
+            });
+            _authSubscription = data?.subscription || null;
+        }
+
+        if (!_supabaseReadyHandlerInstalled) {
+            _supabaseReadyHandlerInstalled = true;
+            window.addEventListener("borsa:supabase-ready", () => {
+                subscribeRealtime();
+                checkAndRedirect();
+            });
+        }
+        window.setTimeout(() => {
+            checkAndRedirect();
+        }, 0);
     }
 
-    if (isDisabled()) {
-        console.log("[Bakım] Pasif: otomatik yönlendirme ve realtime kapalı.");
-    }
+    subscribeRealtime();
 
     return {
         fetchMaintenanceMode,
