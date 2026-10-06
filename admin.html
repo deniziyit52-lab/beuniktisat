@@ -822,7 +822,7 @@
             select.appendChild(everyoneOption);
             users.forEach(user => {
                 const option = document.createElement("option");
-                option.value = user.id;
+                option.value = String(user.id);
                 option.textContent = `${user.display_name || "Üye"} (${user.email || "E-posta yok"})`;
                 select.appendChild(option);
             });
@@ -1235,18 +1235,20 @@
 
                     try {
                         await populateWhisperUserDropdown();
-                        const users = targetUserId
-                            ? whisperUsers.filter(user => String(user.id) === targetUserId)
-                            : whisperUsers;
+                        const targetUser = targetUserId
+                            ? whisperUsers.find(user => String(user.id) === String(targetUserId))
+                            : null;
+                        const users = targetUserId ? (targetUser ? [targetUser] : []) : whisperUsers;
                         if (!users || !users.length) {
                             throw new Error(targetUserId
                                 ? "Seçilen kullanıcı bulunamadı; kullanıcı listesini yenileyip tekrar deneyin."
                                 : "Sistemde kayıtlı kullanıcı bulunamadı.");
                         }
+                        const targetId = targetUser ? String(targetUser.id) : null;
 
                         const payloads = users.map(u => ({
-                            user_id: u.id,
-                            target_user_id: targetUserId,
+                            user_id: String(u.id),
+                            target_user_id: targetId,
                             message: msg,
                             stock_symbol: sym,
                             is_fake: isFake,
@@ -1256,7 +1258,7 @@
                         if (whisperOutput) {
                             whisperOutput.style.display = "block";
                             const stockName = (Borsa.state.stocks[sym] || {}).name || sym;
-                            let html = `<div class="whisper-output-title">🔐 ${targetUserId ? "Hedeflenen kullanıcı" : "Tüm kullanıcılar"} (${users.length} kişi):</div>`;
+                            let html = `<div class="whisper-output-title">🔐 ${targetId ? "Hedeflenen kullanıcı" : "Tüm kullanıcılar"} (${users.length} kişi):</div>`;
                             html += `<ul class="whisper-recipients">`;
                             users.forEach((u, i) => {
                                 const label = `${u.display_name || "Üye"} (${u.email || "E-posta yok"})`;
@@ -1296,7 +1298,7 @@
                             },
                         });
 
-                        showToast(`🕶 Fısıltı ${targetUserId ? "seçilen kullanıcıya" : users.length + " kullanıcıya"} gönderildi! 3 dakika sonra kamuoyunda.`);
+                        showToast(`🕶 Fısıltı ${targetId ? "seçilen kullanıcıya" : users.length + " kullanıcıya"} gönderildi! 3 dakika sonra kamuoyunda.`);
                     } catch (err) {
                         stopWhisperAnim();
                         showErr(err.message || "Fısıltı sızdırılamadı.");

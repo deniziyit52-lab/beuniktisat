@@ -828,10 +828,26 @@ window.BorsaFirebase = {
                         table: "market_tips",
                         filter: `user_id=eq.${uid}`,
                     }, (payload) => {
+                        const currentUser = this.currentUser();
+                        const myId = currentUser && currentUser.id != null
+                            ? String(currentUser.id).trim().toLowerCase()
+                            : "";
+                        if (!myId || myId !== String(uid).trim().toLowerCase()) return;
                         const row = payload && payload.new;
                         if (!row) return;
-                        if (row.target_user_id !== null &&
-                            String(row.target_user_id) !== String(uid)) return;
+                        const recipientId = row.user_id == null
+                            ? ""
+                            : String(row.user_id).trim().toLowerCase();
+                        const targetId = row.target_user_id == null
+                            ? ""
+                            : String(row.target_user_id).trim().toLowerCase();
+                        const deliveryId = String(row.user_id || row.target_user_id || "")
+                            .trim()
+                            .toLowerCase();
+                        if (deliveryId && deliveryId !== "null" &&
+                            deliveryId !== "undefined" && deliveryId !== myId) return;
+                        if (recipientId && recipientId !== myId) return;
+                        if (targetId && targetId !== myId) return;
                         WR._listeners.forEach((fn) => {
                             try { fn(row); } catch (e) {}
                         });
