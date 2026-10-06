@@ -691,15 +691,31 @@ window.BorsaFirebase = {
         }
     },
 
+    async fetchWhisperUsers() {
+        if (!this.db()) throw new Error("Supabase bağlantısı hazır değil.");
+        try {
+            const { data, error } = await this.db().rpc("admin_list_whisper_users");
+            if (error) {
+                console.warn("[Whisper] Kullanıcı listesi RPC hatası:", error.message);
+                throw new Error(error.message || "Kullanıcı listesi alınamadı.");
+            }
+            return Array.isArray(data) ? data : [];
+        } catch (e) {
+            console.warn("[Whisper] Kullanıcı listesi alınamadı:", e);
+            throw e;
+        }
+    },
+
     /**
      * Belirli kullanıcı(lar) a gizli tüyo at.
-     * payloads: [{ user_id, message, stock_symbol, is_fake }] arrayi
+     * payloads: [{ user_id, target_user_id, message, stock_symbol, is_fake }] arrayi
      * (Admin panelinden kullanılır. Client RLS INSERT varsayar.)
      */
     async insertMarketTips(payloads) {
         if (!this.db() || !Array.isArray(payloads) || !payloads.length) return [];
         const rows = payloads.map(p => ({
             user_id:      p.user_id,
+            target_user_id: p.target_user_id == null ? null : p.target_user_id,
             message:      String(p.message || "").slice(0, 280),
             stock_symbol: String(p.stock_symbol || "").slice(0, 16),
             is_fake:      !!p.is_fake,
@@ -709,7 +725,7 @@ window.BorsaFirebase = {
             const { data, error } = await this.db()
                 .from("market_tips")
                 .insert(rows)
-                .select("id, user_id, stock_symbol, created_at");
+                .select("id, user_id, target_user_id, stock_symbol, created_at");
             if (error) {
                 console.warn("[Whisper] market_tips INSERT hatası:", error.message);
                 throw new Error(error.message || "Tüyolar sisteme yüklenemedi.");
@@ -729,7 +745,7 @@ window.BorsaFirebase = {
         try {
             const { data, error } = await this.db()
                 .from("market_tips")
-                .select("id, message, stock_symbol, is_fake, created_at")
+                .select("id, message, stock_symbol, is_fake, target_user_id, created_at")
                 .eq("user_id", this._user.id)
                 .order("created_at", { ascending: false })
                 .limit(30);
@@ -814,6 +830,8 @@ window.BorsaFirebase = {
                     }, (payload) => {
                         const row = payload && payload.new;
                         if (!row) return;
+                        if (row.target_user_id !== null &&
+                            String(row.target_user_id) !== String(uid)) return;
                         WR._listeners.forEach((fn) => {
                             try { fn(row); } catch (e) {}
                         });

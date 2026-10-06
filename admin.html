@@ -460,6 +460,13 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="whisperTargetUser">Hedef Kullanıcı</label>
+                            <select id="whisperTargetUser">
+                                <option value="">Herkes / Rastgele</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
                             <label for="whisperMessage">Fısıltı Mesajı (Kullanıcıya Gizlice Gidecek)</label>
                             <textarea id="whisperMessage" rows="3" maxlength="280" required
                                 placeholder="Gizli duyum: Bu hisse senedinde büyük bir kurumsal anlaşma bekleniyor..."></textarea>
@@ -496,7 +503,7 @@
 
                         <button type="submit" class="submit-btn" style="width:100%;
                             background: linear-gradient(135deg,#7c3aed,#ec4899); border-color: #7c3aed;">
-                            🕶 Rastgele 3 Kişiye Sızdır &amp; 3 Dakika Sonra Yayınla
+                            🕶 Seçilen Kullanıcıya / Herkese Gönder &amp; 3 Dakika Sonra Yayınla
                         </button>
                     </form>
                 </div>
@@ -801,6 +808,29 @@
             if (balVal) balVal.textContent = BorsaFirebase.formatTL(BorsaFirebase.balance());
         }
 
+        let whisperUsers = [];
+        async function populateWhisperUserDropdown() {
+            const select = document.getElementById("whisperTargetUser");
+            if (!select) return;
+            const selectedId = select.value;
+            const users = await BorsaFirebase.fetchWhisperUsers();
+            whisperUsers = users;
+            select.innerHTML = "";
+            const everyoneOption = document.createElement("option");
+            everyoneOption.value = "";
+            everyoneOption.textContent = "Herkes / Rastgele";
+            select.appendChild(everyoneOption);
+            users.forEach(user => {
+                const option = document.createElement("option");
+                option.value = user.id;
+                option.textContent = `${user.display_name || "Üye"} (${user.email || "E-posta yok"})`;
+                select.appendChild(option);
+            });
+            if (selectedId && users.some(user => String(user.id) === selectedId)) {
+                select.value = selectedId;
+            }
+        }
+
         function refreshSymbolDropdowns() {
             const targets = ["targetPerson", "stockSelector", "silentSymbol", "editSymbolSelect", "whisperSymbol"];
             const stocks = Borsa.state.stocks || {};
@@ -838,6 +868,7 @@
                     editNameInput.placeholder = "(boş bırakırsanız değişmez)";
                 }
             }
+
             const silentCur = document.getElementById("silentSymbol");
             const silentExact = document.getElementById("silentExactPrice");
             if (silentCur && silentExact && stocks[silentCur.value]) {
@@ -1155,6 +1186,7 @@
                     e.preventDefault();
                     const sym = document.getElementById("whisperSymbol").value;
                     const msg = document.getElementById("whisperMessage").value.trim();
+                    const targetUserId = document.getElementById("whisperTargetUser").value || null;
                     const isFake = !!document.getElementById("whisperFake").checked;
                     const impactPct = Number(document.getElementById("whisperImpactPct").value || 0);
                     const publicTitleRaw = document.getElementById("whisperPublicTitle").value.trim();
@@ -1202,13 +1234,19 @@
                     if (submitBtn) submitBtn.disabled = true;
 
                     try {
-                        const users = await BorsaFirebase.fetchRandomUsers(3);
+                        await populateWhisperUserDropdown();
+                        const users = targetUserId
+                            ? whisperUsers.filter(user => String(user.id) === targetUserId)
+                            : whisperUsers;
                         if (!users || !users.length) {
-                            throw new Error("Sistemde aktif kullanıcı bulunamadı (en az 1 kayıtlı üye olmalı).");
+                            throw new Error(targetUserId
+                                ? "Seçilen kullanıcı bulunamadı; kullanıcı listesini yenileyip tekrar deneyin."
+                                : "Sistemde kayıtlı kullanıcı bulunamadı.");
                         }
 
                         const payloads = users.map(u => ({
                             user_id: u.id,
+                            target_user_id: targetUserId,
                             message: msg,
                             stock_symbol: sym,
                             is_fake: isFake,
@@ -1218,10 +1256,10 @@
                         if (whisperOutput) {
                             whisperOutput.style.display = "block";
                             const stockName = (Borsa.state.stocks[sym] || {}).name || sym;
-                            let html = `<div class="whisper-output-title">🔐 Sızanlar (${users.length} kişi):</div>`;
+                            let html = `<div class="whisper-output-title">🔐 ${targetUserId ? "Hedeflenen kullanıcı" : "Tüm kullanıcılar"} (${users.length} kişi):</div>`;
                             html += `<ul class="whisper-recipients">`;
                             users.forEach((u, i) => {
-                                const label = (u.display_name || u.email || "Üye").toString();
+                                const label = `${u.display_name || "Üye"} (${u.email || "E-posta yok"})`;
                                 const ok = inserted && inserted.find(r => r.user_id === u.id);
                                 html += `<li><span class="whisper-idx">#${i + 1}</span>
                                     <span class="whisper-email">${escapeHtml(label)}</span>
@@ -1258,7 +1296,7 @@
                             },
                         });
 
-                        showToast(`🕶 Fısıltı ${users.length} kişiye sızdırıldı! 3 dakika sonra kamuoyunda.`);
+                        showToast(`🕶 Fısıltı ${targetUserId ? "seçilen kullanıcıya" : users.length + " kullanıcıya"} gönderildi! 3 dakika sonra kamuoyunda.`);
                     } catch (err) {
                         stopWhisperAnim();
                         showErr(err.message || "Fısıltı sızdırılamadı.");
@@ -1435,6 +1473,10 @@
             wireAdminPanels();
             refreshSymbolDropdowns();
             setInterval(refreshSymbolDropdowns, 5000);
+            populateWhisperUserDropdown().catch(err => {
+                console.warn("[Admin] Fısıltı kullanıcı listesi yüklenemedi:", err);
+                showErr(err.message || "Fısıltı kullanıcıları yüklenemedi.");
+            });
         }
 
         document.addEventListener("DOMContentLoaded", () => {

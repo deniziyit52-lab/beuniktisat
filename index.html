@@ -845,6 +845,7 @@
             if (!tip || !user) return;
             const userId = String(user.id);
             if (_activeWhisperUserId !== userId || _isWhisperHiddenForUser(userId)) return;
+            if (tip.target_user_id !== null && String(tip.target_user_id) !== userId) return;
             const createdAtMs = new Date(tip.created_at).getTime();
             const ageMs = Date.now() - createdAtMs;
             if (!Number.isFinite(createdAtMs) || ageMs > WHISPER_TTL_MS) return;
