@@ -27,7 +27,7 @@ const config: Config = {
         mono: ['"JetBrains Mono"', '"Fira Code"', "ui-monospace", "monospace"],
       },
       animation: {
-        "ticker-scroll": "ticker 40s linear infinite",
+        "ticker-scroll": "ticker 32s linear infinite",
         "pulse-green": "pulse-green 2s ease-in-out infinite",
         "pulse-red": "pulse-red 2s ease-in-out infinite",
         "glow-green": "glow-green 1.5s ease-in-out infinite alternate",

@@ -736,8 +736,28 @@
         //  WHISPER TOAST SISTEMI (Fısıltı Tüyo Bildirimleri)
         // =====================================================================
         const WHISPER_SEEN_KEY = "borsa_seen_tips_v1";
+        const WHISPER_NOTIFICATION_HIDDEN_KEY = "hide_secret_whisper";
         const WHISPER_MAX_TOASTS = 4;
         const WHISPER_DISMISS_MS = 20000;
+
+        function _loadWhisperNotificationHidden() {
+            try {
+                return localStorage.getItem(WHISPER_NOTIFICATION_HIDDEN_KEY) === "true";
+            } catch (e) {
+                console.warn("[Whisper] görünürlük tercihi okunamadı:", e);
+                return false;
+            }
+        }
+        let _whisperNotificationHidden = _loadWhisperNotificationHidden();
+
+        function _hideWhisperNotification() {
+            _whisperNotificationHidden = true;
+            try {
+                localStorage.setItem(WHISPER_NOTIFICATION_HIDDEN_KEY, "true");
+            } catch (e) {
+                console.warn("[Whisper] görünürlük tercihi kaydedilemedi:", e);
+            }
+        }
 
         function _loadSeenWhisperIds() {
             try {
@@ -795,7 +815,7 @@
         }
 
         function showWhisperToast(tip) {
-            if (!tip) return;
+            if (!tip || _whisperNotificationHidden) return;
             const tipId = tip.id || ("tmp_" + Math.random().toString(36).slice(2));
             if (window._seenWhisperIds.has(tipId)) return;
             window._seenWhisperIds.add(tipId);
@@ -836,10 +856,14 @@
             `;
 
             stack.appendChild(el);
+            _hideWhisperNotification();
             _truncateWhispers();
 
             const closeBtn = el.querySelector(".whisper-t-close");
-            if (closeBtn) closeBtn.addEventListener("click", () => _dismissToast(el, true));
+            if (closeBtn) closeBtn.addEventListener("click", () => {
+                _hideWhisperNotification();
+                _dismissToast(el, true);
+            });
 
             el._whisperTimer = setTimeout(() => _dismissToast(el, false), WHISPER_DISMISS_MS);
         }

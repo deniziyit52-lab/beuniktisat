@@ -737,6 +737,18 @@ a.public-link {
         gap: 0.6rem;
         flex-wrap: wrap;
     }
+    .trade-header > div:nth-child(2) {
+        min-width: 0;
+    }
+    .trade-price-col {
+        flex: 1 0 100%;
+        margin-left: 0;
+        text-align: left;
+    }
+    .trade-price {
+        font-size: clamp(1.1rem, 6vw, 1.45rem);
+        overflow-wrap: anywhere;
+    }
     .trade-avatar {
         width: 44px; height: 44px;
         border-radius: 11px;
@@ -756,6 +768,9 @@ a.public-link {
     /* Ticker tape — telefonda yatay kayma, okunabilirlik */
     .ticker-tape {
         font-size: 0.72rem;
+    }
+    .ticker-content {
+        animation-duration: 32s;
     }
     .ticker-content span {
         padding: 0.15rem 0.75rem;
