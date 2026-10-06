@@ -6,37 +6,115 @@ const corsHeaders = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
-const ECONOMY_TERMS = [
+const FINANCIAL_TITLE_TERMS = [
   "borsa",
   "hisse",
-  "ekonomi",
+  "bist",
+  "endeks",
   "finans",
-  "piyasa",
+  "finansal",
+  "sermaye piyasa",
   "merkez bank",
   "faiz",
   "enflasyon",
   "doviz",
-  "kur",
-  "yatirim",
-  "bankac",
-  "sirket",
-  "ihracat",
-  "ithalat",
-  "altin",
-  "petrol",
-  "ticaret",
-  "buyume",
-  "resesyon",
-  "butce",
-  "vergi",
-  "kredi",
-  "kripto",
-  "halka arz",
-  "bilanco",
   "dolar",
   "euro",
-  "ekonomik",
+  "gram altin",
+  "ons altin",
+  "altin fiyat",
+  "petrol fiyat",
+  "petrol piyas",
+  "varil",
+  "opec",
+  "emtia",
+  "yatirim",
+  "tahvil",
+  "bono",
+  "fon",
+  "bilanco",
+  "kripto",
+  "bitcoin",
+  "ethereum",
+  "bankac",
+  "kredi",
+  "ihracat",
+  "ithalat",
+  "resesyon",
+  "vergi",
+  "issizlik",
+  "asgari ucret",
+  "akaryakit",
+  "enerji fiyat",
+  "gida fiyat",
+  "buyume verisi",
+  "ekonomi buyume",
 ];
+
+const EXCLUDED_CONTENT_TERMS = [
+  "yolsuz",
+  "rusvet",
+  "operasyon",
+  "gozalt",
+  "tutuk",
+  "sorustur",
+  "savcil",
+  "mahkeme",
+  "iddianame",
+  "kacakcil",
+  "dolandir",
+  "kara para",
+  "suclu",
+  "suc orgut",
+  "cete",
+  "teror",
+  "baskin",
+  "skandal",
+  "saldiri",
+  "savas",
+  "catism",
+  "bomb",
+  "fuze",
+  "drone",
+  "askeri",
+  "ordu",
+  "ukrayn",
+  "rusya",
+  "gazze",
+  "israil",
+  "iran",
+  "trump",
+  "zelenski",
+  "secil",
+  "secim",
+  "parti",
+  "milletvekili",
+  "cumhurbaskan",
+  "bakan atam",
+  "oyuncu",
+  "sinema",
+  "film festival",
+  "futbol",
+  "mac",
+  "spor",
+  "corruption",
+  "bribery",
+  "arrest",
+  "investigation",
+  "scandal",
+  "money laundering",
+  "attack",
+  "war",
+  "missile",
+  "military",
+  "election",
+  "president",
+  "actor",
+  "movie",
+];
+
+const NEWS_API_QUERY =
+  '("borsa" OR "hisse" OR "BIST" OR "finans" OR "faiz" OR "enflasyon" OR "döviz" OR "yatırım" OR "merkez bankası" OR "tahvil" OR "bono" OR "kripto") NOT ("yolsuzluk" OR "rüşvet" OR "operasyon" OR "gözaltı" OR "tutuklama" OR "soruşturma" OR "kaçakçılık" OR "dolandırıcılık" OR "skandal" OR "saldırı" OR "savaş" OR "Ukrayna" OR "Rusya" OR "film" OR "oyuncu" OR "futbol")';
 
 interface NewsApiArticle {
   title?: string | null;
@@ -83,9 +161,29 @@ function normalizeForSearch(value: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function isEconomyArticle(title: string, summary: string): boolean {
-  const text = normalizeForSearch(`${title} ${summary}`);
-  return ECONOMY_TERMS.some((term) => text.includes(term));
+function normalizeTitle(value: string): string {
+  return normalizeForSearch(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function hasTerm(text: string, term: string): boolean {
+  const words = normalizeForSearch(text).split(" ").filter(Boolean);
+  const termWords = normalizeForSearch(term).split(" ").filter(Boolean);
+  if (termWords.length === 0) return false;
+
+  return words.some((_, start) =>
+    termWords.every((word, offset) => {
+      const candidate = words[start + offset];
+      return candidate === word || (word.length >= 4 && candidate?.startsWith(word));
+    }),
+  );
+}
+
+function isFinancialNews(title: string, summary: string): boolean {
+  const fullText = `${title} ${summary}`;
+  return (
+    FINANCIAL_TITLE_TERMS.some((term) => hasTerm(title, term)) &&
+    !EXCLUDED_CONTENT_TERMS.some((term) => hasTerm(fullText, term))
+  );
 }
 
 function constantTimeEquals(left: string, right: string): boolean {
@@ -129,13 +227,10 @@ Deno.serve(async (request) => {
 
   try {
     const newsUrl = new URL("https://newsapi.org/v2/everything");
-    newsUrl.searchParams.set(
-      "q",
-      '"borsa" OR "ekonomi" OR "finans" OR "piyasa" OR "merkez bankası" OR "enflasyon" OR "faiz" OR "döviz" OR "yatırım"',
-    );
+    newsUrl.searchParams.set("q", NEWS_API_QUERY);
     newsUrl.searchParams.set("language", "tr");
     newsUrl.searchParams.set("sortBy", "publishedAt");
-    newsUrl.searchParams.set("pageSize", "30");
+    newsUrl.searchParams.set("pageSize", "100");
 
     const apiResponse = await fetch(newsUrl, {
       headers: { "X-Api-Key": newsApiKey },
@@ -152,7 +247,8 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "News provider request failed." }, 502);
     }
 
-    const selectedArticles: NewsRecord[] = [];
+    const candidateArticles: NewsRecord[] = [];
+    const seenTitles = new Set<string>();
     for (const article of apiBody.articles) {
       const title = cleanText(article.title ?? "");
       const summary = cleanText(article.description ?? "");
@@ -168,20 +264,23 @@ Deno.serve(async (request) => {
         title.length > 280 ||
         !publishedAt ||
         Number.isNaN(publishedAt.getTime()) ||
-        !isEconomyArticle(title, summary)
+        !isFinancialNews(title, summary)
       ) {
         continue;
       }
 
-      selectedArticles.push({
+      const normalizedTitle = normalizeTitle(title);
+      if (seenTitles.has(normalizedTitle)) continue;
+      seenTitles.add(normalizedTitle);
+
+      candidateArticles.push({
         title,
         summary: summary.slice(0, 500),
         created_at: publishedAt.toISOString(),
       });
-      if (selectedArticles.length === 2) break;
     }
 
-    if (selectedArticles.length === 0) {
+    if (candidateArticles.length === 0) {
       return jsonResponse({ inserted: 0, message: "No matching Turkish economy articles found." });
     }
 
@@ -189,21 +288,22 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const titles = selectedArticles.map((article) => article.title);
     const { data: existingArticles, error: lookupError } = await supabase
       .from("news_feed")
       .select("title")
-      .in("title", titles);
+      .in("title", candidateArticles.map((article) => article.title));
 
     if (lookupError) {
       console.error("Could not check existing news titles.", lookupError);
       return jsonResponse({ error: "Could not check existing news." }, 500);
     }
 
-    const existingTitles = new Set((existingArticles ?? []).map((article) => article.title));
-    const articlesToInsert = selectedArticles.filter(
-      (article) => !existingTitles.has(article.title),
+    const existingTitles = new Set(
+      (existingArticles ?? []).map((article) => normalizeTitle(article.title)),
     );
+    const articlesToInsert = candidateArticles
+      .filter((article) => !existingTitles.has(normalizeTitle(article.title)))
+      .slice(0, 8);
 
     if (articlesToInsert.length === 0) {
       return jsonResponse({ inserted: 0, message: "Articles are already in the news archive." });
