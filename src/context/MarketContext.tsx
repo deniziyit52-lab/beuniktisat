@@ -35,6 +35,7 @@ type StockRow = {
 type NewsRow = {
   id: number;
   title: string;
+  summary: string | null;
   stock_symbol: string | null;
   impact_pct: number;
   created_at: string;
@@ -97,6 +98,7 @@ function mapNews(row: NewsRow): NewsItem {
   return {
     id: String(row.id),
     title: row.title,
+    summary: row.summary ?? "",
     targetStockId: row.stock_symbol?.toLowerCase() ?? "",
     impactPercent: Number(row.impact_pct),
     timestamp: new Date(row.created_at).getTime(),
@@ -105,27 +107,39 @@ function mapNews(row: NewsRow): NewsItem {
 }
 
 async function loadMarket(): Promise<MarketState> {
-  const [stockResult, newsResult] = await Promise.all([
+  const [stockResult, newsRows] = await Promise.all([
     supabase
       .from("stocks")
       .select(
         "symbol, name, color, current_price, previous_close, shares, updated_at, price_history(price, recorded_at)"
       )
       .order("symbol"),
-    supabase
-      .from("news_feed")
-      .select("id, title, stock_symbol, impact_pct, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50),
+    loadAllNews(),
   ]);
 
   if (stockResult.error) throw stockResult.error;
-  if (newsResult.error) throw newsResult.error;
 
   return {
     stocks: ((stockResult.data ?? []) as StockRow[]).map((row) => mapStock(row)),
-    news: ((newsResult.data ?? []) as NewsRow[]).map(mapNews),
+    news: newsRows.map(mapNews),
   };
+}
+
+async function loadAllNews(): Promise<NewsRow[]> {
+  const rows: NewsRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from("news_feed")
+      .select("id, title, summary, stock_symbol, impact_pct, created_at")
+      .order("created_at", { ascending: false })
+      .range(from, from + 999);
+
+    if (error) throw error;
+    if (!data) throw new Error("news_feed sorgusu kayıt listesi döndürmedi.");
+
+    rows.push(...(data as NewsRow[]));
+    if (data.length < 1000) return rows;
+  }
 }
 
 export function MarketProvider({ children }: { children: React.ReactNode }) {
@@ -138,7 +152,22 @@ export function MarketProvider({ children }: { children: React.ReactNode }) {
     const refresh = async () => {
       try {
         const nextState = await loadMarket();
-        if (active) setState(nextState);
+        if (active) {
+          setState((previous) => {
+            const newsById = new Map(
+              nextState.news.map((item) => [item.id, item])
+            );
+            previous.news.forEach((item) => {
+              if (!newsById.has(item.id)) newsById.set(item.id, item);
+            });
+            return {
+              ...nextState,
+              news: Array.from(newsById.values()).sort(
+                (a, b) => b.timestamp - a.timestamp
+              ),
+            };
+          });
+        }
       } catch (error) {
         console.error("Supabase piyasa verileri yüklenemedi:", error);
       }
@@ -186,7 +215,7 @@ export function MarketProvider({ children }: { children: React.ReactNode }) {
           const news = mapNews(payload.new as NewsRow);
           setState((previous) => ({
             ...previous,
-            news: [news, ...previous.news.filter((item) => item.id !== news.id)].slice(0, 50),
+            news: [news, ...previous.news.filter((item) => item.id !== news.id)],
           }));
         }
       )
@@ -205,6 +234,7 @@ export function MarketProvider({ children }: { children: React.ReactNode }) {
         p_title: news.title,
         p_symbol: target?.symbol ?? null,
         p_impact_pct: news.impactPercent,
+        p_summary: news.summary?.trim() || null,
       });
 
       if (error) {
@@ -215,7 +245,7 @@ export function MarketProvider({ children }: { children: React.ReactNode }) {
       const created = mapNews(data as NewsRow);
       setState((previous) => ({
         ...previous,
-        news: [created, ...previous.news.filter((item) => item.id !== created.id)].slice(0, 50),
+        news: [created, ...previous.news.filter((item) => item.id !== created.id)],
       }));
     },
     [state.stocks]
@@ -232,6 +262,7 @@ export function MarketProvider({ children }: { children: React.ReactNode }) {
       console.error("Piyasa sıfırlanamadı:", error);
       return;
     }
+    setState((previous) => ({ ...previous, news: [] }));
     try {
       setState(await loadMarket());
       setSelectedStockId(null);

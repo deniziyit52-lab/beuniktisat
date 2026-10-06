@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMarket } from "@/context/MarketContext";
+import { NewsAccessButton } from "@/components/NewsAccessButton";
 
 const QUICK_IMPACTS = [
   { label: "Çok Kötü -25%", value: -25, color: "#ff3b5c" },
@@ -29,9 +30,22 @@ const TITLE_TEMPLATES_NEGATIVE = [
   "{name} performansı düşüşte",
 ];
 
+function formatNewsDateTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })} - ${date.toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
+
 export default function AdminPage() {
   const { stocks, addNews, news } = useMarket();
   const [title, setTitle] = useState("");
+  const [summary, setSummary] = useState("");
   const [targetStockId, setTargetStockId] = useState(stocks[0]?.id ?? "");
   const [impactPercent, setImpactPercent] = useState<number>(5);
   const [author, setAuthor] = useState("Admin");
@@ -45,6 +59,7 @@ export default function AdminPage() {
     const stock = stocks.find((s) => s.id === targetStockId);
     addNews({
       title: title.trim(),
+      summary: summary.trim(),
       targetStockId,
       impactPercent,
       author: author.trim() || undefined,
@@ -52,6 +67,7 @@ export default function AdminPage() {
 
     setLastNews(`${stock?.name}: ${impactPercent >= 0 ? "+" : ""}${impactPercent}%`);
     setTitle("");
+    setSummary("");
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 2500);
   }
@@ -142,6 +158,20 @@ export default function AdminPage() {
                   − Negatif Şablon
                 </button>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-wider text-gray-400 font-semibold">
+                Alt Bilgi / Spot (Opsiyonel)
+              </label>
+              <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                rows={2}
+                maxLength={500}
+                placeholder="Haberin kısa özeti veya manşet spotu..."
+                className="w-full bg-wallstreet-bg/70 border border-wallstreet-border focus:border-neon-blue/60 focus:ring-2 focus:ring-neon-blue/20 outline-none rounded-lg px-3.5 py-2.5 text-sm text-gray-100 placeholder-gray-600 resize-y transition-all"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -290,7 +320,18 @@ export default function AdminPage() {
                 return (
                   <li key={n.id} className="p-3 hover:bg-wallstreet-bg/40 transition-colors">
                     <p className="text-xs text-gray-300 leading-snug mb-1.5 line-clamp-2">{n.title}</p>
+                    {n.summary && (
+                      <p className="text-[11px] text-gray-500 leading-snug mb-1.5 line-clamp-2">
+                        {n.summary}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between gap-2 text-[10px]">
+                      <time
+                        dateTime={new Date(n.timestamp).toISOString()}
+                        className="text-gray-500"
+                      >
+                        {formatNewsDateTime(n.timestamp)}
+                      </time>
                       <span
                         className="font-mono font-bold px-1.5 py-0.5 rounded"
                         style={stock ? { background: `${stock.avatarColor}22`, color: stock.avatarColor } : undefined}
@@ -315,6 +356,7 @@ export default function AdminPage() {
           </div>
         </aside>
       </div>
+      <NewsAccessButton />
     </main>
   );
 }
