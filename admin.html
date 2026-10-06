@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Yönetici Paneli - Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         /* Admin Header — Temel Flexbox Düzeni (STEP 3) */
@@ -297,6 +300,11 @@
                             <label for="newsTitle">Haber Başlığı</label>
                             <input type="text" id="newsTitle" placeholder="Örn: Deniz FF aldı" required>
                         </div>
+                        <div class="form-group">
+                            <label for="newsSummary">Alt Bilgi / Spot (Opsiyonel)</label>
+                            <textarea id="newsSummary" rows="3" maxlength="500"
+                                placeholder="Haberin kısa özeti veya manşet spotu..."></textarea>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="targetPerson">Hedef Kişi</label>
@@ -543,6 +551,19 @@
                 </div>
             </div>
         </div>
+        <div id="newsModal" class="news-modal-overlay" aria-hidden="true">
+            <section class="news-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="newsModalTitleAdmin">
+                <button id="closeNewsModal" type="button" class="news-modal-close" aria-label="Haberleri kapat" title="Kapat">×</button>
+                <div class="news-paper-masthead">
+                    <p class="news-paper-kicker">PİYASA • HABER ARŞİVİ</p>
+                    <h2 id="newsModalTitleAdmin" class="news-paper-name">Ekonomi Gazetesi</h2>
+                </div>
+                <div id="newsModalFeed" class="news-feed news-paper"></div>
+            </section>
+        </div>
+        <button id="openNewsModal" type="button" class="news-fab" aria-haspopup="dialog" aria-controls="newsModal" aria-expanded="false">
+            📰 Haberler
+        </button>
     </div>
 
     <!-- KVKK / Aydınlatma Metni Modal -->
@@ -737,9 +758,11 @@
         async function submitNews(e) {
             e.preventDefault();
             const titleEl = document.getElementById("newsTitle");
+            const summaryEl = document.getElementById("newsSummary");
             const targetEl = document.getElementById("targetPerson");
             const impactEl = document.getElementById("impactPct");
             const title = titleEl.value.trim();
+            const summary = summaryEl.value.trim();
             const target = targetEl.value;
             const impact = Number(impactEl.value);
             if (!title || !target || !Number.isFinite(impact)) {
@@ -748,7 +771,7 @@
             }
 
             try {
-                await Borsa.publishNews({ title, target, impact });
+                await Borsa.publishNews({ title, summary, target, impact });
                 Borsa.renderStocksGrid();
                 Borsa.renderTickerTape();
                 Borsa.renderNewsFeed();
@@ -764,6 +787,7 @@
                 const dir = impact >= 0 ? "📈 yükseltildi" : "📉 düşürüldü";
                 showToast(`${stockName} %${Math.abs(impact)} ${dir} — "${title}"`);
                 titleEl.value = "";
+                summaryEl.value = "";
                 impactEl.value = "";
                 targetEl.value = "";
                 titleEl.focus();
@@ -1347,7 +1371,7 @@
                 try {
                     if (!(await Borsa.resetMarket())) return;
                     Borsa.renderCommon();
-                    showToast("Haberler ve tüyolar silindi; fiyatlar, grafik geçmişi ve portföyler korundu.");
+                    showToast("Haber arşivi ve piyasa tüyoları silindi; fiyatlar, grafik geçmişi ve portföyler korundu.");
                     refreshSymbolDropdowns();
                 } catch (err) {
                     console.error("[Admin] Piyasa sıfırlama RPC hatası:", err);

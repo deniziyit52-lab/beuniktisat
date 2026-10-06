@@ -31,6 +31,15 @@ const Borsa = {
         });
     },
 
+    formatNewsDateTime(ts) {
+        const date = new Date(ts);
+        return `${date.toLocaleDateString("tr-TR", {
+            day: "numeric", month: "long", year: "numeric",
+        })} - ${date.toLocaleTimeString("tr-TR", {
+            hour: "2-digit", minute: "2-digit",
+        })}`;
+    },
+
     formatCurrency(n) {
         return "₺" + n.toFixed(2);
     },
@@ -73,13 +82,14 @@ const Borsa = {
     },
 
     async resetMarket() {
-        if (!confirm("Haber akışı ve tüyolar silinsin mi? Hisse fiyatları, grafik geçmişi ve portföyler korunur.")) return false;
+        if (!confirm("Haber arşivi ve piyasa tüyoları silinsin mi? Hisse fiyatları, grafik geçmişi ve portföyler korunur.")) return false;
         const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
         if (!sb || !sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
         const { error } = await sb.rpc("admin_reset_market");
         if (error) throw error;
         this.state.news = [];
         this.saveState();
+        this.renderNewsFeed();
         await this.Realtime._loadInitialStocksFromDB();
         this.renderCommon();
         return true;
@@ -159,7 +169,6 @@ const Borsa = {
             timestamp: Date.now(),
         };
         this.state.news.unshift(newsItem);
-        if (this.state.news.length > 150) this.state.news.pop();
         if (target && this.state.stocks[target]) {
             this.applyNewsImpact(target, Number(impact) || 0);
         }
@@ -403,48 +412,119 @@ const Borsa = {
     },
 
     renderNewsFeed() {
-        const el = document.getElementById("newsFeed");
-        if (!el) return;
-        if (this.state.news.length === 0) {
-            el.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📰</div>
-                    <p>Henüz haber yok. Yakında tekrar kontrol edin!</p>
-                </div>
-            `;
+        const elements = [
+            document.getElementById("newsFeed"),
+            document.getElementById("newsModalFeed"),
+        ].filter(Boolean);
+        if (elements.length === 0) return;
+        const sorted = [...this.state.news].sort((a, b) => b.timestamp - a.timestamp);
+        elements.forEach(el => {
+            if (el.classList.contains("news-paper")) {
+                this._renderNewspaper(el, sorted);
+                return;
+            }
+            el.innerHTML = "";
+            if (sorted.length === 0) {
+                el.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📰</div>
+                        <p>Henüz haber yok. Yakında tekrar kontrol edin!</p>
+                    </div>
+                `;
+                return;
+            }
+            sorted.forEach(n => {
+                const impact = Number(n.impact) || 0;
+                const positive = impact >= 0;
+                const stock = n.target && this.state.stocks[n.target];
+                const item = document.createElement("div");
+                item.className = `news-item ${positive ? "positive" : "negative"}`;
+                item.innerHTML = `
+                    <div class="news-header">
+                        <div class="news-title">${this.escapeHtml(n.title)}</div>
+                        <time class="news-time" datetime="${new Date(n.timestamp).toISOString()}">${this.formatNewsDateTime(n.timestamp)}</time>
+                    </div>
+                    ${n.summary ? `<p class="news-summary">${this.escapeHtml(n.summary)}</p>` : ""}
+                    <div class="news-meta">
+                        <span class="news-target">${stock ? this.escapeHtml(stock.name) : "Piyasa"}</span>
+                        <span class="news-impact ${positive ? "positive" : "negative"}">${positive ? "+" : ""}${impact.toFixed(1)}%</span>
+                    </div>
+                `;
+                el.appendChild(item);
+            });
+        });
+    },
+
+    _renderNewspaper(el, news) {
+        if (news.length === 0) {
+            el.innerHTML = `<p class="news-paper-empty">Henüz haber yok.</p>`;
             return;
         }
-        const sorted = [...this.state.news].sort((a, b) => b.timestamp - a.timestamp);
-        el.innerHTML = "";
-        sorted.forEach(n => {
+
+        const metaMarkup = n => {
             const impact = Number(n.impact) || 0;
-            const positive = impact > 0;
-            const negative = impact < 0;
-            const classes = ["news-item"];
-            if (positive) classes.push("positive");
-            if (negative) classes.push("negative");
             const targetInfo = n.target && this.state.stocks[n.target]
-                ? `<span class="news-target">${this.state.stocks[n.target].name}</span>`
-                : `<span class="news-target" style="background: rgba(107,114,128,0.15); color: var(--text-secondary);">Piyasa</span>`;
-            let impactInfo;
-            if (impact !== 0) {
-                impactInfo = `<span class="news-impact ${positive ? "positive" : "negative"}">${positive ? "▲" : "▼"} %${Math.abs(impact).toFixed(1)}</span>`;
-            } else {
-                impactInfo = `<span class="news-impact" style="background: rgba(107,114,128,0.15); color: var(--text-muted);">Nötr</span>`;
-            }
-            const item = document.createElement("div");
-            item.className = classes.join(" ");
-            item.innerHTML = `
-                <div class="news-header">
-                    <div class="news-title">${this.escapeHtml(n.title)}</div>
-                    <span class="news-time">${this.formatDateTime(n.timestamp)}</span>
+                ? `<span class="news-paper-stock-tag">${this.escapeHtml(this.state.stocks[n.target].symbol)} · ${this.escapeHtml(this.state.stocks[n.target].name)}</span>`
+                : `<span class="news-paper-stock-tag">Piyasa</span>`;
+            const impactClass = impact >= 0 ? "positive" : "negative";
+            const impactInfo = `<span class="news-paper-impact ${impactClass}">${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>`;
+            return `${targetInfo}${impactInfo}`;
+        };
+
+        const lead = news[0];
+        const secondaryStories = news.slice(1).map(n => `
+            <li class="news-paper-story">
+                <h4>${this.escapeHtml(n.title)}</h4>
+                ${n.summary ? `<p class="news-paper-secondary-spot">${this.escapeHtml(n.summary)}</p>` : ""}
+                <div class="news-paper-story-meta">
+                    ${metaMarkup(n)}
+                    <time datetime="${new Date(n.timestamp).toISOString()}">${this.formatNewsDateTime(n.timestamp)}</time>
                 </div>
-                <div class="news-meta">
-                    ${targetInfo}
-                    ${impactInfo}
+            </li>
+        `).join("");
+
+        el.innerHTML = `
+            <article class="news-paper-lead">
+                <p class="news-paper-section-label">GÜNÜN MANŞETİ</p>
+                <h3>${this.escapeHtml(lead.title)}</h3>
+                ${lead.summary ? `<p class="news-paper-spot">${this.escapeHtml(lead.summary)}</p>` : ""}
+                <div class="news-paper-story-meta">
+                    ${metaMarkup(lead)}
+                    <time datetime="${new Date(lead.timestamp).toISOString()}">${this.formatNewsDateTime(lead.timestamp)}</time>
                 </div>
-            `;
-            el.appendChild(item);
+            </article>
+            ${secondaryStories ? `<ol class="news-paper-columns">${secondaryStories}</ol>` : ""}
+        `;
+    },
+
+    bindNewsModal() {
+        const trigger = document.getElementById("openNewsModal");
+        const overlay = document.getElementById("newsModal");
+        const closeButton = document.getElementById("closeNewsModal");
+        if (!trigger || !overlay || !closeButton || trigger.dataset.bound === "1") return;
+
+        const close = () => {
+            overlay.classList.remove("is-open");
+            overlay.setAttribute("aria-hidden", "true");
+            trigger.setAttribute("aria-expanded", "false");
+            document.body.classList.remove("news-modal-open");
+            trigger.focus();
+        };
+
+        trigger.dataset.bound = "1";
+        trigger.addEventListener("click", () => {
+            overlay.classList.add("is-open");
+            overlay.setAttribute("aria-hidden", "false");
+            trigger.setAttribute("aria-expanded", "true");
+            document.body.classList.add("news-modal-open");
+            closeButton.focus();
+        });
+        closeButton.addEventListener("click", close);
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay) close();
+        });
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape" && overlay.classList.contains("is-open")) close();
         });
     },
 
@@ -613,6 +693,7 @@ const Borsa = {
         async _loadInitialStocksFromDB() {
             const sb = this._sb();
             if (!sb) return false;
+            await this._loadInitialNewsFromDB();
             try {
                 const { data: stockRows, error } = await sb
                     .from("stocks")
@@ -657,7 +738,6 @@ const Borsa = {
                 if (loadedSymbols.length === 0) return false;
                 Borsa.state.stocks = normalized;
                 Borsa.state.news = Borsa.state.news || Borsa.seedNews();
-                await this._loadInitialNewsFromDB();
                 if (!Borsa.state.selectedStock || !Borsa.state.stocks[Borsa.state.selectedStock]) {
                     Borsa.state.selectedStock = loadedSymbols[0];
                 }
@@ -707,20 +787,33 @@ const Borsa = {
             const sb = this._sb();
             if (!sb) return;
             try {
-                const { data, error } = await sb
-                    .from("news_feed")
-                    .select("id, title, stock_symbol, impact_pct, created_at")
-                    .order("created_at", { ascending: false })
-                    .limit(50);
-                if (error || !data || !Array.isArray(data)) return;
-                const mapped = data.map(n => ({
+                const rows = [];
+                for (let from = 0; ; from += 1000) {
+                    const { data, error } = await sb
+                        .from("news_feed")
+                        .select("id, title, summary, stock_symbol, impact_pct, created_at")
+                        .order("created_at", { ascending: false })
+                        .range(from, from + 999);
+                    if (error) throw error;
+                    if (!Array.isArray(data)) {
+                        throw new Error("news_feed sorgusu geçerli bir kayıt listesi döndürmedi.");
+                    }
+                    rows.push(...data);
+                    if (data.length < 1000) break;
+                }
+                const mapped = rows.map(n => ({
                     id: Number(n.id || Date.now()),
                     title: String(n.title || ""),
+                    summary: String(n.summary || ""),
                     target: String(n.stock_symbol || "").trim() || null,
                     impact: Number(n.impact_pct || 0),
                     timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
                 }));
-                Borsa.state.news = mapped.slice(0, 50);
+                const newsById = new Map(mapped.map(item => [String(item.id), item]));
+                Borsa.state.news.forEach(item => {
+                    if (!newsById.has(String(item.id))) newsById.set(String(item.id), item);
+                });
+                Borsa.state.news = [...newsById.values()].sort((a, b) => b.timestamp - a.timestamp);
                 Borsa.renderNewsFeed();
                 Borsa.saveState();
             } catch (e) {
@@ -730,17 +823,12 @@ const Borsa = {
 
         _handleNewsEvent(evt) {
             if (!evt) return;
-            if (evt.eventType === "DELETE") {
-                Borsa.state.news = [];
-                try { Borsa.renderNewsFeed(); } catch (_) {}
-                try { Borsa.saveState(); } catch (_) {}
-                return;
-            }
             if (evt.eventType !== "INSERT" || !evt.new) return;
             const n = evt.new;
             const item = {
                 id: Number(n.id || Date.now()),
                 title: String(n.title || ""),
+                summary: String(n.summary || ""),
                 target: String(n.stock_symbol || "").trim() || null,
                 impact: Number(n.impact_pct || 0),
                 timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
@@ -748,7 +836,6 @@ const Borsa = {
             if (!item.title) return;
             if (Borsa.state.news.some(existing => String(existing.id) === String(item.id))) return;
             Borsa.state.news.unshift(item);
-            if (Borsa.state.news.length > 150) Borsa.state.news.pop();
             try { Borsa.renderNewsFeed(); } catch (_) {}
             try { Borsa.saveState(); } catch (_) {}
         },
@@ -898,7 +985,7 @@ const Borsa = {
                 this._newsChan = sb
                     .channel("borsa-news-public")
                     .on("postgres_changes",
-                        { event: "*", schema: "public", table: "news_feed" },
+                        { event: "INSERT", schema: "public", table: "news_feed" },
                         (payload) => this._handleNewsEvent(payload)
                     )
                     .subscribe();
@@ -972,7 +1059,7 @@ const Borsa = {
         return this.round2(Number(updated.current_price));
     },
 
-    async publishNews({ title, target, impact }) {
+    async publishNews({ title, summary, target, impact }) {
         const impactPct = Number(impact) || 0;
         const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
         if (!sb || !sb.rpc) throw new Error("Supabase bağlantısı hazır değil.");
@@ -980,6 +1067,7 @@ const Borsa = {
             p_title: String(title || "").slice(0, 280),
             p_symbol: target || null,
             p_impact_pct: impactPct,
+            p_summary: String(summary || "").trim().slice(0, 500) || null,
         });
         if (error) throw error;
         const saved = Array.isArray(data) ? data[0] : data;
@@ -987,13 +1075,13 @@ const Borsa = {
         const newsItem = {
             id: Number(saved.id || Date.now()),
             title: String(saved.title || title || ""),
+            summary: String(saved.summary || summary || ""),
             target: String(saved.stock_symbol || target || "").trim() || null,
             impact: Number(saved.impact_pct ?? impactPct),
             timestamp: saved.created_at ? new Date(saved.created_at).getTime() : Date.now(),
         };
         if (!this.state.news.some(item => String(item.id) === String(newsItem.id))) {
             this.state.news.unshift(newsItem);
-            if (this.state.news.length > 150) this.state.news.pop();
         }
         this.saveState();
         try { this.renderNewsFeed(); } catch (_) {}
@@ -1101,6 +1189,7 @@ const Borsa = {
     },
 
     async ensureInitializedWithRealtime() {
+        this.bindNewsModal();
         this.ensureInitialized();
         let usedDB = false;
         try {
@@ -1122,3 +1211,9 @@ const Borsa = {
         }
     },
 };
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => Borsa.bindNewsModal(), { once: true });
+} else {
+    Borsa.bindNewsModal();
+}

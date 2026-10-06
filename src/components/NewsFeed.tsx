@@ -2,121 +2,115 @@
 
 import { useMarket } from "@/context/MarketContext";
 
-function timeAgo(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "şimdi";
-  if (mins < 60) return `${mins} dk önce`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} saat önce`;
-  const days = Math.floor(hours / 24);
-  return `${days} gün önce`;
+function formatNewsDateTime(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })} - ${date.toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 }
 
 export function NewsFeed() {
   const { news, getStockById, setSelectedStockId } = useMarket();
+  const lead = news[0];
+  const leadStock = lead ? getStockById(lead.targetStockId) : undefined;
 
   return (
-    <div className="bg-wallstreet-panel/60 backdrop-blur-sm border border-wallstreet-border rounded-xl overflow-hidden h-full flex flex-col">
-      <div className="px-4 py-3 border-b border-wallstreet-border flex items-center justify-between bg-wallstreet-bg/40">
-        <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-neon-red animate-pulse-red" />
-          <h2 className="font-bold text-gray-100 text-sm sm:text-base">
-            Canlı Haber Beslemesi
-          </h2>
+    <section className="news-paper" aria-labelledby="news-paper-title">
+      <header className="news-paper-masthead">
+        <p className="news-paper-kicker">PİYASA • HABER ARŞİVİ</p>
+        <h2 id="news-paper-title" className="news-paper-name">
+          Ekonomi Gazetesi
+        </h2>
+        <div className="news-paper-edition">
+          <span>Haberler</span>
+          <span>{news.length} kayıt</span>
         </div>
-        <span className="text-[10px] text-gray-500 font-mono px-2 py-0.5 bg-wallstreet-bg/80 rounded border border-wallstreet-border">
-          LIVE
-        </span>
-      </div>
+      </header>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin max-h-[600px] xl:max-h-none">
+      <div className="news-paper-list">
         {news.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">
-            Henüz haber yok.
-          </div>
+          <p className="news-paper-empty">Henüz haber yok.</p>
         ) : (
-          <ul className="divide-y divide-wallstreet-border/60">
-            {news.map((item) => {
-              const stock = getStockById(item.targetStockId);
-              const isPositive = item.impactPercent >= 0;
-
-              return (
-                <li
-                  key={item.id}
-                  className="p-4 hover:bg-wallstreet-bg/50 transition-colors group"
+          <>
+            <article className="news-paper-lead">
+              <p className="news-paper-section-label">GÜNÜN MANŞETİ</p>
+              <h3>{lead.title}</h3>
+              {lead.summary && (
+                <p className="news-paper-spot">{lead.summary}</p>
+              )}
+              <div className="news-paper-story-meta">
+                {leadStock && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStockId(leadStock.id)}
+                    className="news-paper-stock"
+                  >
+                    {leadStock.symbol} · {leadStock.name}
+                  </button>
+                )}
+                <span
+                  className={`news-paper-impact ${
+                    lead.impactPercent >= 0 ? "positive" : "negative"
+                  }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="shrink-0 mt-0.5">
-                      {isPositive ? (
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neon-green/10 border border-neon-green/30">
-                          <span className="text-neon-green text-xs font-bold">
-                            ▲
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center bg-neon-red/10 border border-neon-red/30">
-                          <span className="text-neon-red text-xs font-bold">
-                            ▼
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                  {lead.impactPercent >= 0 ? "+" : ""}
+                  {lead.impactPercent.toFixed(1)}%
+                </span>
+                <time dateTime={new Date(lead.timestamp).toISOString()}>
+                  {formatNewsDateTime(lead.timestamp)}
+                </time>
+              </div>
+            </article>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-200 leading-snug mb-2 group-hover:text-gray-100 transition-colors">
-                        {item.title}
-                      </p>
+            {news.length > 1 && (
+              <ol className="news-paper-columns">
+                {news.slice(1).map((item) => {
+                  const stock = getStockById(item.targetStockId);
+                  const isPositive = item.impactPercent >= 0;
 
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <button
-                          onClick={() =>
-                            stock && setSelectedStockId(stock.id)
-                          }
-                          className="inline-flex items-center gap-1.5"
-                        >
-                          {stock && (
-                            <>
-                              <span
-                                className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                style={{
-                                  background: `${stock.avatarColor}22`,
-                                  color: stock.avatarColor,
-                                }}
-                              >
-                                {stock.symbol}
-                              </span>
-                              <span className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
-                                {stock.name}
-                              </span>
-                            </>
-                          )}
-                        </button>
-
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded ${
-                              isPositive
-                                ? "bg-neon-green/10 text-neon-green"
-                                : "bg-neon-red/10 text-neon-red"
-                            }`}
-                          >
-                            {isPositive ? "+" : ""}
-                            {item.impactPercent.toFixed(1)}%
-                          </span>
-                          <span className="text-[10px] text-gray-500 font-mono">
-                            {timeAgo(item.timestamp)}
-                          </span>
-                        </div>
+                  return (
+                    <li className="news-paper-story" key={item.id}>
+                      <div className="news-paper-story-heading">
+                        <h4>{item.title}</h4>
+                        <time dateTime={new Date(item.timestamp).toISOString()}>
+                          {formatNewsDateTime(item.timestamp)}
+                        </time>
                       </div>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      {item.summary && (
+                        <p className="news-paper-secondary-spot">{item.summary}</p>
+                      )}
+                      <div className="news-paper-story-meta">
+                        {stock && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStockId(stock.id)}
+                            className="news-paper-stock"
+                          >
+                            {stock.symbol} · {stock.name}
+                          </button>
+                        )}
+                        <span
+                          className={`news-paper-impact ${
+                            isPositive ? "positive" : "negative"
+                          }`}
+                        >
+                          {isPositive ? "+" : ""}
+                          {item.impactPercent.toFixed(1)}%
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </>
         )}
       </div>
-    </div>
+    </section>
   );
 }

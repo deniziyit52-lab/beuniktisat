@@ -25,6 +25,7 @@ export interface Stock {
 export interface NewsItem {
   id: string;
   title: string;
+  summary?: string;
   targetStockId: string;
   impactPercent: number;
   timestamp: number;

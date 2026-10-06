@@ -2,9 +2,9 @@
 
 import { StockTicker } from "@/components/StockTicker";
 import { StocksGrid } from "@/components/StocksGrid";
-import { NewsFeed } from "@/components/NewsFeed";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { Header } from "@/components/Header";
+import { NewsAccessButton } from "@/components/NewsAccessButton";
 import { useMarket } from "@/context/MarketContext";
 
 export default function HomePage() {
@@ -13,6 +13,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col">
       <Header />
+      <NewsAccessButton />
       <StockTicker />
 
       <div className="flex-1 px-4 sm:px-6 lg:px-8 py-5 sm:py-8 max-w-[1600px] mx-auto w-full">
@@ -23,7 +24,7 @@ export default function HomePage() {
               Piyasa Genel Görünümü
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {stocks.length} hisse · Son {news.length} haber
+              {stocks.length} hisse · Arşivde {news.length} haber
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -37,14 +38,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5 xl:gap-6">
-          <section className="min-w-0">
-            <StocksGrid />
-          </section>
-
-          <aside className="xl:sticky xl:top-[150px] xl:self-start xl:h-[calc(100vh-170px)]">
-            <NewsFeed />
-          </aside>
+        <div>
+          <StocksGrid />
         </div>
       </div>
 
