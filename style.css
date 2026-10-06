@@ -736,6 +736,7 @@ a.public-link {
     .trade-header {
         gap: 0.6rem;
         flex-wrap: wrap;
+        padding-right: 0;
     }
     .trade-header > div:nth-child(2) {
         min-width: 0;
@@ -2979,6 +2980,7 @@ body.light-mode .flash-down { animation: flashDown-light 0.8s ease; }
     display: flex;
     align-items: center;
     gap: 0.9rem;
+    padding-right: 48px;
     margin-bottom: 1.25rem;
 }
 
