@@ -369,6 +369,18 @@
                     </div>
                 </div>
 
+                <div class="panel-section admin-card admin-card--maintenance">
+                    <div class="section-header">
+                        <h2>🔔 Seans Kontrolü</h2>
+                        <span id="marketAdminStatus" class="status-pill status-pill--off">Piyasa durumu yükleniyor…</span>
+                    </div>
+                    <p class="panel-sub">Piyasa kapatıldığında güncel fiyatlar seans kapanışı olarak kaydedilir ve alım-satım durdurulur.</p>
+                    <div class="maintenance-toggle-row" style="gap:0.75rem;">
+                        <button type="button" id="closeMarketBtn" class="reset-btn">Piyasayı Kapat</button>
+                        <button type="button" id="openMarketBtn" class="submit-btn">Piyasayı Aç</button>
+                    </div>
+                </div>
+
                 <div class="panel-section admin-card admin-card--crud">
                     <div class="section-header">
                         <h2>🧩 Hisse Yönetimi (CRUD)</h2>
@@ -968,6 +980,57 @@
             });
         }
 
+        function wireMarketControl() {
+            const closeBtn = document.getElementById("closeMarketBtn");
+            const openBtn = document.getElementById("openMarketBtn");
+            const status = document.getElementById("marketAdminStatus");
+            let busy = false;
+
+            function renderMarketControl() {
+                const isOpen = Borsa.state.marketOpen === true;
+                if (status) {
+                    status.textContent = isOpen ? "Piyasa açık" : "Piyasa kapalı";
+                    status.classList.toggle("status-pill--on", isOpen);
+                    status.classList.toggle("status-pill--off", !isOpen);
+                }
+                if (closeBtn) closeBtn.disabled = busy || !isOpen;
+                if (openBtn) openBtn.disabled = busy || isOpen;
+            }
+
+            async function setMarketOpen(isOpen) {
+                if (busy) return;
+                busy = true;
+                renderMarketControl();
+                try {
+                    if (!window.sb || typeof window.sb.rpc !== "function") {
+                        throw new Error("Supabase bağlantısı hazır değil.");
+                    }
+                    const { data, error } = await window.sb.rpc("set_market_open", {
+                        p_is_market_open: isOpen,
+                    });
+                    if (error) throw new Error(error.message || "Piyasa durumu değiştirilemedi.");
+                    const row = Array.isArray(data) ? data[0] : data;
+                    if (!row || typeof row.is_market_open !== "boolean") {
+                        throw new Error("Piyasa durumu güncellendi ancak yanıt geçersiz.");
+                    }
+                    Borsa.Realtime.applyMarketStatus(row.is_market_open);
+                    showToast(row.is_market_open
+                        ? "Piyasa açıldı."
+                        : "Piyasa kapatıldı; kapanış fiyatları kaydedildi.");
+                } catch (e) {
+                    showErr(e.message || "Piyasa durumu değiştirilemedi.");
+                } finally {
+                    busy = false;
+                    renderMarketControl();
+                }
+            }
+
+            if (closeBtn) closeBtn.addEventListener("click", () => setMarketOpen(false));
+            if (openBtn) openBtn.addEventListener("click", () => setMarketOpen(true));
+            window.addEventListener("borsa:market-status-updated", renderMarketControl);
+            renderMarketControl();
+        }
+
         function wireAdminPanels() {
             document.getElementById("addStockForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
@@ -1262,6 +1325,7 @@
                     try { await Borsa.ensureInitializedWithRealtime(); } catch (_) {}
                 }, { once: true });
             }
+            await Borsa.Realtime.refreshMarketStatus();
             Borsa.renderCommon();
             Borsa.startAutoUpdates(true);
             Borsa.Theme.bindToggle("themeToggle");
@@ -1269,6 +1333,7 @@
 
             // Bakım modu admin kontrolünü bağla (toggle + canlı durum)
             wireMaintenanceControl();
+            wireMarketControl();
 
             // User (Firebase) auth state updates are already tracked by global listener below.
             refreshAdminUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());

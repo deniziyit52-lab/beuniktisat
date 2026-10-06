@@ -10,7 +10,7 @@
      çağrıları değiştirmek zorunda kalmayız.
    - Yeni üye kaydında users tablosuna otomatik olarak
      balance=100000 ve boş portfolio JSONB kolonu eklenir.
-   - Alış / satış Postgres tarafında atomik RPC (execute_trade)
+   - Alış / satış Postgres tarafında atomik RPC (execute_hybrid_trade)
      ile yapılır.
    ============================================================ */
 
@@ -518,20 +518,22 @@ window.BorsaFirebase = {
 
     async buyStock(symbol, qty) {
         if (!this._user) throw new Error("Önce giriş yapın.");
+        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım yapılamaz.");
         qty = Math.floor(Number(qty));
         if (!(qty > 0)) throw new Error("Geçerli bir adet girin.");
         const price = this._stockPrice(symbol);
         if (!(price > 0)) throw new Error("Fiyat geçersiz.");
         if (!this.db()) throw new Error("Supabase yapılandırılmamış.");
-        const { data, error } = await this.db().rpc("execute_trade", {
+        const { data, error } = await this.db().rpc("execute_hybrid_trade", {
             p_user_id: this._user.id,
             p_symbol: symbol,
             p_qty: qty,
-            p_price: price,
             p_side: "BUY",
         });
         if (error) throw new Error(error.message || "Alım işlemi başarısız.");
-        const out = (data && Array.isArray(data) && data[0]) || data || {};
+        const result = (data && Array.isArray(data) && data[0]) || data || {};
+        const out = result.trade || result;
+        const executionPrice = Number(result.execution_price || price);
         this._userDoc = this._normalizeProfile({
             id: this._user.id,
             email: this._userDoc?.email || this._user.email,
@@ -540,7 +542,7 @@ window.BorsaFirebase = {
             portfolio: out.portfolio ?? this._userDoc?.portfolio ?? {},
         });
         this._emit();
-        const subtotal = Math.round(price * qty * 100) / 100;
+        const subtotal = Math.round(executionPrice * qty * 100) / 100;
         const fee = Math.round(subtotal * 0.01 * 100) / 100;
         return {
             balance: this._userDoc.balance,
@@ -548,27 +550,31 @@ window.BorsaFirebase = {
             subtotal,
             fee,
             total: Math.round((subtotal + fee) * 100) / 100, // KULLANICI ÖDER: komisyon dahil
-            price,
+            price: executionPrice,
             qty,
+            circuitBreakerTriggered: result.circuit_breaker_triggered === true,
+            circuitBreakerMessage: result.circuit_breaker_message || "",
         };
     },
 
     async sellStock(symbol, qty) {
         if (!this._user) throw new Error("Önce giriş yapın.");
+        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım yapılamaz.");
         qty = Math.floor(Number(qty));
         if (!(qty > 0)) throw new Error("Geçerli bir adet girin.");
         const price = this._stockPrice(symbol);
         if (!(price > 0)) throw new Error("Fiyat geçersiz.");
         if (!this.db()) throw new Error("Supabase yapılandırılmamış.");
-        const { data, error } = await this.db().rpc("execute_trade", {
+        const { data, error } = await this.db().rpc("execute_hybrid_trade", {
             p_user_id: this._user.id,
             p_symbol: symbol,
             p_qty: qty,
-            p_price: price,
             p_side: "SELL",
         });
         if (error) throw new Error(error.message || "Satım işlemi başarısız.");
-        const out = (data && Array.isArray(data) && data[0]) || data || {};
+        const result = (data && Array.isArray(data) && data[0]) || data || {};
+        const out = result.trade || result;
+        const executionPrice = Number(result.execution_price || price);
         this._userDoc = this._normalizeProfile({
             id: this._user.id,
             email: this._userDoc?.email || this._user.email,
@@ -577,7 +583,7 @@ window.BorsaFirebase = {
             portfolio: out.portfolio ?? this._userDoc?.portfolio ?? {},
         });
         this._emit();
-        const subtotal = Math.round(price * qty * 100) / 100;
+        const subtotal = Math.round(executionPrice * qty * 100) / 100;
         const fee = Math.round(subtotal * 0.01 * 100) / 100;
         return {
             balance: this._userDoc.balance,
@@ -585,8 +591,10 @@ window.BorsaFirebase = {
             subtotal,
             fee,
             revenue: Math.round((subtotal - fee) * 100) / 100, // KULLANICIYA KALAN: komisyon dusulmus
-            price,
+            price: executionPrice,
             qty,
+            circuitBreakerTriggered: result.circuit_breaker_triggered === true,
+            circuitBreakerMessage: result.circuit_breaker_message || "",
         };
     },
 

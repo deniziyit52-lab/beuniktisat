@@ -340,6 +340,19 @@ body.light-mode .logo-sub { color: #475569; border-color: rgba(15, 23, 42, 0.2);
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
     animation: pulseGreen 2s infinite;
 }
+.market-status #marketStatusPill {
+    color: inherit;
+}
+.market-status.market-closed {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+.market-status.market-closed .status-dot {
+    background: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);
+    animation: none;
+}
 @keyframes pulseGreen {
     0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
     70%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);   }
@@ -349,6 +362,15 @@ body.light-mode .market-status {
     background: rgba(34, 197, 94, 0.08);
     border-color: rgba(34, 197, 94, 0.35);
     color: #15803d;
+}
+body.light-mode .market-status.market-closed {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #b91c1c;
+}
+[data-market-trade]:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 /* Admin Özel Header Çipleri */
@@ -4892,5 +4914,3 @@ body {
         font-size: 0.62rem;
     }
 }
-
-

@@ -5,6 +5,7 @@ const Borsa = {
         stocks: {},
         news: [],
         selectedStock: null,
+        marketOpen: false,
     },
     priceChart: null,
     _chartSymbol: null,
@@ -488,7 +489,9 @@ const Borsa = {
         _chan: null,
         _statusChan: null,
         _appSettingsChan: null,
+        _marketSettingsChan: null,
         _newsChan: null,
+        _marketStatusRevision: 0,
         _bound: false,
         _enabled: false,
         _lastStatus: null,
@@ -509,7 +512,9 @@ const Borsa = {
             const price = Number(row.current_price ?? row.price ?? 0);
             const previousClose = Number(row.previous_close ?? row.open_price ?? price);
             const change = Number(row.change ?? Borsa.round2(price - previousClose));
-            const changePct = Number(row.change_pct ?? Borsa.round2(previousClose > 0 ? (change / previousClose) * 100 : 0));
+            const changePct = previousClose > 0
+                ? ((price - previousClose) / previousClose) * 100
+                : 0;
             const color = String(row.color || "#3b82f6").trim();
             const shares = Number(row.shares ?? row.shares_outstanding ?? row.total_shares ?? 100000);
             const updatedAt = row.updated_at ? new Date(row.updated_at).getTime() : Date.now();
@@ -549,6 +554,60 @@ const Borsa = {
                 _src: "supabase",
                 _updatedAt: updatedAt,
             };
+        },
+
+        applyMarketStatus(isOpen) {
+            this._marketStatusRevision++;
+            Borsa.state.marketOpen = isOpen === true;
+            const pill = document.getElementById("marketStatusPill");
+            if (pill) {
+                pill.textContent = Borsa.state.marketOpen ? "PİYASA AÇIK" : "PİYASA KAPALI";
+                pill.setAttribute("aria-label", Borsa.state.marketOpen ? "Piyasa açık" : "Piyasa kapalı");
+                const status = pill.closest(".market-status");
+                if (status) {
+                    status.classList.toggle("market-open", Borsa.state.marketOpen);
+                    status.classList.toggle("market-closed", !Borsa.state.marketOpen);
+                }
+            }
+            document.querySelectorAll("[data-market-trade]").forEach(button => {
+                const disabled = !Borsa.state.marketOpen || button.dataset.tradeBusy === "true";
+                button.disabled = disabled;
+                button.setAttribute("aria-disabled", String(disabled));
+                button.title = Borsa.state.marketOpen ? "" : "Piyasa kapalı";
+            });
+            window.dispatchEvent(new CustomEvent("borsa:market-status-updated", {
+                detail: { isMarketOpen: Borsa.state.marketOpen },
+            }));
+        },
+
+        async refreshMarketStatus() {
+            const sb = this._sb();
+            const revision = this._marketStatusRevision;
+            if (!sb) {
+                this.applyMarketStatus(false);
+                return false;
+            }
+            try {
+                const { data, error } = await sb
+                    .from("market_settings")
+                    .select("is_market_open")
+                    .eq("id", 1)
+                    .maybeSingle();
+                if (error) throw error;
+                if (!data || typeof data.is_market_open !== "boolean") {
+                    throw new Error("market_settings row id=1 is missing or invalid.");
+                }
+                if (revision === this._marketStatusRevision) {
+                    this.applyMarketStatus(data.is_market_open);
+                }
+                return true;
+            } catch (e) {
+                console.warn("[Realtime] Piyasa durumu okunamadı; güvenlik için kapalı sayıldı:", e && e.message || e);
+                if (revision === this._marketStatusRevision) {
+                    this.applyMarketStatus(false);
+                }
+                return false;
+            }
         },
 
         async _loadInitialStocksFromDB() {
@@ -719,6 +778,9 @@ const Borsa = {
                 }
                 try { Borsa.saveState(); } catch (_) {}
             }
+            window.dispatchEvent(new CustomEvent("borsa:stock-updated", {
+                detail: { symbol: sym, stock: normalized },
+            }));
         },
 
         removeOneStock(symbol) {
@@ -752,15 +814,6 @@ const Borsa = {
                 typeof window.BorsaMaintenance !== "undefined" &&
                 typeof window.BorsaMaintenance.checkAndRedirect === "function") {
                 try { window.BorsaMaintenance.checkAndRedirect(); } catch (_) {}
-            }
-            if (typeof val.market_open !== "undefined") {
-                const pill = document.getElementById("marketStatusPill");
-                if (pill) {
-                    const open = !!val.market_open;
-                    pill.textContent = open ? "PİYASA AÇIK" : "PİYASA KAPALI";
-                    pill.classList.toggle("market-open", open);
-                    pill.classList.toggle("market-closed", !open);
-                }
             }
             window.dispatchEvent(new CustomEvent("borsa:app-settings-updated", { detail: val }));
         },
@@ -814,6 +867,21 @@ const Borsa = {
                 console.warn("[Realtime] app_settings kanalı açılamadı:", e);
             }
             try {
+                this._marketSettingsChan = sb
+                    .channel("borsa-market-settings")
+                    .on("postgres_changes",
+                        { event: "*", schema: "public", table: "market_settings", filter: "id=eq.1" },
+                        (payload) => {
+                            if (payload.new && typeof payload.new.is_market_open === "boolean") {
+                                this.applyMarketStatus(payload.new.is_market_open);
+                            }
+                        }
+                    )
+                    .subscribe();
+            } catch (e) {
+                console.warn("[Realtime] market_settings kanalı açılamadı:", e);
+            }
+            try {
                 this._statusChan = sb
                     .channel("borsa-transactions-public")
                     .on("postgres_changes",
@@ -835,6 +903,7 @@ const Borsa = {
             } catch (e) {
                 console.warn("[Realtime] news_feed kanalı açılamadı:", e);
             }
+            this.refreshMarketStatus();
             try {
                 window.addEventListener("beforeunload", () => this.stop(), { once: true });
             } catch (_) {}
@@ -843,13 +912,14 @@ const Borsa = {
         stop() {
             const sb = this._sb();
             if (!sb || typeof sb.removeChannel !== "function") return;
-            [this._chan, this._statusChan, this._appSettingsChan, this._newsChan].forEach(c => {
+            [this._chan, this._statusChan, this._appSettingsChan, this._marketSettingsChan, this._newsChan].forEach(c => {
                 if (!c) return;
                 try { sb.removeChannel(c); } catch (_) {}
             });
             this._chan = null;
             this._statusChan = null;
             this._appSettingsChan = null;
+            this._marketSettingsChan = null;
             this._bound = false;
             this._enabled = false;
             console.log("[Realtime] Kanallar kapatıldı.");
