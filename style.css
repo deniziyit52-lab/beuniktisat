@@ -769,9 +769,6 @@ a.public-link {
     .ticker-tape {
         font-size: 0.72rem;
     }
-    .ticker-content {
-        animation-duration: 32s;
-    }
     .ticker-content span {
         padding: 0.15rem 0.75rem;
     }
@@ -941,6 +938,7 @@ body.light-mode .admin-btn-lock {
     gap: 3rem;
     padding: 0.6rem 0;
     animation: scroll 60s linear infinite;
+    will-change: transform;
     white-space: nowrap;
     font-size: 0.85rem;
     font-weight: 600;
@@ -964,6 +962,12 @@ body.light-mode .admin-btn-lock {
 @keyframes scroll {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
+}
+
+@media (max-width: 768px) {
+    .ticker-content {
+        animation-duration: 10s;
+    }
 }
 
 .main-container {
