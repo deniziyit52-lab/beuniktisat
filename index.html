@@ -53,7 +53,7 @@
             <div class="header-center">
                 <div class="market-status">
                     <span class="status-dot"></span>
-                    <span>PİYASA AÇIK</span>
+                    <span id="marketStatusPill" aria-live="polite">PİYASA DURUMU YÜKLENİYOR</span>
                     <span id="currentTime"></span>
                 </div>
             </div>
@@ -232,15 +232,15 @@
                         <button type="button" class="chip-btn" data-qty="5">5</button>
                         <button type="button" class="chip-btn" data-qty="10">10</button>
                         <button type="button" class="chip-btn" data-qty="50">50</button>
-                        <button type="button" class="chip-btn chip-max" id="maxBuyBtn">Max Al</button>
-                        <button type="button" class="chip-btn chip-sellall" id="sellAllBtn">Tümünü Sat</button>
+                        <button type="button" class="chip-btn chip-max" id="maxBuyBtn" data-market-trade disabled>Max Al</button>
+                        <button type="button" class="chip-btn chip-sellall" id="sellAllBtn" data-market-trade disabled>Tümünü Sat</button>
                     </div>
-                    <div id="tradeFeedback" style="display:none; margin-top:0.75rem; padding:0.55rem 0.8rem; border-radius:8px; font-size:0.85rem; text-align:center;"></div>
+                    <div id="tradeFeedback" role="status" aria-live="polite" style="display:none; margin-top:0.75rem; padding:0.55rem 0.8rem; border-radius:8px; font-size:0.85rem; text-align:center;"></div>
                 </div>
 
                 <div class="trade-actions">
-                    <button type="button" id="buyBtn" class="action-btn buy-btn">💹 Al</button>
-                    <button type="button" id="sellBtn" class="action-btn sell-btn">📉 Sat</button>
+                    <button type="button" id="buyBtn" class="action-btn buy-btn" data-market-trade disabled>💹 Al</button>
+                    <button type="button" id="sellBtn" class="action-btn sell-btn" data-market-trade disabled>📉 Sat</button>
                 </div>
             </div>
         </div>
@@ -322,7 +322,7 @@
             <div id="portfolioSellError" class="portfolio-sell-error" role="alert" aria-live="polite"></div>
             <div class="portfolio-sell-actions">
                 <button type="button" id="portfolioSellCancelBtn" class="portfolio-sell-cancel">İptal</button>
-                <button type="button" id="portfolioSellConfirmBtn" class="portfolio-sell-confirm">Satışı Onayla</button>
+                <button type="button" id="portfolioSellConfirmBtn" class="portfolio-sell-confirm" data-market-trade disabled>Satışı Onayla</button>
             </div>
         </div>
     </div>
@@ -444,7 +444,7 @@
             $("portfolioSellQty").value = "";
             $("portfolioSellQty").max = String(maxQty);
             $("portfolioSellError").textContent = "";
-            $("portfolioSellConfirmBtn").disabled = false;
+            $("portfolioSellConfirmBtn").disabled = Borsa.state.marketOpen !== true;
             modal.style.display = "flex";
             modal.setAttribute("aria-hidden", "false");
             requestAnimationFrame(() => $("portfolioSellQty").focus());
@@ -461,6 +461,10 @@
         async function confirmPortfolioSale() {
             const sale = pendingPortfolioSale;
             if (!sale || sale.busy) return;
+            if (Borsa.state.marketOpen !== true) {
+                $("portfolioSellError").textContent = "Piyasa kapalı. Alım-satım yapılamaz.";
+                return;
+            }
             const input = $("portfolioSellQty").value.trim();
             const quantity = Number(input);
             if (!/^\d+$/.test(input) || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > sale.maxQty) {
@@ -471,6 +475,7 @@
 
             sale.busy = true;
             $("portfolioSellConfirmBtn").disabled = true;
+            $("portfolioSellConfirmBtn").dataset.tradeBusy = "true";
             $("portfolioSellCancelBtn").disabled = true;
             $("portfolioSellCloseBtn").disabled = true;
             $("portfolioSellQty").disabled = true;
@@ -482,13 +487,17 @@
                 refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
                 invalidateSidebarCaches();
                 renderPortfolio();
-                showPortfolioToast(`Satış başarılı! ${quantity} ${sale.symbol} satıldı, ${fmt(Number(result.revenue || 0))} bakiyenize eklendi.`);
+                const breakerNotice = result.circuitBreakerTriggered
+                    ? ` ${result.circuitBreakerMessage || "Devre Kesici: Fiyat değişimi %20 ile sınırlandı."}`
+                    : "";
+                showPortfolioToast(`Satış başarılı! ${quantity} ${sale.symbol} satıldı, ${fmt(Number(result.revenue || 0))} bakiyenize eklendi.${breakerNotice}`);
             } catch (err) {
                 console.error("[Portfolio] Hisse satışı başarısız:", err);
                 sale.busy = false;
                 $("portfolioSellError").textContent = err.message || "Satış başarısız. Tekrar deneyin.";
             } finally {
-                $("portfolioSellConfirmBtn").disabled = false;
+                $("portfolioSellConfirmBtn").dataset.tradeBusy = "false";
+                $("portfolioSellConfirmBtn").disabled = Borsa.state.marketOpen !== true;
                 $("portfolioSellCancelBtn").disabled = false;
                 $("portfolioSellCloseBtn").disabled = false;
                 $("portfolioSellQty").disabled = false;
@@ -572,6 +581,8 @@
                     sellButton.type = "button";
                     sellButton.className = "portfolio-sell-btn";
                     sellButton.textContent = "Sat";
+                    sellButton.dataset.marketTrade = "";
+                    sellButton.disabled = Borsa.state.marketOpen !== true;
                     sellButton.setAttribute("aria-label", `${sym} hissesinden satış yap`);
                     sellButton.addEventListener("click", () => {
                         const maxQty = BorsaFirebase.ownedQty(sym);
@@ -735,8 +746,9 @@
             ["buyBtn","sellBtn"].forEach(id => {
                 const btn = $(id);
                 if (!btn) return;
-                btn.disabled = busy;
-                btn.style.opacity = busy ? 0.7 : 1;
+                btn.dataset.tradeBusy = String(busy);
+                btn.disabled = busy || Borsa.state.marketOpen !== true;
+                btn.style.opacity = btn.disabled ? 0.7 : 1;
             });
         }
 
@@ -1146,17 +1158,12 @@
                 }, 250);
             }
 
-            // Re-render trade modal & portfolio prices every tick + sidebar active tab refresh
-            setInterval(() => {
-                if (currentTradeSymbol) updateTradeModal();
+            window.addEventListener("borsa:stock-updated", (event) => {
+                const symbol = event.detail?.symbol;
+                if (currentTradeSymbol && currentTradeSymbol === symbol) updateTradeModal();
                 const pm = $("portfolioModal");
                 if (pm && pm.style.display === "flex") renderPortfolio();
-                // sidebar aciksa 25 tick sonrasinda 1 defa tazele (fiyatlar degistigi icin LB market degeri)
-                if (document.body.classList.contains("drawer-open")) {
-                    const active = document.querySelector(".sidebar-tab--active");
-                    if (active && active.dataset.tab === "leaderboard") loadLeaderboard(false);
-                }
-            }, 2500);
+            });
 
             // Modal + trade events
             const tradeClose = $("tradeCloseBtn");
@@ -1296,7 +1303,10 @@
                         updateTradeTotals("BUY");
                         const r = await BorsaFirebase.buyStock(currentTradeSymbol, qty);
                         const totalPaid = Number(r.total || 0); // komisyon dahil
-                        setTradeFeedback("success", `✅ Alım başarılı! ${qty} Adet → ${fmt(totalPaid)} tahsil edildi (komisyon dahil).`);
+                        const breakerNotice = r.circuitBreakerTriggered
+                            ? `<br>⚠️ ${escapeHtml(r.circuitBreakerMessage || "Devre Kesici: Aşırı hacim nedeniyle fiyat maksimum %20 oranında değişti.")}`
+                            : "";
+                        setTradeFeedback(r.circuitBreakerTriggered ? "info" : "success", `✅ Alım başarılı! ${qty} Adet → ${fmt(totalPaid)} tahsil edildi (komisyon dahil).${breakerNotice}`);
                         refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
                         updateTradeModal();
                         if ($("portfolioModal").style.display === "flex") renderPortfolio();
@@ -1323,7 +1333,10 @@
                         updateTradeTotals("SELL");
                         const r = await BorsaFirebase.sellStock(currentTradeSymbol, qty);
                         const rev = Number(r.revenue || 0); // komisyon dusulmus
-                        setTradeFeedback("success", `✅ Satım başarılı! ${qty} Adet → ${fmt(rev)} bakiyenize eklendi (komisyon dahil).`);
+                        const breakerNotice = r.circuitBreakerTriggered
+                            ? `<br>⚠️ ${escapeHtml(r.circuitBreakerMessage || "Devre Kesici: Aşırı hacim nedeniyle fiyat maksimum %20 oranında değişti.")}`
+                            : "";
+                        setTradeFeedback(r.circuitBreakerTriggered ? "info" : "success", `✅ Satım başarılı! ${qty} Adet → ${fmt(rev)} bakiyenize eklendi (komisyon dahil).${breakerNotice}`);
                         refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
                         updateTradeModal();
                         if ($("portfolioModal").style.display === "flex") renderPortfolio();
