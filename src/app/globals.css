@@ -40,7 +40,7 @@ a {
 
 @media (max-width: 640px) {
   .animate-ticker-scroll {
-    animation-duration: 26s;
+    animation-duration: 10s;
   }
 }
 

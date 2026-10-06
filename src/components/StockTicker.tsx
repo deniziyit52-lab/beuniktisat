@@ -27,7 +27,7 @@ export function StockTicker() {
       <div className="absolute left-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-r from-wallstreet-panel to-transparent pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-20 z-10 bg-gradient-to-l from-wallstreet-panel to-transparent pointer-events-none" />
 
-      <div className="flex whitespace-nowrap animate-ticker-scroll">
+      <div className="flex whitespace-nowrap will-change-transform animate-ticker-scroll">
         {doubled.map((stock, idx) => {
           const { percent } = getChange(stock);
           const isUp = percent >= 0;
