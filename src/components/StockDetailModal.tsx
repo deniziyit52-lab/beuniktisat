@@ -135,10 +135,10 @@ export function StockDetailModal() {
           }}
         />
 
-        <div className="flex items-start justify-between gap-4 p-5 sm:p-6 border-b border-wallstreet-border bg-wallstreet-bg/40">
-          <div className="flex items-start gap-4 min-w-0">
+        <div className="flex flex-wrap items-start gap-3 p-4 sm:flex-nowrap sm:gap-4 sm:p-6 border-b border-wallstreet-border bg-wallstreet-bg/40">
+          <div className="flex min-w-0 flex-1 basis-[calc(100%-3rem)] items-start gap-3 sm:basis-auto sm:gap-4">
             <div
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center font-bold text-2xl sm:text-3xl shrink-0"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center font-bold text-2xl sm:text-3xl shrink-0"
               style={{
                 background: `linear-gradient(135deg, ${stock.avatarColor}33, ${stock.avatarColor}55)`,
                 color: stock.avatarColor,
@@ -167,26 +167,12 @@ export function StockDetailModal() {
               <p className="text-xs sm:text-sm text-gray-500 truncate">
                 {stock.fullName} · {stock.sector}
               </p>
-              <div className="mt-2 flex items-baseline gap-3">
-                <span className="font-mono text-2xl sm:text-4xl font-black text-gray-50">
-                  {formatPrice(stock.currentPrice)}
-                </span>
-                <span
-                  className={`font-mono text-sm sm:text-base font-bold ${
-                    isUp ? "text-neon-green animate-glow-green" : "text-neon-red animate-glow-red"
-                  }`}
-                >
-                  {isUp ? "▲" : "▼"} {isUp ? "+" : ""}
-                  {diff.toFixed(2)} ({isUp ? "+" : ""}
-                  {percent.toFixed(2)}%)
-                </span>
-              </div>
             </div>
           </div>
 
           <button
             onClick={() => setSelectedStockId(null)}
-            className="shrink-0 w-9 h-9 rounded-lg bg-wallstreet-bg/60 hover:bg-wallstreet-bg border border-wallstreet-border text-gray-400 hover:text-gray-200 transition-colors flex items-center justify-center"
+            className="order-2 shrink-0 w-9 h-9 rounded-lg bg-wallstreet-bg/60 hover:bg-wallstreet-bg border border-wallstreet-border text-gray-400 hover:text-gray-200 transition-colors flex items-center justify-center sm:order-3"
             aria-label="Kapat"
           >
             <svg
@@ -203,6 +189,21 @@ export function StockDetailModal() {
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
+
+          <div className="order-3 flex w-full min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 sm:order-2 sm:ml-auto sm:w-auto sm:flex-col sm:items-end sm:gap-0">
+            <span className="break-words font-mono text-2xl sm:text-4xl font-black text-gray-50">
+              {formatPrice(stock.currentPrice)}
+            </span>
+            <span
+              className={`font-mono text-sm sm:text-base font-bold ${
+                isUp ? "text-neon-green animate-glow-green" : "text-neon-red animate-glow-red"
+              }`}
+            >
+              {isUp ? "▲" : "▼"} {isUp ? "+" : ""}
+              {diff.toFixed(2)} ({isUp ? "+" : ""}
+              {percent.toFixed(2)}%)
+            </span>
+          </div>
         </div>
 
         <div className="overflow-y-auto scrollbar-thin flex-1 p-5 sm:p-6 space-y-6">

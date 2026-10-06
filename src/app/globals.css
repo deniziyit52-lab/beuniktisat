@@ -38,6 +38,12 @@ a {
   text-decoration: none;
 }
 
+@media (max-width: 640px) {
+  .animate-ticker-scroll {
+    animation-duration: 26s;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
