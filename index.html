@@ -737,7 +737,7 @@
         // =====================================================================
         const WHISPER_SEEN_KEY = "borsa_seen_tips_v1";
         const WHISPER_MAX_TOASTS = 4;
-        const WHISPER_DISMISS_MS = 20000;
+        const WHISPER_TTL_MS = 120000;
         const _hiddenWhisperUserIds = new Set();
         let _activeWhisperUserId = null;
 
@@ -845,6 +845,9 @@
             if (!tip || !user) return;
             const userId = String(user.id);
             if (_activeWhisperUserId !== userId || _isWhisperHiddenForUser(userId)) return;
+            const createdAtMs = new Date(tip.created_at).getTime();
+            const ageMs = Date.now() - createdAtMs;
+            if (!Number.isFinite(createdAtMs) || ageMs > WHISPER_TTL_MS) return;
             const tipId = tip.id || ("tmp_" + Math.random().toString(36).slice(2));
             if (window._seenWhisperIds.has(tipId)) return;
             window._seenWhisperIds.add(tipId);
@@ -859,7 +862,7 @@
 
             const symbol = String(tip.stock_symbol || "").slice(0, 16);
             const message = String(tip.message || "").slice(0, 280);
-            const createdAt = tip.created_at ? new Date(tip.created_at) : new Date();
+            const createdAt = new Date(createdAtMs);
             const timeText = formatDate(createdAt);
             const alertText = isFake
                 ? "▸ ASILMAZ BİLGİ SAÇILDI — İŞLEM YAPMADAN ÖNCE DİKKATLİ OL"
@@ -893,7 +896,10 @@
                 _hideWhispersForUser(userId);
             });
 
-            el._whisperTimer = setTimeout(() => _dismissToast(el, false), WHISPER_DISMISS_MS);
+            el._whisperTimer = setTimeout(() => {
+                el._whisperTimer = null;
+                el.remove();
+            }, Math.max(0, WHISPER_TTL_MS - ageMs));
         }
 
         async function _loadExistingWhispers() {
