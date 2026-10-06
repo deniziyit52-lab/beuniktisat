@@ -741,6 +741,27 @@
         const _hiddenWhisperUserIds = new Set();
         let _activeWhisperUserId = null;
 
+        function _parseWhisperTimestamp(value) {
+            if (typeof value === "number") return Number.isFinite(value) ? value : null;
+            if (value instanceof Date) {
+                const timestamp = value.getTime();
+                return Number.isFinite(timestamp) ? timestamp : null;
+            }
+            if (typeof value !== "string" || !value.trim()) return null;
+
+            let normalized = value.trim()
+                .replace(/^(\d{4}-\d{2}-\d{2})\s+/, "$1T")
+                .replace(/(\.\d{3})\d+(?=(?:Z|[+-]\d{2}:?\d{2})?$)/i, "$1")
+                .replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
+            if (/^\d{4}-\d{2}-\d{2}T/.test(normalized) &&
+                !/(?:Z|[+-]\d{2}:\d{2})$/i.test(normalized)) {
+                normalized += "Z";
+            }
+
+            const timestamp = Date.parse(normalized);
+            return Number.isFinite(timestamp) ? timestamp : null;
+        }
+
         function _getVerifiedWhisperUser() {
             if (!window.BorsaFirebase || BorsaFirebase._authReady !== true) return null;
             const user = BorsaFirebase.currentUser();
@@ -846,9 +867,10 @@
             const userId = String(user.id);
             if (_activeWhisperUserId !== userId || _isWhisperHiddenForUser(userId)) return;
             if (tip.target_user_id !== null && String(tip.target_user_id) !== userId) return;
-            const createdAtMs = new Date(tip.created_at).getTime();
+            const createdAtMs = _parseWhisperTimestamp(tip.created_at);
+            if (createdAtMs === null) return;
             const ageMs = Date.now() - createdAtMs;
-            if (!Number.isFinite(createdAtMs) || ageMs > WHISPER_TTL_MS) return;
+            if (ageMs > WHISPER_TTL_MS) return;
             const tipId = tip.id || ("tmp_" + Math.random().toString(36).slice(2));
             if (window._seenWhisperIds.has(tipId)) return;
             window._seenWhisperIds.add(tipId);

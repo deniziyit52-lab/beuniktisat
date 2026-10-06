@@ -3943,6 +3943,22 @@ body.light-mode .whisper-meta {
     .whisper-toast { width: 100%; }
 }
 
+@media (max-width: 768px) {
+    .whisper-toast-stack {
+        position: fixed !important;
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        right: calc(12px + env(safe-area-inset-right, 0px));
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        left: calc(12px + env(safe-area-inset-left, 0px));
+        z-index: 10001 !important;
+        max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 body.light-mode .whisper-toast {
     background:
         repeating-linear-gradient(
