@@ -799,7 +799,7 @@
         }
 
         function _setActiveWhisperUser(user) {
-            const userId = user && user.id ? String(user.id) : null;
+            const userId = user && user.id ? String(user.id).trim().toLowerCase() : null;
             if (_activeWhisperUserId !== userId) {
                 _clearWhisperToasts();
                 _activeWhisperUserId = userId;
@@ -864,9 +864,14 @@
         function showWhisperToast(tip) {
             const user = _getVerifiedWhisperUser();
             if (!tip || !user) return;
-            const userId = String(user.id);
-            if (_activeWhisperUserId !== userId || _isWhisperHiddenForUser(userId)) return;
-            if (tip.target_user_id !== null && String(tip.target_user_id) !== userId) return;
+            const userId = String(user.id).trim();
+            const normalizedUserId = userId.toLowerCase();
+            if (_activeWhisperUserId !== normalizedUserId || _isWhisperHiddenForUser(userId)) return;
+            const targetUserId = tip.target_user_id == null
+                ? ""
+                : String(tip.target_user_id).trim().toLowerCase();
+            if (targetUserId && targetUserId !== "null" &&
+                targetUserId !== "undefined" && targetUserId !== normalizedUserId) return;
             const createdAtMs = _parseWhisperTimestamp(tip.created_at);
             if (createdAtMs === null) return;
             const ageMs = Date.now() - createdAtMs;
