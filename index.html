@@ -736,9 +736,8 @@
         //  WHISPER TOAST SISTEMI (Fısıltı Tüyo Bildirimleri)
         // =====================================================================
         const WHISPER_SEEN_KEY = "borsa_seen_tips_v1";
-        const WHISPER_MAX_TOASTS = 4;
         const WHISPER_TTL_MS = 120000;
-        const _hiddenWhisperUserIds = new Set();
+        let whisperTimeout = null;
         let _activeWhisperUserId = null;
 
         function _parseWhisperTimestamp(value) {
@@ -768,34 +767,35 @@
             return user && user.id ? user : null;
         }
 
-        function _isWhisperHiddenForUser(userId) {
-            if (_hiddenWhisperUserIds.has(userId)) return true;
+        function _isWhisperClosed(whisperId) {
             try {
-                return localStorage.getItem("hide_whisper_" + userId) === "true";
+                return localStorage.getItem("closed_whisper_" + whisperId) === "true";
             } catch (e) {
-                console.warn("[Whisper] kullanıcı tercihi okunamadı:", e);
+                console.warn("[Whisper] kapatma tercihi okunamadı:", e);
                 return false;
             }
         }
 
-        function _hideWhispersForUser(userId) {
-            _hiddenWhisperUserIds.add(userId);
-            try {
-                localStorage.setItem("hide_whisper_" + userId, "true");
-            } catch (e) {
-                console.warn("[Whisper] kullanıcı tercihi kaydedilemedi:", e);
+        function _closeWhisper(toastEl, whisperId) {
+            if (whisperTimeout) {
+                clearTimeout(whisperTimeout);
+                whisperTimeout = null;
             }
-            document.querySelectorAll(".whisper-toast").forEach((toast) => {
-                if (toast._whisperTimer) clearTimeout(toast._whisperTimer);
-                toast.remove();
-            });
+            try {
+                localStorage.setItem("closed_whisper_" + whisperId, "true");
+            } catch (e) {
+                console.warn("[Whisper] kapatma tercihi kaydedilemedi:", e);
+            }
+            if (toastEl) toastEl.style.display = "none";
         }
 
         function _clearWhisperToasts() {
-            document.querySelectorAll(".whisper-toast").forEach((toast) => {
-                if (toast._whisperTimer) clearTimeout(toast._whisperTimer);
-                toast.remove();
-            });
+            if (whisperTimeout) {
+                clearTimeout(whisperTimeout);
+                whisperTimeout = null;
+            }
+            const toast = document.querySelector(".whisper-toast");
+            if (toast) toast.style.display = "none";
         }
 
         function _setActiveWhisperUser(user) {
@@ -811,7 +811,7 @@
                 const raw = sessionStorage.getItem(WHISPER_SEEN_KEY);
                 if (!raw) return new Set();
                 const arr = JSON.parse(raw);
-                return new Set(Array.isArray(arr) ? arr : []);
+                return new Set(Array.isArray(arr) ? arr.map(String) : []);
             } catch (e) {
                 return new Set();
             }
@@ -837,56 +837,34 @@
             return stack;
         }
 
-        function _truncateWhispers() {
-            const stack = _ensureToastStack();
-            const toasts = stack.querySelectorAll(".whisper-toast:not(.hide)");
-            if (toasts.length > WHISPER_MAX_TOASTS) {
-                const excess = Array.from(toasts).slice(0, toasts.length - WHISPER_MAX_TOASTS);
-                excess.forEach((t) => _dismissToast(t, true));
-            }
-        }
-
-        function _dismissToast(toastEl, immediate) {
-            if (!toastEl) return;
-            if (toastEl._whisperTimer) {
-                clearTimeout(toastEl._whisperTimer);
-                toastEl._whisperTimer = null;
-            }
-            if (toastEl.classList.contains("hide") || !document.body.contains(toastEl)) return;
-            const run = () => {
-                toastEl.classList.add("hide");
-                setTimeout(() => { if (toastEl.parentNode) toastEl.remove(); }, 420);
-            };
-            if (immediate) { run(); }
-            else run();
-        }
-
         function showWhisperToast(tip) {
             const user = _getVerifiedWhisperUser();
-            if (!tip || !user) return;
+            if (!tip || !user || tip.id == null) return false;
             const userId = String(user.id).trim();
             const normalizedUserId = userId.toLowerCase();
-            if (_activeWhisperUserId !== normalizedUserId || _isWhisperHiddenForUser(userId)) return;
+            if (_activeWhisperUserId !== normalizedUserId) return false;
+            const tipId = String(tip.id);
+            if (_isWhisperClosed(tipId) || window._seenWhisperIds.has(tipId)) return false;
             const targetUserId = tip.target_user_id == null
                 ? ""
                 : String(tip.target_user_id).trim().toLowerCase();
             if (targetUserId && targetUserId !== "null" &&
-                targetUserId !== "undefined" && targetUserId !== normalizedUserId) return;
+                targetUserId !== "undefined" && targetUserId !== normalizedUserId) return false;
             const createdAtMs = _parseWhisperTimestamp(tip.created_at);
-            if (createdAtMs === null) return;
-            const ageMs = Date.now() - createdAtMs;
-            if (ageMs > WHISPER_TTL_MS) return;
-            const tipId = tip.id || ("tmp_" + Math.random().toString(36).slice(2));
-            if (window._seenWhisperIds.has(tipId)) return;
-            window._seenWhisperIds.add(tipId);
-            _saveSeenWhisperIds(window._seenWhisperIds);
+            if (createdAtMs === null) return false;
+            if (whisperTimeout) clearTimeout(whisperTimeout);
 
             const stack = _ensureToastStack();
-            const el = document.createElement("div");
+            let el = stack.querySelector(".whisper-toast");
+            if (!el) {
+                el = document.createElement("div");
+                stack.appendChild(el);
+            }
             const isFake = !!tip.is_fake;
             el.className = "whisper-toast" + (isFake ? " whisper-toast--fake" : "");
             el.dataset.id = String(tipId);
             el.dataset.userId = userId;
+            el.style.display = "block";
 
             const symbol = String(tip.stock_symbol || "").slice(0, 16);
             const message = String(tip.message || "").slice(0, 280);
@@ -916,18 +894,16 @@
                 </div>
             `;
 
-            stack.appendChild(el);
-            _truncateWhispers();
-
             const closeBtn = el.querySelector(".whisper-t-close");
-            if (closeBtn) closeBtn.addEventListener("click", () => {
-                _hideWhispersForUser(userId);
-            });
+            if (closeBtn) closeBtn.onclick = () => _closeWhisper(el, tipId);
 
-            el._whisperTimer = setTimeout(() => {
-                el._whisperTimer = null;
-                el.remove();
-            }, Math.max(0, WHISPER_TTL_MS - ageMs));
+            whisperTimeout = setTimeout(() => {
+                el.style.display = "none";
+                whisperTimeout = null;
+            }, WHISPER_TTL_MS);
+            window._seenWhisperIds.add(tipId);
+            _saveSeenWhisperIds(window._seenWhisperIds);
+            return true;
         }
 
         async function _loadExistingWhispers() {
@@ -949,14 +925,13 @@
                 const user = _getVerifiedWhisperUser();
                 if (!user) return;
                 const userId = String(user.id);
-                if (_isWhisperHiddenForUser(userId)) return;
                 const tips = await BorsaFirebase.fetchMyTips();
                 if (!tips || !tips.length) return;
                 const currentUser = _getVerifiedWhisperUser();
-                if (!currentUser || String(currentUser.id) !== userId ||
-                    _isWhisperHiddenForUser(userId)) return;
-                const notSeen = tips.filter(t => t && !window._seenWhisperIds.has(t.id));
-                notSeen.reverse().forEach(tip => showWhisperToast(tip));
+                if (!currentUser || String(currentUser.id) !== userId) return;
+                for (const tip of tips) {
+                    if (showWhisperToast(tip)) break;
+                }
             } catch (e) {
                 console.warn("[Whisper] eski tüyler yuklenemedi:", e);
             }
@@ -991,9 +966,7 @@
                 }
                 try {
                     _unsub = BorsaFirebase.subscribeWhisperRealtime((tip) => {
-                        if (tip && tip.id && !window._seenWhisperIds.has(tip.id)) {
-                            showWhisperToast(tip);
-                        }
+                        if (tip && tip.id != null) showWhisperToast(tip);
                     });
                 } catch (e) {
                     console.warn("[Whisper] canlı abonelik hatası (deneme #" + _tries + "):", e);
