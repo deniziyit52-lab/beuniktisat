@@ -737,7 +737,6 @@
         // =====================================================================
         const WHISPER_SEEN_KEY = "borsa_seen_tips_v1";
         const WHISPER_TTL_MS = 120000;
-        let whisperTimeout = null;
         let _activeWhisperUserId = null;
 
         function _parseWhisperTimestamp(value) {
@@ -777,9 +776,9 @@
         }
 
         function _closeWhisper(toastEl, whisperId) {
-            if (whisperTimeout) {
-                clearTimeout(whisperTimeout);
-                whisperTimeout = null;
+            if (window.whisperExpireTimer) {
+                clearTimeout(window.whisperExpireTimer);
+                window.whisperExpireTimer = null;
             }
             try {
                 localStorage.setItem("closed_whisper_" + whisperId, "true");
@@ -790,9 +789,9 @@
         }
 
         function _clearWhisperToasts() {
-            if (whisperTimeout) {
-                clearTimeout(whisperTimeout);
-                whisperTimeout = null;
+            if (window.whisperExpireTimer) {
+                clearTimeout(window.whisperExpireTimer);
+                window.whisperExpireTimer = null;
             }
             const toast = document.querySelector(".whisper-toast");
             if (toast) toast.style.display = "none";
@@ -837,6 +836,19 @@
             return stack;
         }
 
+        function _scheduleWhisperExpiry(toast, createdAtMs) {
+            if (window.whisperExpireTimer) clearTimeout(window.whisperExpireTimer);
+            const ageMs = Date.now() - createdAtMs;
+            if (ageMs >= WHISPER_TTL_MS) {
+                toast.style.display = "none";
+                window.whisperExpireTimer = null;
+                return;
+            }
+            window.whisperExpireTimer = setTimeout(() => {
+                _scheduleWhisperExpiry(toast, createdAtMs);
+            }, WHISPER_TTL_MS - ageMs);
+        }
+
         function showWhisperToast(tip) {
             const user = _getVerifiedWhisperUser();
             if (!tip || !user || tip.id == null) return false;
@@ -852,7 +864,9 @@
                 targetUserId !== "undefined" && targetUserId !== normalizedUserId) return false;
             const createdAtMs = _parseWhisperTimestamp(tip.created_at);
             if (createdAtMs === null) return false;
-            if (whisperTimeout) clearTimeout(whisperTimeout);
+            const ageMs = Date.now() - createdAtMs;
+            if (ageMs >= WHISPER_TTL_MS) return false;
+            if (window.whisperExpireTimer) clearTimeout(window.whisperExpireTimer);
 
             const stack = _ensureToastStack();
             let el = stack.querySelector(".whisper-toast");
@@ -860,32 +874,29 @@
                 el = document.createElement("div");
                 stack.appendChild(el);
             }
-            const isFake = !!tip.is_fake;
-            el.className = "whisper-toast" + (isFake ? " whisper-toast--fake" : "");
+            el.className = "whisper-toast";
             el.dataset.id = String(tipId);
             el.dataset.userId = userId;
+            el.dataset.createdAtMs = String(createdAtMs);
             el.style.display = "block";
 
             const symbol = String(tip.stock_symbol || "").slice(0, 16);
             const message = String(tip.message || "").slice(0, 280);
             const createdAt = new Date(createdAtMs);
             const timeText = formatDate(createdAt);
-            const alertText = isFake
-                ? "▸ ASILMAZ BİLGİ SAÇILDI — İŞLEM YAPMADAN ÖNCE DİKKATLİ OL"
-                : "▸ ŞİFRELİ KANAL DINLENDİ — KAMUOYUNDAN ÖNCE BİLGİ";
+            const alertText = "▸ ŞİFRELİ KANAL DİNLENDİ — KAMUOYUNDAN ÖNCE BİLGİ";
 
             el.innerHTML = `
                 <div class="whisper-t-head">
                     <div class="whisper-t-label">
                         <span class="whisper-t-lock">🔒</span>
-                        <span>${isFake ? "ŞÜPHELİ FISILTI / TÜYO" : "GIZLI FISILTI / TÜYO"}</span>
+                        <span>GİZLİ FISILTI / TÜYO</span>
                     </div>
                     <button type="button" class="whisper-t-close" aria-label="Kapat" title="Kapat">×</button>
                 </div>
                 <div class="whisper-t-alert">${escapeHtml(alertText)}</div>
                 <div class="whisper-t-msg">${escapeHtml(message)}</div>
                 ${symbol ? `<div class="whisper-t-symbol">📡 ${escapeHtml(symbol)}</div>` : ""}
-                ${isFake ? `<div class="whisper-t-banner whisper-t-banner--fake">⚠ UYARI: Bu tüyo admin tarafından ASILSIZ olarak işaretlenmiştir — tersine işlem riski!</div>` : ""}
                 <div class="whisper-t-foot">
                     <span class="whisper-t-symbol" style="background:transparent;border:none;padding:0;font-weight:700;color:inherit;letter-spacing:0;">
                         👁 Diğer kullanıcılar henüz görmedi
@@ -897,14 +908,31 @@
             const closeBtn = el.querySelector(".whisper-t-close");
             if (closeBtn) closeBtn.onclick = () => _closeWhisper(el, tipId);
 
-            whisperTimeout = setTimeout(() => {
-                el.style.display = "none";
-                whisperTimeout = null;
-            }, WHISPER_TTL_MS);
+            _scheduleWhisperExpiry(el, createdAtMs);
             window._seenWhisperIds.add(tipId);
             _saveSeenWhisperIds(window._seenWhisperIds);
             return true;
         }
+
+        function _expireWhisperIfStale() {
+            const toast = document.querySelector(".whisper-toast");
+            if (!toast || toast.style.display === "none") return;
+            const createdAtMs = Number(toast.dataset.createdAtMs);
+            if (!Number.isFinite(createdAtMs)) return;
+            const ageMs = Date.now() - createdAtMs;
+            if (ageMs >= WHISPER_TTL_MS) {
+                toast.style.display = "none";
+                if (window.whisperExpireTimer) clearTimeout(window.whisperExpireTimer);
+                window.whisperExpireTimer = null;
+                return;
+            }
+            _scheduleWhisperExpiry(toast, createdAtMs);
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) _expireWhisperIfStale();
+        });
+        window.addEventListener("pageshow", _expireWhisperIfStale);
 
         async function _loadExistingWhispers() {
             try {
