@@ -1833,24 +1833,6 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     margin: 0 auto 1.3rem;
     max-width: 480px;
 }
-.maintenance-status-row {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-}
-.maintenance-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.9rem;
-    background: rgba(127,29,29,0.4);
-    border: 1px solid rgba(239,68,68,0.35);
-    border-radius: 999px;
-    color: #fecaca;
-    font-size: 0.78rem;
-    letter-spacing: 0.3px;
-    font-weight: 600;
-}
 .status-dot {
     width: 10px;
     height: 10px;
@@ -1859,7 +1841,6 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     box-shadow: 0 0 10px rgba(248,113,113,0.8);
     animation: pulse-status 1.8s ease-in-out infinite;
 }
-.status-dot--warn { background: #fbbf24; box-shadow: 0 0 10px rgba(251,191,36,0.8); }
 @keyframes pulse-status {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.25); opacity: 0.8; }
@@ -1927,11 +1908,6 @@ body.light-mode .maintenance-card {
 body.light-mode .maintenance-title { color: #991b1b; }
 body.light-mode .maintenance-subtitle { color: #7c3aed; }
 body.light-mode .maintenance-desc { color: #334155; }
-body.light-mode .maintenance-status {
-    background: rgba(254, 226, 226, 0.85);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: #7f1d1d;
-}
 body.light-mode .maintenance-copy,
 body.light-mode .maintenance-dev { color: #64748b; }
 body.light-mode .maintenance-wrap {

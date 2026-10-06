@@ -165,20 +165,6 @@
         }
     </style>
     <script>
-        /* ============================================================
-         *  ACIL KILL SWITCH — BAKIM SISTEMINI KALICI DEVRE DISI BIRAKIR
-         * ============================================================ */
-        (function disableMaintenance() {
-            try {
-                window.__BORSA_DISABLE_MAINTENANCE__ = true;
-                window.__BORSA_KILL_MAINT__ = true;
-                try { sessionStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
-                try { localStorage.setItem("borsa_maint_disabled", "1"); } catch (e) {}
-                window.__borsa_admin_maintenance_bypass_set = true;
-            } catch (e) {}
-        })();
-    </script>
-    <script>
         (function i(){window._scriptErrors=[];window.addEventListener('error',function(e){var m="[SYNTAX ERROR] "+(e.message||String(e.error||""))+" @ "+(e.filename||"?")+":"+(e.lineno||"?");console.error(m);window._scriptErrors.push(m);},true);function f(el,s){var m="❌ Script yüklenemedi (404/Network/CORS): "+s;console.error(m);window._scriptErrors.push(m);function s2(){if(!document.body)return setTimeout(s2,30);var d=document.createElement('div');d.style.cssText="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;padding:10px 16px;border-radius:8px;background:#991b1b;color:#fff;font-weight:700;font-family:sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.4);max-width:92vw;";d.textContent=m;document.body.appendChild(d);}s2();}window._hookScriptFail=function(src){return function(){f(this,src);};};})();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
@@ -187,25 +173,6 @@
     <script src="shared.js" onerror="window._hookScriptFail&&window._hookScriptFail(this.src).call(this)"></script>
 </head>
 <body id="adminBody">
-    <!-- ============================================================
-         ADMIN MAINTENANCE BYPASS (EN USTTE, Hemen İLK SIRADA)
-         - Admin.html HER AÇILIŞINDA sessionStorage'a 30dk TTL'li
-           garanti bypass bayrağı YAZAR. Böylece supabase-config.js
-           yüklenmeden / auth hydrated olmadan bile BAKIM KONTROLÜ
-           BAŞLAMADAN bayrak vardır.
-         - Döngü TAMAMEN KIRILIR.
-         ============================================================ -->
-    <script>
-        (function setAdminBypassImmediately() {
-            try {
-                var KEY = "borsa_admin_maintenance_bypass";
-                var TTL = 30 * 60 * 1000; // 30 dakika
-                sessionStorage.setItem(KEY, String(Date.now() + TTL));
-                window.__borsa_admin_bypass_set_at = Date.now();
-            } catch (e) {}
-        })();
-    </script>
-
     <div id="gateScreen" class="auth-screen" aria-live="polite">
         <div class="auth-card">
             <div style="display:flex; justify-content:flex-end; margin:-1rem -1rem 0 auto;">
@@ -350,9 +317,9 @@
                         <span id="maintStatusPill" class="status-pill status-pill--off">Bakım: Kapalı</span>
                     </div>
                     <div class="panel-sub maintenance-hint">
-                        Bu anahtar veritabanındaki bakım bayrağını günceller. Otomatik sayfa yönlendirmesi
-                        şu an kodda kapalıdır; üyeler <code>index.html</code> üzerinde kalır. Bakım ekranı
-                        yalnızca <code>maintenance.html</code> adresine elle gidilirse görünür.
+                        Bakım modu açıkken kullanıcılar otomatik olarak <code>maintenance.html</code> sayfasına
+                        yönlendirilir. Yönetici hesabı yönlendirilmez; <code>?bypass=admin</code> acil erişim
+                        bağlantısı da mevcut tarayıcı sekmesinde bakım kontrolünü atlar.
                     </div>
                     <div class="maintenance-toggle-row">
                         <label class="switch-toggle">
@@ -620,7 +587,7 @@
             startApp();
         }
 
-        function showGate({ message, title, redirect } = {}) {
+        function showGate({ message, title, redirect, redirectTarget } = {}) {
             const gateEl  = document.getElementById("gateScreen");
             const appEl   = document.getElementById("appShell");
             const msgEl   = document.getElementById("gateMessage");
@@ -648,10 +615,10 @@
             if (msgEl) msgEl.innerHTML = message || "";
 
             if (redirect) {
-                // 1.2 saniye sonra index.html'e yönlendir (kullanıcı mesajı görsün)
+                const target = redirectTarget || "index.html";
                 setTimeout(() => {
-                    try { window.location.replace("index.html"); }
-                    catch (e) { window.location.href = "index.html"; }
+                    try { window.location.replace(target); }
+                    catch (e) { window.location.href = target; }
                 }, 1200);
             }
         }
@@ -708,8 +675,9 @@
                 if (error || !data || !data.user) {
                     showGate({
                         title:    "Yönetici İzni Yok",
-                        message:  "⚠️ Önce giriş yapmanız gerekiyor. Ana panele yönlendiriliyorsunuz…",
+                        message:  "⚠️ Yönetici panelini açmak için önce giriş yapın. Giriş sayfasına yönlendiriliyorsunuz…",
                         redirect: true,
+                        redirectTarget: "login.html",
                     });
                     return;
                 }
@@ -924,20 +892,6 @@
                 if (lastStatus) lastStatus.textContent = "Son durum: Yüklenemedi.";
                 return;
             }
-            if (typeof BorsaMaintenance.isDisabled === "function" && BorsaMaintenance.isDisabled()) {
-                toggle.checked = false;
-                toggle.disabled = true;
-                if (pill) {
-                    pill.textContent = "Bakım: Kodda kapalı";
-                    pill.classList.add("status-pill--off");
-                    pill.classList.remove("status-pill--on");
-                }
-                if (lastStatus) {
-                    lastStatus.textContent = "Otomatik yönlendirme pasif — site açık kalır.";
-                }
-                return;
-            }
-
             function _applyUi(mode, { silent } = { silent: false }) {
                 const isOn = !!mode;
                 if (!silent) toggle.checked = isOn;

@@ -813,7 +813,9 @@ const Borsa = {
             if (typeof val.maintenance_mode !== "undefined" &&
                 typeof window.BorsaMaintenance !== "undefined" &&
                 typeof window.BorsaMaintenance.checkAndRedirect === "function") {
-                try { window.BorsaMaintenance.checkAndRedirect(); } catch (_) {}
+                window.BorsaMaintenance.checkAndRedirect().catch(e => {
+                    console.error("[Bakım] Realtime bakım kontrolü başarısız:", e);
+                });
             }
             window.dispatchEvent(new CustomEvent("borsa:app-settings-updated", { detail: val }));
         },
@@ -902,6 +904,10 @@ const Borsa = {
                     .subscribe();
             } catch (e) {
                 console.warn("[Realtime] news_feed kanalı açılamadı:", e);
+            }
+            if (window.BorsaMaintenance &&
+                typeof window.BorsaMaintenance.subscribeRealtime === "function") {
+                window.BorsaMaintenance.subscribeRealtime();
             }
             this.refreshMarketStatus();
             try {
