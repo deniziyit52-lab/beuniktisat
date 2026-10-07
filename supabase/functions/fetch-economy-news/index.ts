@@ -6,115 +6,49 @@ const corsHeaders = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
-const FINANCIAL_TITLE_TERMS = [
+const FINANCIAL_KEYWORDS = [
   "borsa",
   "hisse",
   "bist",
-  "endeks",
-  "finans",
-  "finansal",
-  "sermaye piyasa",
-  "merkez bank",
   "faiz",
   "enflasyon",
-  "doviz",
   "dolar",
-  "euro",
-  "gram altin",
-  "ons altin",
-  "altin fiyat",
-  "petrol fiyat",
-  "petrol piyas",
-  "varil",
-  "opec",
-  "emtia",
-  "yatirim",
-  "tahvil",
-  "bono",
-  "fon",
-  "bilanco",
+  "altın",
   "kripto",
-  "bitcoin",
-  "ethereum",
-  "bankac",
-  "kredi",
+  "döviz",
+  "yatırım",
+  "piyasa",
+  "ekonomi",
+  "merkez bankası",
+  "spk",
+  "fon",
   "ihracat",
-  "ithalat",
-  "resesyon",
-  "vergi",
-  "issizlik",
-  "asgari ucret",
-  "akaryakit",
-  "enerji fiyat",
-  "gida fiyat",
-  "buyume verisi",
-  "ekonomi buyume",
+  "büyüme",
+  "gram altın",
+  "ons altın",
+  "altın fiyat",
 ];
 
-const EXCLUDED_CONTENT_TERMS = [
-  "yolsuz",
-  "rusvet",
-  "operasyon",
-  "gozalt",
-  "tutuk",
-  "sorustur",
-  "savcil",
-  "mahkeme",
-  "iddianame",
-  "kacakcil",
-  "dolandir",
-  "kara para",
-  "suclu",
-  "suc orgut",
-  "cete",
-  "teror",
-  "baskin",
-  "skandal",
-  "saldiri",
-  "savas",
-  "catism",
-  "bomb",
-  "fuze",
-  "drone",
-  "askeri",
-  "ordu",
-  "ukrayn",
-  "rusya",
-  "gazze",
-  "israil",
-  "iran",
-  "trump",
-  "zelenski",
-  "secil",
-  "secim",
+const POLITICAL_BLOCKLIST = [
   "parti",
+  "siyaset",
+  "secim",
+  "meclis",
+  "akp",
+  "chp",
+  "mhp",
+  "dem parti",
   "milletvekili",
   "cumhurbaskan",
-  "bakan atam",
+  "altin portakal",
+  "portakal",
+  "film",
   "oyuncu",
-  "sinema",
-  "film festival",
   "futbol",
-  "mac",
-  "spor",
-  "corruption",
-  "bribery",
-  "arrest",
-  "investigation",
-  "scandal",
-  "money laundering",
-  "attack",
-  "war",
-  "missile",
-  "military",
-  "election",
-  "president",
-  "actor",
-  "movie",
 ];
 
 const NEWS_API_QUERY =
-  '("borsa" OR "hisse" OR "BIST" OR "finans" OR "faiz" OR "enflasyon" OR "döviz" OR "yatırım" OR "merkez bankası" OR "tahvil" OR "bono" OR "kripto") NOT ("yolsuzluk" OR "rüşvet" OR "operasyon" OR "gözaltı" OR "tutuklama" OR "soruşturma" OR "kaçakçılık" OR "dolandırıcılık" OR "skandal" OR "saldırı" OR "savaş" OR "Ukrayna" OR "Rusya" OR "film" OR "oyuncu" OR "futbol")';
+  '("borsa" OR "hisse" OR "BIST" OR "faiz" OR "enflasyon" OR "döviz" OR "yatırım" OR "merkez bankası" OR "kripto" OR "altın") NOT ("parti" OR "siyaset" OR "secim" OR "meclis" OR "akp" OR "chp" OR "mhp" OR "film" OR "oyuncu" OR "futbol" OR "portakal")';
 
 interface NewsApiArticle {
   title?: string | null;
@@ -166,25 +100,25 @@ function normalizeTitle(value: string): string {
   return normalizeForSearch(value).replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-function hasTerm(text: string, term: string): boolean {
-  const words = normalizeForSearch(text).split(" ").filter(Boolean);
-  const termWords = normalizeForSearch(term).split(" ").filter(Boolean);
-  if (termWords.length === 0) return false;
-
-  return words.some((_, start) =>
-    termWords.every((word, offset) => {
-      const candidate = words[start + offset];
-      return candidate === word || (word.length >= 4 && candidate?.startsWith(word));
-    }),
-  );
-}
-
 function isFinancialNews(title: string, summary: string): boolean {
-  const fullText = `${title} ${summary}`;
-  return (
-    FINANCIAL_TITLE_TERMS.some((term) => hasTerm(title, term)) &&
-    !EXCLUDED_CONTENT_TERMS.some((term) => hasTerm(fullText, term))
-  );
+  const fullText = `${title} ${summary}`.toLocaleLowerCase("tr-TR");
+
+  // Political blocklist check - KESİNLİKLE ENGELLE
+  for (const term of POLITICAL_BLOCKLIST) {
+    if (fullText.includes(term.toLocaleLowerCase("tr-TR"))) {
+      return false;
+    }
+  }
+
+  // Count financial keywords - EN AZ 3 TANE OLMALI
+  let keywordCount = 0;
+  for (const keyword of FINANCIAL_KEYWORDS) {
+    if (fullText.includes(keyword.toLocaleLowerCase("tr-TR"))) {
+      keywordCount++;
+    }
+  }
+
+  return keywordCount >= 3;
 }
 
 function constantTimeEquals(left: string, right: string): boolean {
