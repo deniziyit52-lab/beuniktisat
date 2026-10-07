@@ -192,8 +192,10 @@ export function NewsFeed() {
                 </div>
               </header>
               <div className="news-detail-body">
-                {selectedNews.summary && (
+                {selectedNews.summary ? (
                   <p className="news-detail-summary">{selectedNews.summary}</p>
+                ) : (
+                  <p className="news-detail-summary">Haber detayı bulunmuyor.</p>
                 )}
                 <div className="news-detail-stats">
                   <div className="stat-item">

@@ -5504,6 +5504,9 @@ body {
     font-size: 1.05rem;
     line-height: 1.8;
     font-style: italic;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-height: none;
 }
 
 .news-detail-stats {
