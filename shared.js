@@ -461,6 +461,21 @@ const Borsa = {
             return;
         }
 
+        const formatDateHeader = () => {
+            const date = new Date();
+            const dayNames = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+            const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+            return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+        };
+
+        const getVolumeNumber = () => {
+            const startDate = new Date("2024-01-01");
+            const currentDate = new Date();
+            const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return `No. ${diffDays}`;
+        };
+
         const metaMarkup = n => {
             const impact = Number(n.impact) || 0;
             const targetInfo = n.target && this.state.stocks[n.target]
@@ -484,6 +499,24 @@ const Borsa = {
         `).join("");
 
         el.innerHTML = `
+            <header class="news-paper-masthead">
+                <div class="news-paper-top-border"></div>
+                <p class="news-paper-kicker">PİYASA • HABER ARŞİVİ</p>
+                <h2 class="news-paper-name">THE GLOBAL GAZETTE</h2>
+                <div class="news-paper-subtitle">
+                    <span>Daily Financial News</span>
+                </div>
+                <div class="news-paper-ticker">
+                    <span class="ticker-date">${formatDateHeader()}</span>
+                    <span class="ticker-separator">•</span>
+                    <span class="ticker-weather">Istanbul, Türkiye</span>
+                    <span class="ticker-separator">•</span>
+                    <span class="ticker-volume">${getVolumeNumber()}</span>
+                    <span class="ticker-separator">•</span>
+                    <span class="ticker-count">${news.length} Makale</span>
+                </div>
+                <div class="news-paper-bottom-border"></div>
+            </header>
             <article class="news-paper-lead">
                 <p class="news-paper-section-label">GÜNÜN MANŞETİ</p>
                 <h3>${this.escapeHtml(lead.title)}</h3>
