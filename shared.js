@@ -542,6 +542,9 @@ const Borsa = {
             ? `📊 ${this.escapeHtml(this.state.stocks[newsItem.target].symbol)} · ${this.escapeHtml(this.state.stocks[newsItem.target].name)}`
             : "📈 Piyasa";
 
+        // Summary'ın tamamını göster (kırpmadan)
+        const fullSummary = newsItem.summary || "";
+
         modal.innerHTML = `
             <div class="news-detail-modal-dialog">
                 <button type="button" class="news-detail-modal-close" aria-label="Kapat" title="Kapat">×</button>
@@ -556,7 +559,7 @@ const Borsa = {
                         </div>
                     </header>
                     <div class="news-detail-body">
-                        ${newsItem.summary ? `<p class="news-detail-summary">${this.escapeHtml(newsItem.summary)}</p>` : ""}
+                        ${fullSummary ? `<p class="news-detail-summary">${this.escapeHtml(fullSummary)}</p>` : "<p class='news-detail-summary'>Haber detayı bulunmuyor.</p>"}
                         <div class="news-detail-stats">
                             <div class="stat-item">
                                 <span class="stat-label">📅 Tarih</span>
