@@ -13,7 +13,6 @@ const FINANCIAL_KEYWORDS = [
   "faiz",
   "enflasyon",
   "dolar",
-  "altın",
   "kripto",
   "döviz",
   "yatırım",
@@ -27,9 +26,12 @@ const FINANCIAL_KEYWORDS = [
   "gram altın",
   "ons altın",
   "altın fiyat",
+  "altın fiyatları",
+  "cumhuriyet altını",
 ];
 
-const POLITICAL_BLOCKLIST = [
+const BLOCKLIST = [
+  // Siyasi terimler
   "parti",
   "siyaset",
   "secim",
@@ -40,15 +42,31 @@ const POLITICAL_BLOCKLIST = [
   "dem parti",
   "milletvekili",
   "cumhurbaskan",
-  "altin portakal",
-  "portakal",
+  // Kültür/Sanat/Festival - KESİNLİKLE ENGELLE
+  "altın portakal",
+  "altın koza",
+  "festival",
   "film",
+  "sinema",
+  "gala",
+  "sergi",
+  "konser",
+  "tiyatro",
+  "dizi",
   "oyuncu",
+  "sanatci",
+  "odul",
+  "aday",
+  "en iyi",
+  "kategorisi",
+  "portakal",
   "futbol",
+  "mac",
+  "spor",
 ];
 
 const NEWS_API_QUERY =
-  '("borsa" OR "hisse" OR "BIST" OR "faiz" OR "enflasyon" OR "döviz" OR "yatırım" OR "merkez bankası" OR "kripto" OR "altın") NOT ("parti" OR "siyaset" OR "secim" OR "meclis" OR "akp" OR "chp" OR "mhp" OR "film" OR "oyuncu" OR "futbol" OR "portakal")';
+  '("borsa" OR "hisse" OR "BIST" OR "faiz" OR "enflasyon" OR "döviz" OR "yatırım" OR "merkez bankası" OR "kripto" OR "gram altın" OR "ons altın") NOT ("parti" OR "siyaset" OR "secim" OR "meclis" OR "akp" OR "chp" OR "mhp" OR "film" OR "oyuncu" OR "futbol" OR "festival" OR "altın portakal" OR "portakal")';
 
 interface NewsApiArticle {
   title?: string | null;
@@ -103,8 +121,8 @@ function normalizeTitle(value: string): string {
 function isFinancialNews(title: string, summary: string): boolean {
   const fullText = `${title} ${summary}`.toLocaleLowerCase("tr-TR");
 
-  // Political blocklist check - KESİNLİKLE ENGELLE
-  for (const term of POLITICAL_BLOCKLIST) {
+  // Blocklist check - KESİNLİKLE ENGELLE
+  for (const term of BLOCKLIST) {
     if (fullText.includes(term.toLocaleLowerCase("tr-TR"))) {
       return false;
     }
@@ -136,7 +154,7 @@ function constantTimeEquals(left: string, right: string): boolean {
 }
 
 function calculateImportanceScore(title: string, summary: string): number {
-  const highImpactWords = ["borsa", "spk", "faiz", "merkez bankası", "enflasyon", "kripto", "döviz", "dolar", "altın"];
+  const highImpactWords = ["borsa", "spk", "faiz", "merkez bankası", "enflasyon", "kripto", "döviz", "dolar", "gram altın", "ons altın"];
   const mediumImpactWords = ["ekonomi", "ihracat", "ithalat", "büyüme", "yatırım", "fon", "şirket", "vergi"];
 
   const fullText = `${title} ${summary}`.toLocaleLowerCase("tr-TR");
