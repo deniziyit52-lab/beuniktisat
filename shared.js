@@ -461,35 +461,21 @@ const Borsa = {
             return;
         }
 
-        const formatDateHeader = () => {
-            const date = new Date();
-            const dayNames = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
-            const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-            return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-        };
-
-        const getVolumeNumber = () => {
-            const startDate = new Date("2024-01-01");
-            const currentDate = new Date();
-            const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return `No. ${diffDays}`;
-        };
-
         const metaMarkup = n => {
             const impact = Number(n.impact) || 0;
             const targetInfo = n.target && this.state.stocks[n.target]
-                ? `<span class="news-paper-stock-tag">${this.escapeHtml(this.state.stocks[n.target].symbol)} · ${this.escapeHtml(this.state.stocks[n.target].name)}</span>`
-                : `<span class="news-paper-stock-tag">Piyasa</span>`;
+                ? `<span class="news-paper-stock-tag">📊 ${this.escapeHtml(this.state.stocks[n.target].symbol)} · ${this.escapeHtml(this.state.stocks[n.target].name)}</span>`
+                : `<span class="news-paper-stock-tag">📈 Piyasa</span>`;
             const impactClass = impact >= 0 ? "positive" : "negative";
-            const impactInfo = `<span class="news-paper-impact ${impactClass}">${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>`;
+            const impactEmoji = impact >= 0 ? "📈" : "📉";
+            const impactInfo = `<span class="news-paper-impact ${impactClass}">${impactEmoji} ${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>`;
             return `${targetInfo}${impactInfo}`;
         };
 
         const lead = news[0];
-        const secondaryStories = news.slice(1).map(n => `
-            <li class="news-paper-story">
-                <h4>${this.escapeHtml(n.title)}</h4>
+        const secondaryStories = news.slice(1).map((n, index) => `
+            <li class="news-paper-story" data-news-id="${n.id}" data-news-index="${index + 1}">
+                <h4>💰 ${this.escapeHtml(n.title)}</h4>
                 ${n.summary ? `<p class="news-paper-secondary-spot">${this.escapeHtml(n.summary)}</p>` : ""}
                 <div class="news-paper-story-meta">
                     ${metaMarkup(n)}
@@ -501,25 +487,13 @@ const Borsa = {
         el.innerHTML = `
             <header class="news-paper-masthead">
                 <div class="news-paper-top-border"></div>
-                <p class="news-paper-kicker">PİYASA • HABER ARŞİVİ</p>
-                <h2 class="news-paper-name">THE GLOBAL GAZETTE</h2>
-                <div class="news-paper-subtitle">
-                    <span>Daily Financial News</span>
-                </div>
-                <div class="news-paper-ticker">
-                    <span class="ticker-date">${formatDateHeader()}</span>
-                    <span class="ticker-separator">•</span>
-                    <span class="ticker-weather">Istanbul, Türkiye</span>
-                    <span class="ticker-separator">•</span>
-                    <span class="ticker-volume">${getVolumeNumber()}</span>
-                    <span class="ticker-separator">•</span>
-                    <span class="ticker-count">${news.length} Makale</span>
-                </div>
+                <p class="news-paper-kicker">📰 PİYASA • HABER ARŞİVİ</p>
+                <h2 class="news-paper-name">EKONOMİ GAZETESİ</h2>
                 <div class="news-paper-bottom-border"></div>
             </header>
-            <article class="news-paper-lead">
-                <p class="news-paper-section-label">GÜNÜN MANŞETİ</p>
-                <h3>${this.escapeHtml(lead.title)}</h3>
+            <article class="news-paper-lead" data-news-id="${lead.id}" data-news-index="0">
+                <p class="news-paper-section-label">🔥 GÜNÜN MANŞETİ</p>
+                <h3>💎 ${this.escapeHtml(lead.title)}</h3>
                 ${lead.summary ? `<p class="news-paper-spot">${this.escapeHtml(lead.summary)}</p>` : ""}
                 <div class="news-paper-story-meta">
                     ${metaMarkup(lead)}
@@ -528,6 +502,97 @@ const Borsa = {
             </article>
             ${secondaryStories ? `<ol class="news-paper-columns">${secondaryStories}</ol>` : ""}
         `;
+
+        // Add click handlers for expanded view
+        this._bindNewsExpandHandlers(el, news);
+    },
+
+    _bindNewsExpandHandlers(el, news) {
+        const stories = el.querySelectorAll('[data-news-id]');
+        stories.forEach(story => {
+            story.style.cursor = 'pointer';
+            story.addEventListener('click', (e) => {
+                const newsId = story.dataset.newsId;
+                const newsIndex = parseInt(story.dataset.newsIndex);
+                const newsItem = news[newsIndex];
+                if (newsItem) {
+                    this._showNewsDetailModal(newsItem);
+                }
+            });
+        });
+    },
+
+    _showNewsDetailModal(newsItem) {
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('newsDetailModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'newsDetailModal';
+            modal.className = 'news-detail-modal-overlay';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-labelledby', 'newsDetailTitle');
+            document.body.appendChild(modal);
+        }
+
+        const impact = Number(newsItem.impact) || 0;
+        const impactClass = impact >= 0 ? "positive" : "negative";
+        const impactEmoji = impact >= 0 ? "📈" : "📉";
+        const targetInfo = newsItem.target && this.state.stocks[newsItem.target]
+            ? `📊 ${this.escapeHtml(this.state.stocks[newsItem.target].symbol)} · ${this.escapeHtml(this.state.stocks[newsItem.target].name)}`
+            : "📈 Piyasa";
+
+        modal.innerHTML = `
+            <div class="news-detail-modal-dialog">
+                <button type="button" class="news-detail-modal-close" aria-label="Kapat" title="Kapat">×</button>
+                <div class="news-detail-content">
+                    <header class="news-detail-header">
+                        <span class="news-detail-badge">📰 Detaylı Haber</span>
+                        <h2 id="newsDetailTitle" class="news-detail-title">${this.escapeHtml(newsItem.title)}</h2>
+                        <div class="news-detail-meta">
+                            <span class="news-detail-stock">${targetInfo}</span>
+                            <span class="news-detail-impact ${impactClass}">${impactEmoji} ${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>
+                            <time class="news-detail-time" datetime="${new Date(newsItem.timestamp).toISOString()}">${this.formatNewsDateTime(newsItem.timestamp)}</time>
+                        </div>
+                    </header>
+                    <div class="news-detail-body">
+                        ${newsItem.summary ? `<p class="news-detail-summary">${this.escapeHtml(newsItem.summary)}</p>` : ""}
+                        <div class="news-detail-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">📅 Tarih</span>
+                                <span class="stat-value">${new Date(newsItem.timestamp).toLocaleDateString('tr-TR')}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">⏰ Saat</span>
+                                <span class="stat-value">${new Date(newsItem.timestamp).toLocaleTimeString('tr-TR')}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">📊 Etki</span>
+                                <span class="stat-value ${impactClass}">${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        modal.classList.add('is-open');
+        document.body.classList.add('news-detail-modal-open');
+
+        // Close handler
+        const closeBtn = modal.querySelector('.news-detail-modal-close');
+        const close = () => {
+            modal.classList.remove('is-open');
+            document.body.classList.remove('news-detail-modal-open');
+        };
+
+        closeBtn.addEventListener('click', close);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) close();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('is-open')) close();
+        });
     },
 
     bindNewsModal() {
