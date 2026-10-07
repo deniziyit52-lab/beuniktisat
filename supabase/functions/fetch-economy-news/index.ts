@@ -133,6 +133,7 @@ interface NewsRecord {
   title: string;
   summary: string;
   created_at: string;
+  importance_score: number;
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -198,6 +199,28 @@ function constantTimeEquals(left: string, right: string): boolean {
   }
 
   return difference === 0;
+}
+
+function calculateImportanceScore(title: string, summary: string): number {
+  const highImpactWords = ["borsa", "spk", "faiz", "merkez bankası", "enflasyon", "kripto", "döviz", "dolar", "altın"];
+  const mediumImpactWords = ["ekonomi", "ihracat", "ithalat", "büyüme", "yatırım", "fon", "şirket", "vergi"];
+
+  const fullText = `${title} ${summary}`.toLocaleLowerCase("tr-TR");
+  let score = 0;
+
+  for (const word of highImpactWords) {
+    if (fullText.includes(word)) {
+      score += 10;
+    }
+  }
+
+  for (const word of mediumImpactWords) {
+    if (fullText.includes(word)) {
+      score += 5;
+    }
+  }
+
+  return score;
 }
 
 Deno.serve(async (request) => {
@@ -277,6 +300,7 @@ Deno.serve(async (request) => {
         title,
         summary: summary.slice(0, 500),
         created_at: publishedAt.toISOString(),
+        importance_score: calculateImportanceScore(title, summary),
       });
     }
 
@@ -317,6 +341,7 @@ Deno.serve(async (request) => {
       stock_symbol: null,
       impact_pct: 0,
       created_at: article.created_at,
+      importance_score: article.importance_score,
     }));
 
     const { data: insertedArticles, error: insertError } = await supabase
@@ -327,6 +352,33 @@ Deno.serve(async (request) => {
     if (insertError) {
       console.error("Could not insert fetched news.", insertError);
       return jsonResponse({ error: "Could not save fetched news." }, 500);
+    }
+
+    // Check total count and keep only top 15 articles by importance_score and created_at
+    const { data: allArticles, error: countError } = await supabase
+      .from("news_feed")
+      .select("id")
+      .order("importance_score", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (countError) {
+      console.error("Could not check article count.", countError);
+      return jsonResponse({ error: "Could not check article count." }, 500);
+    }
+
+    if (allArticles && allArticles.length > 15) {
+      const articlesToDelete = allArticles.slice(15);
+      const idsToDelete = articlesToDelete.map((article) => article.id);
+
+      const { error: deleteError } = await supabase
+        .from("news_feed")
+        .delete()
+        .in("id", idsToDelete);
+
+      if (deleteError) {
+        console.error("Could not delete excess articles.", deleteError);
+        return jsonResponse({ error: "Could not delete excess articles." }, 500);
+      }
     }
 
     return jsonResponse({

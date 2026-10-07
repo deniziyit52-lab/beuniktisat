@@ -14,6 +14,21 @@ function formatNewsDateTime(timestamp: number): string {
   })}`;
 }
 
+function formatDateHeader(): string {
+  const date = new Date();
+  const dayNames = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+  const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function getVolumeNumber(): string {
+  const startDate = new Date("2024-01-01");
+  const currentDate = new Date();
+  const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return `No. ${diffDays}`;
+}
+
 export function NewsFeed() {
   const { news, getStockById, setSelectedStockId } = useMarket();
   const lead = news[0];
@@ -22,14 +37,24 @@ export function NewsFeed() {
   return (
     <section className="news-paper" aria-labelledby="news-paper-title">
       <header className="news-paper-masthead">
+        <div className="news-paper-top-border"></div>
         <p className="news-paper-kicker">PİYASA • HABER ARŞİVİ</p>
         <h2 id="news-paper-title" className="news-paper-name">
-          Ekonomi Gazetesi
+          THE GLOBAL GAZETTE
         </h2>
-        <div className="news-paper-edition">
-          <span>Haberler</span>
-          <span>{news.length} kayıt</span>
+        <div className="news-paper-subtitle">
+          <span>Daily Financial News</span>
         </div>
+        <div className="news-paper-ticker">
+          <span className="ticker-date">{formatDateHeader()}</span>
+          <span className="ticker-separator">•</span>
+          <span className="ticker-weather">Istanbul, Türkiye</span>
+          <span className="ticker-separator">•</span>
+          <span className="ticker-volume">{getVolumeNumber()}</span>
+          <span className="ticker-separator">•</span>
+          <span className="ticker-count">{news.length} Makale</span>
+        </div>
+        <div className="news-paper-bottom-border"></div>
       </header>
 
       <div className="news-paper-list">
