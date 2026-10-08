@@ -2,7 +2,7 @@
 -- Sure dolduktan sonra gelen cevaplar sayilmaz.
 
 ALTER TABLE public.engine_settings
-    ADD COLUMN IF NOT EXISTS quiz_minutes INTEGER NOT NULL DEFAULT 10;
+    ADD COLUMN IF NOT EXISTS quiz_minutes INTEGER NOT NULL DEFAULT 5;
 
 -- quiz_attempts satiri artik sinav baslayinca acilir, gonderilince tamamlanir.
 ALTER TABLE public.quiz_attempts
@@ -47,8 +47,8 @@ BEGIN
         );
     END IF;
 
-    SELECT coalesce(quiz_minutes, 10) INTO _minutes FROM public.engine_settings WHERE id = 1;
-    _minutes := coalesce(_minutes, 10);
+    SELECT coalesce(quiz_minutes, 5) INTO _minutes FROM public.engine_settings WHERE id = 1;
+    _minutes := coalesce(_minutes, 5);
 
     SELECT coalesce(jsonb_agg(q.item), '[]'::jsonb)
     INTO _questions
@@ -97,8 +97,8 @@ BEGIN
         RAISE EXCEPTION 'Sınavı daha önce çözdünüz.';
     END IF;
 
-    SELECT coalesce(quiz_minutes, 10) INTO _minutes FROM public.engine_settings WHERE id = 1;
-    _minutes := coalesce(_minutes, 10);
+    SELECT coalesce(quiz_minutes, 5) INTO _minutes FROM public.engine_settings WHERE id = 1;
+    _minutes := coalesce(_minutes, 5);
 
     RETURN jsonb_build_object(
         'minutes', _minutes,
@@ -145,8 +145,8 @@ BEGIN
         RAISE EXCEPTION 'Sınavı daha önce çözdünüz.';
     END IF;
 
-    SELECT coalesce(quiz_minutes, 10) INTO _minutes FROM public.engine_settings WHERE id = 1;
-    _minutes := coalesce(_minutes, 10);
+    SELECT coalesce(quiz_minutes, 5) INTO _minutes FROM public.engine_settings WHERE id = 1;
+    _minutes := coalesce(_minutes, 5);
 
     -- Sure dolduktan sonra (30 sn tolerans) gelen cevaplar sayilmaz.
     _late := now() > _attempt.started_at + make_interval(secs => _minutes * 60 + 30);
