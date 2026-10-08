@@ -1799,6 +1799,23 @@ if (document.readyState === "loading") {
             }
         } catch (_) {}
         window.dispatchEvent(new CustomEvent("borsa:live-resumed"));
+        showResumeNote();
+    }
+
+    // Sekmeye dönüldüğünde verilerin yenilendiğini kısa bir bilgi baloncuğuyla gösterir.
+    function showResumeNote() {
+        let note = document.getElementById("liveResumeNote");
+        if (!note) {
+            note = document.createElement("div");
+            note.id = "liveResumeNote";
+            note.className = "live-resume-note";
+            note.setAttribute("role", "status");
+            note.textContent = "🔄 Fiyatlar güncellendi";
+            document.body.appendChild(note);
+        }
+        note.classList.add("is-visible");
+        clearTimeout(note._hideTimer);
+        note._hideTimer = setTimeout(() => note.classList.remove("is-visible"), 3500);
     }
 
     document.addEventListener("visibilitychange", () => {
