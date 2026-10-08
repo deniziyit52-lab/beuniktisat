@@ -14,6 +14,9 @@
         _tiers: [],
         _modal: null,
         _busy: false,
+        _minutes: 0,      // 0: süre yok (sunucu süre bildirmediyse)
+        _deadline: 0,     // sınav başladıysa bitiş anı (ms)
+        _timer: null,
 
         _button() { return document.getElementById("quizBtn"); },
 
@@ -38,7 +41,15 @@
                 .map(t => ({ min: Number(t.min), bonus: Number(t.bonus) }))
                 .sort((a, b) => a.min - b.min);
             if (!this._questions.length) return;
+            this._minutes = Number(data.minutes) || 0;
+            this._deadline = 0;
             this._showButton(true);
+            // Süre daha önce başladıysa kaldığı yerden devam eder.
+            if (data.started && this._minutes > 0) {
+                this._deadline = Date.now() + Number(data.seconds_left || 0) * 1000;
+                this.openQuestions();
+                return;
+            }
             let dismissed = false;
             try { dismissed = sessionStorage.getItem(DISMISS_KEY) === uid; } catch (_) {}
             if (!dismissed) this.openIntro();
@@ -55,8 +66,13 @@
             return modal;
         },
 
+        _stopTimer() {
+            if (this._timer) { clearInterval(this._timer); this._timer = null; }
+        },
+
         close(silent) {
             if (this._busy) return;
+            this._stopTimer();
             if (this._modal) { this._modal.remove(); this._modal = null; }
             if (!silent && this._uid) {
                 try { sessionStorage.setItem(DISMISS_KEY, this._uid); } catch (_) {}
@@ -73,16 +89,47 @@
                         return `<li><b>${t.min}–${upTo} doğru</b> → +${fmt(t.bonus)}</li>`;
                     }).join("")}
                 </ul>
+                ${this._minutes > 0 ? `<p class="quiz-text">⏱ Süre: <b>${this._minutes} dakika</b>. "Şimdi Çöz"e basınca süre başlar ve durmaz; sayfayı kapatsan da işlemeye devam eder. Süre bitince işaretlediklerin kendiliğinden gönderilir.</p>` : ""}
                 <p class="quiz-text quiz-muted">Sınav yalnızca bir kez çözülebilir. Şimdi çözmek istemezsen sayfanın üstündeki sınav kutusundan daha sonra başlayabilirsin.</p>
                 <div class="quiz-actions">
                     <button type="button" class="btn btn--ghost" data-quiz="later">Sonra</button>
                     <button type="button" class="submit-btn" data-quiz="start">Şimdi Çöz</button>
                 </div>`);
             modal.querySelector('[data-quiz="later"]').addEventListener("click", () => this.close());
-            modal.querySelector('[data-quiz="start"]').addEventListener("click", () => this.openQuestions());
+            modal.querySelector('[data-quiz="start"]').addEventListener("click", () => this.start());
+        },
+
+        // Süreyi sunucuda başlatır, sonra soruları açar.
+        async start() {
+            if (this._busy) return;
+            if (this._minutes > 0 && !this._deadline) {
+                this._busy = true;
+                const { data, error } = await window.sb.rpc("start_quiz");
+                this._busy = false;
+                if (error) {
+                    alert(error.message || "Sınav başlatılamadı. Tekrar deneyin.");
+                    return;
+                }
+                this._deadline = Date.now() + Number(data && data.seconds_left || 0) * 1000;
+            }
+            this.openQuestions();
+        },
+
+        _tick() {
+            const el = this._modal && this._modal.querySelector(".quiz-timer");
+            const left = Math.max(0, Math.ceil((this._deadline - Date.now()) / 1000));
+            if (el) {
+                el.textContent = `⏱ ${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+                el.classList.toggle("is-low", left <= 60);
+            }
+            if (left <= 0) {
+                this._stopTimer();
+                this.submit();
+            }
         },
 
         openQuestions() {
+            const timed = this._deadline > 0;
             const body = this._questions.map((q, i) => `
                 <fieldset class="quiz-question" data-qid="${q.id}">
                     <legend>${i + 1}. ${esc(q.question)}</legend>
@@ -93,15 +140,22 @@
                         </label>`).join("")}
                 </fieldset>`).join("");
             const modal = this._open(`
-                <h2 class="quiz-title">📝 Açılış Sınavı</h2>
+                <h2 class="quiz-title">📝 Açılış Sınavı${timed ? ' <span class="quiz-timer" aria-live="off"></span>' : ""}</h2>
                 <div class="quiz-body">${body}</div>
                 <div class="quiz-error" role="alert"></div>
                 <div class="quiz-actions">
-                    <button type="button" class="btn btn--ghost" data-quiz="later">Sonra</button>
+                    ${timed ? "" : '<button type="button" class="btn btn--ghost" data-quiz="later">Sonra</button>'}
                     <button type="button" class="submit-btn" data-quiz="submit">Gönder</button>
                 </div>`);
-            modal.querySelector('[data-quiz="later"]').addEventListener("click", () => this.close());
+            const later = modal.querySelector('[data-quiz="later"]');
+            if (later) later.addEventListener("click", () => this.close());
             modal.querySelector('[data-quiz="submit"]').addEventListener("click", () => this.submit());
+            if (timed) {
+                this._tick();
+                if (this._modal === modal && this._deadline > Date.now()) {
+                    this._timer = setInterval(() => this._tick(), 1000);
+                }
+            }
         },
 
         async submit() {
@@ -115,7 +169,8 @@
                 if (picked) answers[q.id] = Number(picked.value);
                 else missing++;
             });
-            if (missing > 0) {
+            const expired = this._deadline > 0 && Date.now() >= this._deadline;
+            if (missing > 0 && !expired) {
                 errorEl.textContent = `${missing} soru boş. Göndermeden önce hepsini işaretle; sınav tek seferlik.`;
                 return;
             }
@@ -123,6 +178,7 @@
             errorEl.textContent = "Gönderiliyor…";
             const { data, error } = await window.sb.rpc("submit_quiz", { p_answers: answers });
             this._busy = false;
+            if (!error && data) { this._stopTimer(); this._deadline = 0; }
             if (error || !data) {
                 errorEl.textContent = (error && error.message) || "Sınav gönderilemedi. Tekrar deneyin.";
                 return;
@@ -142,13 +198,15 @@
                 const ok = chosen === correct;
                 return `<div class="quiz-review ${ok ? "ok" : "wrong"}">
                     <div class="quiz-review-q">${ok ? "✅" : "❌"} ${i + 1}. ${esc(q.question)}</div>
-                    ${ok ? "" : `<div class="quiz-review-a">Senin cevabın: ${esc((q.options || [])[chosen])}</div>`}
+                    ${ok ? "" : `<div class="quiz-review-a">Senin cevabın: ${chosen === undefined ? "boş" : esc((q.options || [])[chosen])}</div>`}
                     <div class="quiz-review-a">Doğru cevap: <b>${esc((q.options || [])[correct])}</b></div>
                 </div>`;
             }).join("");
             const bonus = Number(result.bonus || 0);
+            const missingCount = this._questions.filter(q => answers[q.id] === undefined).length;
             const modal = this._open(`
                 <h2 class="quiz-title">🎉 Sonuç: ${Number(result.score)} / ${Number(result.total)}</h2>
+                ${result.late ? '<p class="quiz-text">⏰ Süre dolduktan sonra gönderildiği için cevapların sayılmadı.</p>' : (missingCount > 0 ? `<p class="quiz-text">⏰ Süre doldu; ${missingCount} soru boş kaldı.</p>` : "")}
                 <p class="quiz-text">${bonus > 0
                     ? `Tebrikler, <b>+${fmt(bonus)}</b> bonus kazandın. Yeni bakiyen <b>${fmt(Number(result.balance || 0))}</b>.`
                     : `Bu sefer bonus çıkmadı; ${fmt(Number(result.balance || 0))} ile oyuna devam ediyorsun.`}</p>
@@ -162,7 +220,9 @@
 
         wire() {
             const btn = this._button();
-            if (btn) btn.addEventListener("click", () => { if (this._questions.length) this.openIntro(); });
+            if (btn) btn.addEventListener("click", () => { if (!this._questions.length) return;
+                if (this._deadline > 0) this.openQuestions(); else this.openIntro();
+            });
             BorsaFirebase.onChange((user) => { this.check(user).catch(() => {}); });
         },
     };

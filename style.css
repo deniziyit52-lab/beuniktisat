@@ -5703,6 +5703,22 @@ body.news-detail-modal-open {
     white-space: nowrap;
 }
 
+/* Sınav süresi sayacı */
+.quiz-timer {
+    float: right;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.quiz-timer.is-low {
+    color: var(--red-bright);
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.1);
+}
+
 /* Gazete: boş hali ve sayfa numaraları */
 .news-paper-empty {
     margin: 0;
