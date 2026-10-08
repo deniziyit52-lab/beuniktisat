@@ -5703,6 +5703,22 @@ body.news-detail-modal-open {
     white-space: nowrap;
 }
 
+/* Piyasa saatleri bilgisi */
+.market-hours-note {
+    margin: -0.25rem 0 1rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.market-hours-note.is-closed {
+    color: var(--red-bright);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
 /* Admin: oyun ayarları */
 .settings-table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
 .settings-table th,

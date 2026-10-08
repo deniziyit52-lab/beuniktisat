@@ -775,11 +775,18 @@ const Borsa = {
                     status.classList.toggle("market-closed", !Borsa.state.marketOpen);
                 }
             }
+            const hoursNote = document.getElementById("marketHoursNote");
+            if (hoursNote) {
+                hoursNote.textContent = Borsa.state.marketOpen
+                    ? "🕘 Piyasa açık. Her gün 09:00–24:00 arası işlem yapılabilir."
+                    : "🔒 Piyasa şu an kapalı. Her gün 09:00'da açılır, 24:00'te kapanır.";
+                hoursNote.classList.toggle("is-closed", !Borsa.state.marketOpen);
+            }
             document.querySelectorAll("[data-market-trade]").forEach(button => {
                 const disabled = !Borsa.state.marketOpen || button.dataset.tradeBusy === "true";
                 button.disabled = disabled;
                 button.setAttribute("aria-disabled", String(disabled));
-                button.title = Borsa.state.marketOpen ? "" : "Piyasa kapalı";
+                button.title = Borsa.state.marketOpen ? "" : "Piyasa kapalı (09:00–24:00 arası açık)";
             });
             window.dispatchEvent(new CustomEvent("borsa:market-status-updated", {
                 detail: { isMarketOpen: Borsa.state.marketOpen },
