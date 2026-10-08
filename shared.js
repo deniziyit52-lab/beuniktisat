@@ -381,7 +381,11 @@ const Borsa = {
                         grid: { color: chartColors.grid, drawBorder: false },
                         ticks: {
                             color: chartColors.ticks, maxRotation: 0, autoSkip: true,
-                            maxTicksLimit: 8, font: { size: 10 },
+                            maxTicksLimit: 5, font: { size: 10 },
+                            // Eksende saniye gösterilmez ("07.10 13:14"); ipucunda tam saat durur.
+                            callback: function (value) {
+                                return String(this.getLabelForValue(value) || "").slice(0, 11);
+                            },
                         },
                     },
                     y: {
@@ -439,8 +443,9 @@ const Borsa = {
             document.getElementById("newsFeed"),
             document.getElementById("newsModalFeed"),
         ].filter(Boolean);
-        if (elements.length === 0) return;
         const sorted = [...this.state.news].sort((a, b) => b.timestamp - a.timestamp).slice(0, this.NEWS_MAX);
+        this._renderHeadlines(sorted);
+        if (elements.length === 0) return;
         elements.forEach(el => {
             if (el.classList.contains("news-paper")) {
                 this._renderNewspaper(el, sorted);
@@ -475,6 +480,27 @@ const Borsa = {
                 `;
                 el.appendChild(item);
             });
+        });
+    },
+
+    // Grafiğin altındaki kısa liste: en yeni birkaç başlık, tıklanınca haberin detayı açılır.
+    _renderHeadlines(news) {
+        const el = document.getElementById("newsHeadlines");
+        if (!el) return;
+        const top = news.slice(0, 5);
+        if (top.length === 0) {
+            el.innerHTML = `<li class="headlines-empty">Henüz haber yok.</li>`;
+            return;
+        }
+        el.innerHTML = top.map((n, index) => `
+            <li>
+                <button type="button" data-headline-index="${index}">
+                    <span class="headline-title">${this.escapeHtml(n.title)}</span>
+                    <time datetime="${new Date(n.timestamp).toISOString()}">${this.formatTime(n.timestamp).slice(0, 11)}</time>
+                </button>
+            </li>`).join("");
+        el.querySelectorAll("[data-headline-index]").forEach(button => {
+            button.addEventListener("click", () => this._showNewsDetailModal(top[Number(button.dataset.headlineIndex)]));
         });
     },
 
@@ -675,6 +701,9 @@ const Borsa = {
             trigger.setAttribute("aria-expanded", "true");
             document.body.classList.add("news-modal-open");
             closeButton.focus();
+        });
+        document.querySelectorAll("[data-open-news]").forEach(button => {
+            button.addEventListener("click", () => trigger.click());
         });
         closeButton.addEventListener("click", close);
         overlay.addEventListener("click", event => {

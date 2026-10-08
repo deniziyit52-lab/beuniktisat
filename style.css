@@ -5833,3 +5833,66 @@ body.news-detail-modal-open {
     accent-color: #22c55e;
 }
 .settings-option input[type="text"] { flex: 1; }
+
+/* Oyuncu sayfası düzeni: sıkı aralıklar, dört sütun kart, sağ sütunda son haberler */
+.left-panel .section-header { margin-bottom: 0; }
+.left-panel .market-hours-note { margin: -0.6rem 0 -0.4rem; }
+.left-panel .assets-header { margin-top: 1rem; }
+.left-panel .quiz-banner { margin-bottom: 0; }
+
+.headlines-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+.headlines-list li + li { border-top: 1px solid var(--border); }
+.headlines-list button {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.7rem 0.25rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: left;
+    cursor: pointer;
+}
+.headlines-list button:hover .headline-title { color: var(--accent-bright); }
+.headline-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.headlines-list time {
+    flex: none;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+.headlines-empty {
+    padding: 0.8rem 0.25rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+@media (min-width: 1101px) {
+    .left-panel .stocks-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    .left-panel .stock-card { padding: 1rem; }
+    /* Grafik ve haberler, hisse listesi kaydırılırken ekranda kalır. */
+    .right-panel {
+        position: sticky;
+        top: 8.5rem;
+        align-self: start;
+    }
+    .right-panel .chart-container { height: 320px; }
+    /* Yüzen haber düğmesi yerine sağ sütundaki kutu kullanılır. */
+    body:has(#newsHeadlines) .news-fab { display: none; }
+}
