@@ -555,7 +555,7 @@
                 invalidateSidebarCaches();
                 renderPortfolio();
                 const breakerNotice = result.circuitBreakerTriggered
-                    ? ` ${result.circuitBreakerMessage || "Devre Kesici: Fiyat değişimi %20 ile sınırlandı."}`
+                    ? ` ${result.circuitBreakerMessage || "Devre kesici devreye girdi."}`
                     : "";
                 showPortfolioToast(`Satış başarılı! ${quantity} ${sale.symbol} satıldı, ${fmt(Number(result.revenue || 0))} bakiyenize eklendi.${breakerNotice}`);
             } catch (err) {
@@ -732,6 +732,9 @@
             if (!sym) return;
             const s = stockOf(sym);
             if (!s) return;
+            if (Borsa.isHalted(s)) {
+                setTradeFeedback("info", `⚡ Devre kesici devrede. Bu hissede işlemler ${Borsa.haltEndsAt(s)}'de yeniden açılacak.`);
+            }
             const price = Number(s.price || 0);
             const pct = Number(s.changePct || 0);
             const isUp = pct >= 0;
@@ -1471,7 +1474,7 @@
                         const r = await BorsaFirebase.buyStock(currentTradeSymbol, qty);
                         const totalPaid = Number(r.total || 0); // komisyon dahil
                         const breakerNotice = r.circuitBreakerTriggered
-                            ? `<br>⚠️ ${escapeHtml(r.circuitBreakerMessage || "Devre Kesici: Aşırı hacim nedeniyle fiyat maksimum %20 oranında değişti.")}`
+                            ? `<br>⚠️ ${escapeHtml(r.circuitBreakerMessage || "Devre kesici devreye girdi.")}`
                             : "";
                         setTradeFeedback(r.circuitBreakerTriggered ? "info" : "success", `✅ Alım başarılı! ${qty} Adet → ${fmt(totalPaid)} tahsil edildi (komisyon dahil).${breakerNotice}`);
                         refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
@@ -1501,7 +1504,7 @@
                         const r = await BorsaFirebase.sellStock(currentTradeSymbol, qty);
                         const rev = Number(r.revenue || 0); // komisyon dusulmus
                         const breakerNotice = r.circuitBreakerTriggered
-                            ? `<br>⚠️ ${escapeHtml(r.circuitBreakerMessage || "Devre Kesici: Aşırı hacim nedeniyle fiyat maksimum %20 oranında değişti.")}`
+                            ? `<br>⚠️ ${escapeHtml(r.circuitBreakerMessage || "Devre kesici devreye girdi.")}`
                             : "";
                         setTradeFeedback(r.circuitBreakerTriggered ? "info" : "success", `✅ Satım başarılı! ${qty} Adet → ${fmt(rev)} bakiyenize eklendi (komisyon dahil).${breakerNotice}`);
                         refreshUserNav(BorsaFirebase.currentUser(), BorsaFirebase.currentUserData());
