@@ -548,6 +548,7 @@
                         <h2>🔴 Canlı Haber Akışı</h2>
                         <button id="resetBtn" class="reset-btn">Haber Arşivini Temizle</button>
                     </div>
+                    <button id="fetchRealNewsBtn" type="button" class="submit-btn" style="width:100%; margin-bottom:0.75rem;">🌐 Gerçek Ekonomi Haberlerini Çek</button>
                     <div id="newsFeed" class="news-feed"></div>
                 </div>
 
@@ -579,12 +580,8 @@
             </div>
         </div>
         <div id="newsModal" class="news-modal-overlay" aria-hidden="true">
-            <section class="news-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="newsModalTitleAdmin">
+            <section class="news-modal-dialog" role="dialog" aria-modal="true" aria-label="Ekonomi Gazetesi">
                 <button id="closeNewsModal" type="button" class="news-modal-close" aria-label="Haberleri kapat" title="Kapat">×</button>
-                <div class="news-paper-masthead">
-                    <p class="news-paper-kicker">PİYASA • HABER ARŞİVİ</p>
-                    <h2 id="newsModalTitleAdmin" class="news-paper-name">Ekonomi Gazetesi</h2>
-                </div>
                 <div id="newsModalFeed" class="news-feed news-paper"></div>
             </section>
         </div>
@@ -1407,6 +1404,44 @@
                 } catch (err) {
                     console.error("[Admin] Piyasa sıfırlama RPC hatası:", err);
                     showErr(err.message || "Piyasa sıfırlanamadı.");
+                }
+            });
+
+            // Gerçek haberler: istek sunucudan gönderilir, sonuç birkaç saniye sonra sorulur.
+            const fetchRealNewsBtn = document.getElementById("fetchRealNewsBtn");
+            fetchRealNewsBtn.addEventListener("click", async () => {
+                const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+                const label = fetchRealNewsBtn.textContent;
+                fetchRealNewsBtn.disabled = true;
+                fetchRealNewsBtn.textContent = "⏳ Haberler çekiliyor…";
+                try {
+                    const { data: requestId, error } = await window.sb.rpc("admin_fetch_real_news");
+                    if (error) throw error;
+                    let result = null;
+                    for (let attempt = 0; attempt < 8; attempt++) {
+                        await wait(3000);
+                        const { data, error: resultError } = await window.sb.rpc("admin_news_fetch_result", { p_request_id: requestId });
+                        if (resultError) throw resultError;
+                        if (data && data.done) { result = data; break; }
+                    }
+                    await Borsa.Realtime._loadInitialNewsFromDB();
+                    if (!result) {
+                        showErr("Haber servisi henüz cevap vermedi. Biraz sonra gazeteye bakın.");
+                    } else if (result.ok) {
+                        const inserted = Number(result.body && result.body.inserted || 0);
+                        showToast(inserted > 0
+                            ? `${inserted} yeni haber gazeteye eklendi.`
+                            : "Yeni haber çıkmadı; gazetedekiler zaten güncel.");
+                    } else {
+                        const reason = (result.body && result.body.error) || result.error || `durum ${result.status}`;
+                        showErr(`Haberler çekilemedi: ${reason}`);
+                    }
+                } catch (err) {
+                    console.error("[Admin] Gerçek haber çekme hatası:", err);
+                    showErr(err.message || "Haberler çekilemedi.");
+                } finally {
+                    fetchRealNewsBtn.disabled = false;
+                    fetchRealNewsBtn.textContent = label;
                 }
             });
 

@@ -5703,6 +5703,44 @@ body.news-detail-modal-open {
     white-space: nowrap;
 }
 
+/* Gazete: boş hali ve sayfa numaraları */
+.news-paper-empty {
+    margin: 0;
+    padding: 3.5rem 1rem 4rem;
+    text-align: center;
+    color: #6d6559;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    position: relative;
+    z-index: 2;
+}
+.news-paper-pager {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 1rem 0 0.5rem;
+    border-top: 3px double rgba(44, 44, 44, 0.2);
+    position: relative;
+    z-index: 2;
+}
+.news-paper-pager button {
+    min-width: 40px;
+    height: 40px;
+    border: 2px solid #2c2c2c;
+    border-radius: 2px;
+    background: transparent;
+    color: #2c2c2c;
+    font: 900 1rem/1 "Playfair Display", Georgia, serif;
+    cursor: pointer;
+}
+.news-paper-pager button:hover { background: rgba(44, 44, 44, 0.08); }
+.news-paper-pager button.is-active {
+    background: #2c2c2c;
+    color: #f5f0e6;
+    cursor: default;
+}
+
 /* Piyasa saatleri bilgisi */
 .market-hours-note {
     margin: -0.25rem 0 1rem;
