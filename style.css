@@ -5633,3 +5633,44 @@ body.news-detail-modal-open {
     background: rgba(245, 158, 11, 0.12);
     border: 1px solid rgba(245, 158, 11, 0.4);
 }
+
+/* Açılış sınavı */
+.quiz-backdrop { z-index: 9300; }
+.quiz-modal {
+    width: min(640px, 94vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+}
+.quiz-title { margin: 0 0 0.75rem; font-size: 1.3rem; }
+.quiz-text { margin: 0 0 0.75rem; line-height: 1.5; color: var(--text-primary); }
+.quiz-muted { color: var(--text-secondary); font-size: 0.88rem; }
+.quiz-tiers { margin: 0 0 0.75rem 1.2rem; line-height: 1.8; }
+.quiz-body { overflow-y: auto; padding-right: 0.4rem; margin-bottom: 0.75rem; }
+.quiz-question {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    margin: 0 0 0.75rem;
+}
+.quiz-question legend { font-weight: 700; padding: 0 0.3rem; white-space: normal; }
+.quiz-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.35rem 0;
+    cursor: pointer;
+}
+.quiz-option input { width: auto; min-height: 0; margin-top: 0.2rem; }
+.quiz-error { min-height: 1.2rem; color: var(--red-bright); font-size: 0.88rem; margin-bottom: 0.5rem; }
+.quiz-actions { display: flex; justify-content: flex-end; gap: 0.6rem; }
+.quiz-review {
+    border-left: 3px solid var(--border);
+    padding: 0.4rem 0.75rem;
+    margin-bottom: 0.6rem;
+}
+.quiz-review.ok { border-left-color: var(--green-bright); }
+.quiz-review.wrong { border-left-color: var(--red-bright); }
+.quiz-review-q { font-weight: 700; }
+.quiz-review-a { font-size: 0.88rem; color: var(--text-secondary); }
