@@ -524,7 +524,7 @@ window.BorsaFirebase = {
 
     async buyStock(symbol, qty) {
         if (!this._user) throw new Error("Önce giriş yapın.");
-        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım yapılamaz.");
+        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım her gün 09:00–24:00 arasında yapılabilir.");
         qty = Math.floor(Number(qty));
         if (!(qty > 0)) throw new Error("Geçerli bir adet girin.");
         const price = this._stockPrice(symbol);
@@ -566,7 +566,7 @@ window.BorsaFirebase = {
 
     async sellStock(symbol, qty) {
         if (!this._user) throw new Error("Önce giriş yapın.");
-        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım yapılamaz.");
+        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım her gün 09:00–24:00 arasında yapılabilir.");
         qty = Math.floor(Number(qty));
         if (!(qty > 0)) throw new Error("Geçerli bir adet girin.");
         const price = this._stockPrice(symbol);
