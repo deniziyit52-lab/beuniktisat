@@ -32,7 +32,7 @@
             </p>
 
             <div id="maintEta" class="maintenance-eta" style="display:none;" role="status">
-                <span class="maintenance-eta-label">Tahmini açılışa kalan</span>
+                <span id="maintEtaLabel" class="maintenance-eta-label">Tahmini açılışa kalan</span>
                 <span id="maintCountdown" class="maintenance-eta-countdown">--:--</span>
                 <span id="maintEtaAt" class="maintenance-eta-label"></span>
             </div>
@@ -69,6 +69,7 @@
             const DEFAULT_MESSAGE = document.getElementById("maintMessage").textContent.trim();
             const $ = (id) => document.getElementById(id);
             let until = 0;
+            let autoOff = false;
             let checking = false;
 
             function renderCountdown() {
@@ -79,7 +80,7 @@
                     box.style.display = until ? "flex" : "none";
                     if (until) {
                         $("maintCountdown").textContent = "Az kaldı";
-                        $("maintEtaAt").textContent = "Son rötuşlar yapılıyor";
+                        $("maintEtaAt").textContent = autoOff ? "Oyun birazdan açılıyor" : "Son rötuşlar yapılıyor";
                     }
                     return;
                 }
@@ -89,7 +90,8 @@
                 const s = left % 60;
                 const pad = (n) => String(n).padStart(2, "0");
                 $("maintCountdown").textContent = h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-                $("maintEtaAt").textContent = "Tahmini açılış: " +
+                $("maintEtaLabel").textContent = autoOff ? "Açılışa kalan" : "Tahmini açılışa kalan";
+                $("maintEtaAt").textContent = (autoOff ? "Açılış: " : "Tahmini açılış: ") +
                     new Date(until).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
             }
 
@@ -117,6 +119,7 @@
                     $("maintMessage").textContent = message || DEFAULT_MESSAGE;
                     const t = data.maintenance_until ? new Date(data.maintenance_until).getTime() : 0;
                     until = Number.isFinite(t) ? t : 0;
+                    autoOff = data.maintenance_auto_off === true;
                     renderCountdown();
                     $("maintStatus").textContent = manual
                         ? "Bakım sürüyor. Bittiği an bu sayfa kendiliğinden açılacak."

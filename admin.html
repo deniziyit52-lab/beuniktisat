@@ -695,6 +695,13 @@
                                 <input type="time" id="maintUntilInput">
                                 <small class="field-hint">Bakım sayfasında geri sayım olarak görünür. Geçmiş bir saat yazarsan yarın o saat kabul edilir.</small>
                             </div>
+                            <div>
+                                <label class="checkrow" for="maintAutoOffInput">
+                                    <input type="checkbox" id="maintAutoOffInput">
+                                    <span>Bu saatte bakım modunu kendiliğinden kapat</span>
+                                </label>
+                                <small class="field-hint">İşaretlersen yukarıdaki saat geldiğinde bakım kendiliğinden biter ve oyuncular oyuna alınır. İşaretlemezsen saat yalnızca tahmindir, bakımı sen kapatırsın.</small>
+                            </div>
                             <div class="admin-btn-pair">
                                 <button type="submit" class="submit-btn">💾 Notu Kaydet</button>
                                 <button type="button" id="maintInfoClearBtn" class="reset-btn">Temizle</button>
@@ -1164,7 +1171,8 @@
             const infoForm = document.getElementById("maintInfoForm");
             const messageInput = document.getElementById("maintMessageInput");
             const untilInput = document.getElementById("maintUntilInput");
-            if (infoForm && messageInput && untilInput && window.sb) {
+            const autoOffInput = document.getElementById("maintAutoOffInput");
+            if (infoForm && messageInput && untilInput && autoOffInput && window.sb) {
                 try {
                     const { data } = await window.sb.from("app_settings").select("*").eq("id", 1).maybeSingle();
                     if (data) {
@@ -1174,10 +1182,11 @@
                         untilInput.value = t && t.getTime() > Date.now()
                             ? String(t.getHours()).padStart(2, "0") + ":" + String(t.getMinutes()).padStart(2, "0")
                             : "";
+                        autoOffInput.checked = Boolean(untilInput.value) && data.maintenance_auto_off === true;
                     }
                 } catch (_) {}
 
-                const saveInfo = async (message, timeText) => {
+                const saveInfo = async (message, timeText, autoOff) => {
                     let until = null;
                     if (timeText) {
                         const [hh, mm] = timeText.split(":").map(Number);
@@ -1186,26 +1195,31 @@
                         if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
                         until = d.toISOString();
                     }
+                    if (autoOff && !until) throw new Error("Kendiliğinden kapanma için bir saat seçmelisin.");
                     const { error } = await window.sb.rpc("admin_set_maintenance_info", {
                         p_message: message || null,
                         p_until: until,
+                        p_auto_off: Boolean(autoOff),
                     });
                     if (error) throw new Error(error.message || "Bakım notu kaydedilemedi.");
                 };
                 infoForm.addEventListener("submit", async (e) => {
                     e.preventDefault();
                     try {
-                        await saveInfo(messageInput.value.trim(), untilInput.value);
-                        showToast("Bakım notu kaydedildi.");
+                        await saveInfo(messageInput.value.trim(), untilInput.value, autoOffInput.checked);
+                        showToast(autoOffInput.checked
+                            ? "Kaydedildi: bakım " + untilInput.value + "'de kendiliğinden kapanacak."
+                            : "Bakım notu kaydedildi.");
                     } catch (err) {
                         showErr(err.message);
                     }
                 });
                 document.getElementById("maintInfoClearBtn").addEventListener("click", async () => {
                     try {
-                        await saveInfo("", "");
+                        await saveInfo("", "", false);
                         messageInput.value = "";
                         untilInput.value = "";
+                        autoOffInput.checked = false;
                         showToast("Bakım notu temizlendi.");
                     } catch (err) {
                         showErr(err.message);

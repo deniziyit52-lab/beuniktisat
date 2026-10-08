@@ -988,8 +988,15 @@ window.BorsaMaintenance = (function () {
         }
     }
 
+    // Site adresleri uzantısız da sunuluyor (/maintenance, /bakim, /admin ...); hepsi tanınır.
+    function pageIs(names) {
+        const path = window.location.pathname.toLowerCase().replace(/\/+$/, "");
+        const last = path.slice(path.lastIndexOf("/") + 1).replace(/\.html$/, "");
+        return names.includes(last);
+    }
+
     function isMaintenancePage() {
-        return window.location.pathname.toLowerCase().endsWith("/maintenance.html");
+        return pageIs(["maintenance", "bakim"]);
     }
 
     function isAdminUser(user) {
@@ -1005,9 +1012,8 @@ window.BorsaMaintenance = (function () {
     async function checkAndRedirect() {
         if (captureEmergencyBypass() || hasAdminBypassFlag()) return false;
 
-        const page = window.location.pathname.toLowerCase();
-        const isAdminPage = page.endsWith("/admin.html");
-        const isLoginPage = page.endsWith("/login.html");
+        const isAdminPage = pageIs(["admin", "panel"]);
+        const isLoginPage = pageIs(["login", "giris", "kayit", "signup"]);
         const maintenancePage = isMaintenancePage();
         if (isAdminPage) return false;
 
