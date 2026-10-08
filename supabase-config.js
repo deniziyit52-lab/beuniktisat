@@ -941,14 +941,11 @@ window.BorsaMaintenance = (function () {
     }
 
     async function setMaintenanceMode(nextBool) {
-        if (!window.sb || !window.sb.from) {
+        if (!window.sb || !window.sb.rpc) {
             throw new Error("Supabase yapılandırılmamış.");
         }
         const val = !!nextBool;
-        const { error } = await window.sb.from("app_settings").upsert(
-            [{ id: 1, maintenance_mode: val }],
-            { onConflict: "id" }
-        );
+        const { error } = await window.sb.rpc("admin_set_maintenance", { p_enabled: val });
         if (error) throw new Error(error.message || "Bakım modu güncellenemedi.");
         return val;
     }
