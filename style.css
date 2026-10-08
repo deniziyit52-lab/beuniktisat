@@ -5598,3 +5598,22 @@ body.news-detail-modal-open {
         grid-template-columns: 1fr;
     }
 }
+
+/* Portföy tabloları: sağa kaydırmadan pencereye sığar */
+.portfolio-modal {
+    max-width: 1080px;
+    width: 96vw;
+}
+.portfolio-table thead th {
+    padding: 0.6rem 0.5rem;
+    letter-spacing: 0.4px;
+    white-space: normal;
+    vertical-align: bottom;
+}
+.portfolio-table tbody td {
+    padding: 0.55rem 0.5rem;
+}
+.portfolio-table .pf-name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
