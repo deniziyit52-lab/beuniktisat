@@ -18,7 +18,7 @@
             const select = $("columnSymbol");
             if (!select) return;
             const previous = select.value;
-            const stocks = (window.Borsa && Borsa.state.stocks) || {};
+            const stocks = (typeof Borsa !== "undefined" && Borsa.state.stocks) || {};
             // Liste yalnızca hisseler değiştiğinde yeniden kurulur; açık menü boş yere kapanmaz.
             const signature = Object.keys(stocks).sort().map(sym => `${sym}:${stocks[sym].name}`).join("|");
             if (signature === select.dataset.signature) return;
@@ -86,7 +86,7 @@
                 this.togglePrediction();
                 ok("Köşe yazısı yayınlandı.");
                 await this.loadList();
-                if (window.Borsa && typeof Borsa.loadColumns === "function") Borsa.loadColumns();
+                if (typeof Borsa !== "undefined" && typeof Borsa.loadColumns === "function") Borsa.loadColumns();
             } catch (err) {
                 fail(err.message || "Köşe yazısı yayınlanamadı.");
             } finally {
@@ -101,7 +101,7 @@
                 if (error) throw error;
                 ok("Köşe yazısı silindi.");
                 await this.loadList();
-                if (window.Borsa && typeof Borsa.loadColumns === "function") Borsa.loadColumns();
+                if (typeof Borsa !== "undefined" && typeof Borsa.loadColumns === "function") Borsa.loadColumns();
             } catch (err) {
                 fail(err.message || "Köşe yazısı silinemedi.");
             }
