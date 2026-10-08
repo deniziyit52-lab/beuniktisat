@@ -1271,7 +1271,7 @@
             const root = $("leaderboardList");
             if (!root) return;
             if (!list || !list.length) {
-                root.innerHTML = `<li class="leaderboard-empty">Henüz sıralama verisi yok.</li>`;
+                root.innerHTML = `<li class="leaderboard-empty">Henüz kimse işlem yapmadı. İlk işlemi yapan tabloya girer.</li>`;
                 return;
             }
             root.innerHTML = list.map(r => {
@@ -1724,7 +1724,7 @@
             <ol id="leaderboardList" class="leaderboard-list">
                 <li class="leaderboard-empty">Yükleniyor…</li>
             </ol>
-            <div class="sidebar-note">Sıralama getiri yüzdesine göre yapılır: toplam varlığın (nakit + hisse + altın/döviz) başlangıç bakiyesine göre değişimi</div>
+            <div class="sidebar-note">Sıralama getiri yüzdesine göre yapılır: toplam varlığın (nakit + hisse + altın/döviz) başlangıç bakiyesine göre değişimi. Tabloda yalnızca en az bir işlem yapmış oyuncular yer alır.</div>
         </section>
 
         <!-- Son Islemler -->
