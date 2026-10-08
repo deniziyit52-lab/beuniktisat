@@ -19,6 +19,10 @@
             if (!select) return;
             const previous = select.value;
             const stocks = (window.Borsa && Borsa.state.stocks) || {};
+            // Liste yalnızca hisseler değiştiğinde yeniden kurulur; açık menü boş yere kapanmaz.
+            const signature = Object.keys(stocks).sort().map(sym => `${sym}:${stocks[sym].name}`).join("|");
+            if (signature === select.dataset.signature) return;
+            select.dataset.signature = signature;
             select.innerHTML = '<option value="">Tahmin yok</option>' + Object.keys(stocks).sort().map(sym =>
                 `<option value="${esc(sym)}">${esc(stocks[sym].name)} (${esc(sym)})</option>`).join("");
             if (previous && stocks[previous]) select.value = previous;
@@ -107,7 +111,6 @@
             const form = $("columnForm");
             if (!form) return;
             form.addEventListener("submit", (e) => this.publish(e));
-            $("columnSymbol").addEventListener("focus", () => this.fillStocks());
             $("columnSymbol").addEventListener("change", () => this.togglePrediction());
             $("columnList").addEventListener("click", (e) => {
                 const button = e.target.closest("[data-column-delete]");
@@ -119,8 +122,7 @@
                 if (!uid || uid === this._loadedFor) return;
                 this._loadedFor = uid;
                 this.loadList();
-                // Hisseler yüklendikten sonra tahmin listesi doldurulur.
-                setTimeout(() => this.fillStocks(), 2500);
+                this.fillStocks();
             });
         },
     };

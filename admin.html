@@ -1052,6 +1052,7 @@
             if (silentCur && silentExact && stocks[silentCur.value]) {
                 silentExact.placeholder = `Şu an: ${Borsa.formatCurrency(stocks[silentCur.value].price).replace("₺", "")}`;
             }
+            if (window.AdminColumns) window.AdminColumns.fillStocks();
         }
 
         function sbStockRpc(fn, args) {
