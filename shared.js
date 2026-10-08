@@ -579,16 +579,148 @@ const Borsa = {
         });
     },
 
+    // ---------------- Köşe yazıları (hocaların piyasa yorumları) ----------------
+    _columns: [],
+
+    async loadColumns() {
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (!sb || !sb.from) return;
+        try {
+            const { data, error } = await sb
+                .from("guest_columns")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .limit(6);
+            if (error) throw error;
+            this._columns = Array.isArray(data) ? data : [];
+            this.renderNewsFeed();
+        } catch (e) {
+            // Tablo henüz yoksa köşe yazısı bölümü hiç gösterilmez.
+            this._columns = [];
+        }
+    },
+
+    _columnDate(value) {
+        return new Date(value).toLocaleDateString("tr-TR", { day: "numeric", month: "long" });
+    },
+
+    // Yazıdaki tahmin: beklemede, tuttu ya da tutmadı.
+    _columnPredictionMarkup(c) {
+        if (!c.stock_symbol || !c.direction) return "";
+        const stock = this.state.stocks[c.stock_symbol];
+        const name = stock ? `${this.escapeHtml(stock.name)} (${this.escapeHtml(c.stock_symbol)})` : this.escapeHtml(c.stock_symbol);
+        const direction = c.direction === "UP" ? "📈 yükselir" : "📉 düşer";
+        const start = this.formatCurrency(Number(c.start_price || 0));
+        if (c.result === "HIT" || c.result === "MISS") {
+            const hit = c.result === "HIT";
+            return `<div class="column-prediction ${hit ? "is-hit" : "is-miss"}">
+                <strong>${hit ? "✅ Tahmin tuttu" : "❌ Tahmin tutmadı"}</strong>
+                <span>${name} ${direction} demişti: ${start} → ${this.formatCurrency(Number(c.end_price || 0))}</span>
+            </div>`;
+        }
+        return `<div class="column-prediction">
+            <strong>🎯 Tahmin: ${name} ${direction}</strong>
+            <span>Yazıldığında ${start} · Sonuç ${this._columnDate(c.target_at)} günü belli olur</span>
+        </div>`;
+    },
+
+    // Gazetenin ilk sayfasındaki köşe: en yeni yazı öne çıkar, öncekiler başlık olarak listelenir.
+    _columnsPaperMarkup() {
+        if (!this._columns.length) return "";
+        const [latest, ...older] = this._columns;
+        const excerpt = String(latest.body || "").replace(/\s+/g, " ").slice(0, 260);
+        return `
+            <section class="news-paper-column">
+                <p class="news-paper-section-label">✍️ KÖŞE YAZISI</p>
+                <button type="button" class="column-feature" data-column-id="${Number(latest.id)}">
+                    <span class="column-byline">${this.escapeHtml(latest.author_name)}${latest.author_title ? ` · ${this.escapeHtml(latest.author_title)}` : ""}</span>
+                    <span class="column-title">${this.escapeHtml(latest.title)}</span>
+                    <span class="column-excerpt">${this.escapeHtml(excerpt)}${String(latest.body || "").length > 260 ? "…" : ""}</span>
+                    <span class="column-more">Yazının tamamını oku →</span>
+                </button>
+                ${this._columnPredictionMarkup(latest)}
+                ${older.length ? `<ul class="column-older">${older.map(c => `
+                    <li><button type="button" data-column-id="${Number(c.id)}">${this.escapeHtml(c.title)} <em>${this.escapeHtml(c.author_name)}</em>${c.result === "HIT" ? " ✅" : c.result === "MISS" ? " ❌" : ""}</button></li>`).join("")}</ul>` : ""}
+            </section>`;
+    },
+
+    _bindColumnLinks(root) {
+        root.querySelectorAll("[data-column-id]").forEach(button => {
+            button.addEventListener("click", () => {
+                const column = this._columns.find(c => Number(c.id) === Number(button.dataset.columnId));
+                if (column) this._showColumnModal(column);
+            });
+        });
+    },
+
+    _showColumnModal(c) {
+        let modal = document.getElementById("columnDetailModal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "columnDetailModal";
+            modal.className = "news-detail-modal-overlay";
+            modal.setAttribute("role", "dialog");
+            modal.setAttribute("aria-modal", "true");
+            modal.setAttribute("aria-labelledby", "columnDetailTitle");
+            document.body.appendChild(modal);
+            const close = () => {
+                modal.classList.remove("is-open");
+                document.body.classList.remove("news-detail-modal-open");
+            };
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal || e.target.closest(".news-detail-modal-close")) close();
+            });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && modal.classList.contains("is-open")) close();
+            });
+        }
+        const paragraphs = String(c.body || "").split(/\n+/).map(p => p.trim()).filter(Boolean)
+            .map(p => `<p>${this.escapeHtml(p)}</p>`).join("");
+        modal.innerHTML = `
+            <div class="news-detail-modal-dialog">
+                <button type="button" class="news-detail-modal-close" aria-label="Kapat" title="Kapat">×</button>
+                <div class="news-detail-content">
+                    <header class="news-detail-header">
+                        <span class="news-detail-badge">✍️ Köşe Yazısı</span>
+                        <h2 id="columnDetailTitle" class="news-detail-title">${this.escapeHtml(c.title)}</h2>
+                        <div class="column-author">
+                            <span class="column-author-avatar" aria-hidden="true">${this.escapeHtml(String(c.author_name || "?").trim().charAt(0).toUpperCase())}</span>
+                            <span>
+                                <b>${this.escapeHtml(c.author_name)}</b>
+                                ${c.author_title ? `<small>${this.escapeHtml(c.author_title)}</small>` : ""}
+                            </span>
+                            <time datetime="${new Date(c.created_at).toISOString()}">${this._columnDate(c.created_at)}</time>
+                        </div>
+                    </header>
+                    <div class="news-detail-body column-body">
+                        ${paragraphs}
+                        ${this._columnPredictionMarkup(c)}
+                        <p class="column-disclaimer">Bu yazı yazarının kişisel görüşüdür; oyun içindir, yatırım tavsiyesi değildir.</p>
+                    </div>
+                </div>
+            </div>`;
+        modal.classList.add("is-open");
+        document.body.classList.add("news-detail-modal-open");
+    },
+
     // Grafiğin altındaki kısa liste: en yeni birkaç başlık, tıklanınca haberin detayı açılır.
     _renderHeadlines(news) {
         const el = document.getElementById("newsHeadlines");
         if (!el) return;
         const top = news.slice(0, 5);
+        const latestColumn = this._columns[0];
+        const columnItem = latestColumn ? `
+            <li class="headline-column">
+                <button type="button" data-column-id="${Number(latestColumn.id)}">
+                    <span class="headline-title"><b>✍️ Köşe Yazısı:</b> ${this.escapeHtml(latestColumn.title)} <em>${this.escapeHtml(latestColumn.author_name)}</em></span>
+                </button>
+            </li>` : "";
         if (top.length === 0) {
-            el.innerHTML = `<li class="headlines-empty">Henüz haber yok.</li>`;
+            el.innerHTML = `${columnItem}<li class="headlines-empty">Henüz haber yok.</li>`;
+            this._bindColumnLinks(el);
             return;
         }
-        el.innerHTML = top.map((n, index) => `
+        el.innerHTML = columnItem + top.map((n, index) => `
             <li>
                 <button type="button" data-headline-index="${index}">
                     <span class="headline-title">${this.escapeHtml(n.title)}</span>
@@ -598,6 +730,7 @@ const Borsa = {
         el.querySelectorAll("[data-headline-index]").forEach(button => {
             button.addEventListener("click", () => this._showNewsDetailModal(top[Number(button.dataset.headlineIndex)]));
         });
+        this._bindColumnLinks(el);
     },
 
     // Gazetede en fazla NEWS_MAX haber durur, sayfa başına NEWS_PAGE_SIZE haber gösterilir.
@@ -615,7 +748,8 @@ const Borsa = {
             </header>`;
 
         if (news.length === 0) {
-            el.innerHTML = `${masthead}<p class="news-paper-empty">Henüz haber yok. Yakında tekrar kontrol edin.</p>`;
+            el.innerHTML = `${masthead}${this._columnsPaperMarkup()}<p class="news-paper-empty">Henüz haber yok. Yakında tekrar kontrol edin.</p>`;
+            this._bindColumnLinks(el);
             return;
         }
 
@@ -670,8 +804,10 @@ const Borsa = {
                 </div>
             </article>` : ""}
             ${secondaryStories ? `<ol class="news-paper-columns">${secondaryStories}</ol>` : ""}
+            ${page === 1 ? this._columnsPaperMarkup() : ""}
             ${pager}
         `;
+        this._bindColumnLinks(el);
 
         // Add click handlers for expanded view
         this._bindNewsExpandHandlers(el, news);
@@ -1051,6 +1187,7 @@ ${sourceMarkup}
             const sb = this._sb();
             if (!sb) return false;
             await this._loadInitialNewsFromDB();
+            Borsa.loadColumns();
             try {
                 const { data: stockRows, error } = await sb
                     .from("stocks")

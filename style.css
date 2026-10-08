@@ -6112,3 +6112,145 @@ body.light-mode .market-halt-clock { background: #991b1b; }
     background: linear-gradient(135deg, #3b82f6, #6366f1);
     color: #fff;
 }
+
+/* Köşe yazıları: gazetedeki köşe */
+.news-paper-column {
+    position: relative;
+    z-index: 2;
+    margin: 1.5rem 0 0.5rem;
+    padding: 1.25rem 1.5rem 1.5rem;
+    border: 2px solid #1e3a5f;
+    background: rgba(30, 58, 95, 0.04);
+}
+.column-feature {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.column-byline {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e3a5f;
+}
+.column-title {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+    font-weight: 900;
+    line-height: 1.2;
+    color: #1a1a1a;
+}
+.column-excerpt {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.7;
+    color: #3a3a3a;
+}
+.column-more {
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #8b2a2a;
+}
+.column-feature:hover .column-title { color: #1e3a5f; }
+.column-older {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px dashed rgba(44, 44, 44, 0.25);
+}
+.column-older button {
+    padding: 0.3rem 0;
+    border: 0;
+    background: transparent;
+    color: #1a1a1a;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+.column-older button:hover { color: #1e3a5f; }
+.column-older em { font-weight: 400; color: #504a40; }
+
+/* Tahmin kutusu (gazetede ve yazı penceresinde) */
+.column-prediction {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin-top: 1rem;
+    padding: 0.7rem 1rem;
+    border-left: 4px solid #b45309;
+    background: rgba(180, 83, 9, 0.08);
+    font-family: "Playfair Display", Georgia, serif;
+    color: #1a1a1a;
+}
+.column-prediction strong { font-size: 0.95rem; }
+.column-prediction span { font-size: 0.82rem; color: #4b5563; }
+.column-prediction.is-hit { border-left-color: #15803d; background: rgba(21, 128, 61, 0.1); }
+.column-prediction.is-miss { border-left-color: #b91c1c; background: rgba(185, 28, 28, 0.08); }
+
+/* Yazı penceresi */
+.column-author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    font-family: "Playfair Display", Georgia, serif;
+    color: #1a1a1a;
+}
+.column-author > span:nth-child(2) { display: flex; flex-direction: column; }
+.column-author small { font-size: 0.8rem; color: #6b7280; }
+.column-author time { margin-left: auto; font-size: 0.8rem; color: #6b7280; }
+.column-author-avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #1e3a5f;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+.column-body p {
+    margin: 0 0 1.1rem;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: #1f2937;
+    overflow-wrap: break-word;
+}
+.column-body .column-disclaimer {
+    margin: 1.5rem 0 0;
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #6b7280;
+}
+
+/* Ana sayfadaki kısa listede köşe yazısı satırı */
+.headline-column button { background: rgba(59, 130, 246, 0.08); border-radius: 8px; padding-left: 0.6rem; padding-right: 0.6rem; }
+.headline-column em { color: var(--text-secondary); font-style: normal; }
+
+/* Admin: yayınlanan yazılar listesi */
+.column-admin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.column-admin-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.column-admin-text strong { font-size: 0.9rem; }
+.column-admin-text span { font-size: 0.78rem; color: var(--text-secondary); }

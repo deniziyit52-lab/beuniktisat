@@ -401,6 +401,58 @@
                         </form>
                     </div>
 
+                    <div class="panel-section admin-card admin-card--column">
+                        <div class="section-header">
+                            <h2>✍️ Köşe Yazısı Yayınla</h2>
+                            <span class="admin-tag">Hocaların piyasa yorumu</span>
+                        </div>
+                        <p class="admin-card-note">Yazı gazetede yazarın adıyla çıkar ve sen silene kadar durur. Yayınlamadan önce yazardan adının ve metnin yayınlanması için onay al.</p>
+                        <form id="columnForm" class="news-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="columnAuthor">Yazarın Adı</label>
+                                    <input type="text" id="columnAuthor" maxlength="80" placeholder="Örn: Doç. Dr. Ad Soyad" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="columnAuthorTitle">Unvan / Bölüm (Opsiyonel)</label>
+                                    <input type="text" id="columnAuthorTitle" maxlength="120" placeholder="Örn: İktisat Bölümü">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="columnTitle">Yazının Başlığı</label>
+                                <input type="text" id="columnTitle" maxlength="160" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="columnBody">Yazı</label>
+                                <textarea id="columnBody" rows="8" maxlength="6000" required placeholder="Paragrafları boş satırla ayırabilirsin."></textarea>
+                            </div>
+                            <div class="panel-sub">🎯 Tahmin (Opsiyonel)</div>
+                            <div class="form-group">
+                                <label for="columnSymbol">Hisse</label>
+                                <select id="columnSymbol">
+                                    <option value="">Tahmin yok</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="columnDirection">Yön</label>
+                                    <select id="columnDirection">
+                                        <option value="UP">Yükselir</option>
+                                        <option value="DOWN">Düşer</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="columnDays">Süre (gün)</label>
+                                    <input type="number" id="columnDays" min="1" max="30" step="1" value="7">
+                                </div>
+                            </div>
+                            <small class="field-hint">Süre dolunca hissenin fiyatı, yazının yayınlandığı andaki fiyatla karşılaştırılır ve yazının altında "tuttu" ya da "tutmadı" yazar.</small>
+                            <button type="submit" id="columnSubmitBtn" class="submit-btn">✍️ Köşe Yazısını Yayınla</button>
+                        </form>
+                        <div class="panel-sub">📚 Yayınlanan Yazılar</div>
+                        <div id="columnList"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
                     <div class="panel-section admin-card admin-card--silent">
                         <div class="section-header">
                             <h2>🎛 Sessiz Fiyat Manipülasyonu</h2>
@@ -1683,6 +1735,7 @@
             runAdminGate();
         });
     </script>
+    <script src="admin-columns.js"></script>
     <script src="admin-settings.js"></script>
 </body>
 </html>
