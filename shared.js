@@ -321,6 +321,88 @@ const Borsa = {
         el.textContent = "Piyasa Hacmi: " + formatted;
     },
 
+    // Grafik zaman aralıkları. Kısa aralıklar dakikalık geçmişten, uzunlar saatlik arşivden çizilir.
+    CHART_RANGES: [
+        { key: "1S", label: "1S", title: "Son 1 saat", ms: 60 * 60 * 1000, hourly: false },
+        { key: "1G", label: "1G", title: "Son 1 gün", ms: 24 * 60 * 60 * 1000, hourly: false },
+        { key: "1H", label: "1H", title: "Son 1 hafta", ms: 7 * 24 * 60 * 60 * 1000, hourly: true },
+        { key: "1A", label: "1A", title: "Son 1 ay", ms: 30 * 24 * 60 * 60 * 1000, hourly: true },
+    ],
+    chartRange: "1G",
+    _hourlyHistory: {},
+
+    _chartRangeDef() {
+        return this.CHART_RANGES.find(r => r.key === this.chartRange) || this.CHART_RANGES[1];
+    },
+
+    // Seçili aralıkta çizilecek noktalar: [{ time, price }]
+    _chartPoints(stock) {
+        const range = this._chartRangeDef();
+        const cutoff = Date.now() - range.ms;
+        const minute = (stock.history || []).filter(p => Number(p.time) >= cutoff);
+        if (!range.hourly) {
+            // Aralıkta nokta yoksa (piyasa uzun süre kapalıydıysa) eldeki son noktalar gösterilir.
+            return minute.length >= 2 ? minute : (stock.history || []).slice(-60);
+        }
+        const cached = this._hourlyHistory[stock.symbol];
+        const hourly = cached ? cached.points.filter(p => p.time >= cutoff) : [];
+        if (hourly.length < 2) return stock.history || [];
+        return [...hourly, { time: Date.now(), price: stock.price }];
+    },
+
+    // Saatlik arşivi (en fazla 1 ay) sembol başına bir kez okur; 10 dakika önbellekte tutar.
+    async _loadHourlyHistory(symbol) {
+        const cached = this._hourlyHistory[symbol];
+        if (cached && Date.now() - cached.loadedAt < 10 * 60 * 1000) return;
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (!sb || !sb.from) return;
+        this._hourlyHistory[symbol] = { points: cached ? cached.points : [], loadedAt: Date.now() };
+        try {
+            const since = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+            const { data, error } = await sb
+                .from("price_history_hourly")
+                .select("price, recorded_at")
+                .eq("symbol", symbol)
+                .gte("recorded_at", since)
+                .order("recorded_at", { ascending: true })
+                .limit(1000);
+            if (error) throw error;
+            this._hourlyHistory[symbol] = {
+                points: (data || []).map(r => ({ time: new Date(r.recorded_at).getTime(), price: Number(r.price) })),
+                loadedAt: Date.now(),
+            };
+            if (this._chartSymbol === symbol && this._chartRangeDef().hourly) this.renderChart();
+        } catch (e) {
+            console.warn("[Grafik] Saatlik geçmiş okunamadı:", e && e.message || e);
+        }
+    },
+
+    _ensureChartRanges(canvas) {
+        const container = canvas.closest(".chart-container");
+        if (!container) return;
+        let bar = container.parentElement.querySelector(".chart-ranges");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.className = "chart-ranges";
+            bar.setAttribute("role", "group");
+            bar.setAttribute("aria-label", "Grafik zaman aralığı");
+            bar.innerHTML = this.CHART_RANGES.map(r =>
+                `<button type="button" data-chart-range="${r.key}" title="${r.title}">${r.label}</button>`).join("");
+            container.insertAdjacentElement("afterend", bar);
+            bar.addEventListener("click", (e) => {
+                const button = e.target.closest("[data-chart-range]");
+                if (!button) return;
+                this.chartRange = button.dataset.chartRange;
+                this.renderChart();
+            });
+        }
+        bar.querySelectorAll("[data-chart-range]").forEach(button => {
+            const active = button.dataset.chartRange === this.chartRange;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+    },
+
     renderChart() {
         const canvas = document.getElementById("priceChart");
         if (!canvas || typeof Chart !== "function") return;
@@ -328,9 +410,13 @@ const Borsa = {
         const sym = this.state.selectedStock || Object.keys(this.state.stocks)[0];
         const stock = this.state.stocks[sym];
         if (!stock) return;
-        const labels = stock.history.map(p => this.formatTime(p.time));
-        const data = stock.history.map(p => p.price);
-        const isUp = stock.changePct >= 0;
+        this._ensureChartRanges(canvas);
+        if (this._chartRangeDef().hourly) this._loadHourlyHistory(sym);
+        const points = this._chartPoints(stock);
+        const labels = points.map(p => this.formatTime(p.time));
+        const data = points.map(p => p.price);
+        // Renk, seçili aralığın başından sonuna yükseliş mi düşüş mü olduğuna göre belirlenir.
+        const isUp = data.length >= 2 ? data[data.length - 1] >= data[0] : stock.changePct >= 0;
         const lineColor = isUp ? "#10b981" : "#ef4444";
         const bgColor = isUp ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
         const chartColors = (this.Theme && this.Theme._chartColors)
@@ -400,7 +486,7 @@ const Borsa = {
             },
         });
         this._chartSymbol = sym;
-        this.priceChart.$historyTimestamps = stock.history.map(point => Number(point.time));
+        this.priceChart.$historyTimestamps = points.map(point => Number(point.time));
     },
 
     updateLiveChart(stock) {
@@ -412,6 +498,15 @@ const Borsa = {
         const chart = this.priceChart;
         const dataset = chart.data.datasets[0];
         const timestamps = chart.$historyTimestamps || [];
+        const range = this._chartRangeDef();
+        // Uzun aralıklarda yalnızca son nokta güncel fiyata çekilir.
+        if (range.hourly) {
+            if (dataset.data.length) {
+                dataset.data[dataset.data.length - 1] = Number(stock.price);
+                chart.update("none");
+            }
+            return;
+        }
         const history = (stock.history || []).slice(-5760);
         const lastTimestamp = timestamps.length ? timestamps[timestamps.length - 1] : -Infinity;
         const newPoints = history.filter(point => Number(point.time) > lastTimestamp);
@@ -429,7 +524,8 @@ const Borsa = {
             }
         }
 
-        while (timestamps.length > 5760) {
+        const windowStart = Date.now() - range.ms;
+        while (timestamps.length > 5760 || (timestamps.length > 2 && timestamps[0] < windowStart)) {
             timestamps.shift();
             chart.data.labels.shift();
             dataset.data.shift();

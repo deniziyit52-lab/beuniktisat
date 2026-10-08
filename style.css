@@ -6086,3 +6086,29 @@ body.light-mode .market-halt-clock { background: #991b1b; }
 @media (prefers-reduced-motion: reduce) {
     .market-halt-banner { animation: none; }
 }
+
+/* Grafik zaman aralığı düğmeleri */
+.chart-ranges {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+}
+.chart-ranges button {
+    min-width: 52px;
+    padding: 0.4rem 0.9rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.chart-ranges button:hover { color: var(--text-primary); background: var(--bg-card); }
+.chart-ranges button.is-active {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+}
