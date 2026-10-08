@@ -287,8 +287,13 @@ window.BorsaFirebase = {
             };
             let insError = null;
             try {
-                const r = await sb.from(USERS_TABLE).insert([payload], { upsert: true, onConflict: "id" });
+                const r = await sb.rpc("ensure_profile");
                 insError = r.error;
+                // ensure_profile henüz veritabanına kurulmadıysa (migration 0027) eski yola düş.
+                if (insError && insError.code === "PGRST202") {
+                    const r2 = await sb.from(USERS_TABLE).insert([payload], { upsert: true, onConflict: "id" });
+                    insError = r2.error;
+                }
             } catch (e) { insError = e; }
             if (insError) {
                 const msg = String((insError.code ? insError.code + " :: " : "") + (insError.message || insError));
