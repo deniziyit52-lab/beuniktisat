@@ -18,8 +18,8 @@
         _button() { return document.getElementById("quizBtn"); },
 
         _showButton(show) {
-            const btn = this._button();
-            if (btn) btn.style.display = show ? "" : "none";
+            const banner = document.getElementById("quizBanner");
+            if (banner) banner.style.display = show ? "flex" : "none";
         },
 
         // Giriş yapan kullanıcı için sınav durumunu bir kez sorar.
@@ -73,7 +73,7 @@
                         return `<li><b>${t.min}–${upTo} doğru</b> → +${fmt(t.bonus)}</li>`;
                     }).join("")}
                 </ul>
-                <p class="quiz-text quiz-muted">Sınav yalnızca bir kez çözülebilir. Şimdi çözmek istemezsen üst menüdeki “Sınav” düğmesinden daha sonra başlayabilirsin.</p>
+                <p class="quiz-text quiz-muted">Sınav yalnızca bir kez çözülebilir. Şimdi çözmek istemezsen sayfanın üstündeki sınav kutusundan daha sonra başlayabilirsin.</p>
                 <div class="quiz-actions">
                     <button type="button" class="btn btn--ghost" data-quiz="later">Sonra</button>
                     <button type="button" class="submit-btn" data-quiz="start">Şimdi Çöz</button>
