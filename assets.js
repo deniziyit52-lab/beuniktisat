@@ -310,8 +310,8 @@
                             <th class="num">Ort. Maliyet</th>
                             <th class="num">Güncel Fiyat</th>
                             <th class="num">Miktar</th>
-                            <th class="num">Piyasa Değeri</th>
-                            <th class="num">Anlık K / Z (₺)</th>
+                            <th class="num">Değer</th>
+                            <th class="num">K / Z (₺)</th>
                             <th class="num">K / Z (%)</th>
                             <th class="num">İşlem</th>
                         </tr>
