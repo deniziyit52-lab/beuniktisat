@@ -100,7 +100,9 @@ const Borsa = {
      */
 
     // Admin: yeni hisse ekle. color opsiyonel, atanmazsa rastgele.
-    addStock({ symbol, name, price }) {
+    RISK_TYPES: { guvenli: "Güvenli", orta: "Orta", riskli: "Riskli" },
+
+    addStock({ symbol, name, price, riskType }) {
         symbol = String(symbol || "").trim().toUpperCase();
         name = String(name || "").trim();
         const p = Math.max(0.05, Number(price) || 0);
@@ -120,6 +122,7 @@ const Borsa = {
             changePct: 0,
             history: [],
             shares: 100000,
+            riskType: this.RISK_TYPES[riskType] ? riskType : "orta",
         };
         if (!this.state.selectedStock) this.state.selectedStock = symbol;
         this.saveState();
@@ -211,7 +214,7 @@ const Borsa = {
                 </div>
                 <div class="stock-body">
                     <div class="stock-name">${s.name}</div>
-                    <div class="stock-symbol">${s.symbol}</div>
+                    <div class="stock-symbol">${s.symbol}<span class="stock-risk stock-risk--${s.riskType || "orta"}">${this.RISK_TYPES[s.riskType] || this.RISK_TYPES.orta}</span></div>
                     <div class="stock-price-row">
                         <div class="stock-price">${this.formatCurrency(s.price)}</div>
                         <div class="stock-change ${isUp ? "up" : "down"}">
@@ -732,6 +735,7 @@ const Borsa = {
                 changePct: Borsa.round2(changePct),
                 history,
                 shares: Math.max(1, Math.floor(shares)),
+                riskType: Borsa.RISK_TYPES[row.risk_type] ? row.risk_type : "orta",
                 _src: "supabase",
                 _updatedAt: updatedAt,
             };
