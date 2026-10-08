@@ -52,9 +52,6 @@
                     </div>
 
                     <div id="userNav" class="nav-block" style="display:none;">
-                        <button id="quizBtn" class="portfolio-btn" type="button" title="Açılış sınavını çöz, bonus kazan" style="display:none;">
-                            📝 Sınav
-                        </button>
                         <button id="portfolioBtn" class="portfolio-btn" type="button" title="Portföyüm / Cüzdanım">
                             👛 Cüzdanım
                         </button>
@@ -88,6 +85,13 @@
 
     <main class="main-container">
         <section class="left-panel">
+            <div id="quizBanner" class="quiz-banner" style="display:none;">
+                <div class="quiz-banner-text">
+                    <strong>📝 Açılış sınavı seni bekliyor</strong>
+                    <span>10 soruyu çöz, başlangıç bakiyene bonus kazan. Tek seferlik.</span>
+                </div>
+                <button id="quizBtn" type="button" class="submit-btn quiz-banner-btn">Sınavı Çöz</button>
+            </div>
             <div class="section-header">
                 <h2>📈 Canlı Piyasa</h2>
                 <span class="market-cap" id="totalMarketCap"></span>

@@ -5674,3 +5674,31 @@ body.news-detail-modal-open {
 .quiz-review.wrong { border-left-color: var(--red-bright); }
 .quiz-review-q { font-weight: 700; }
 .quiz-review-a { font-size: 0.88rem; color: var(--text-secondary); }
+
+.quiz-banner {
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.1rem;
+    margin-bottom: 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(139, 92, 246, 0.14));
+}
+.quiz-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+.quiz-banner-text span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+.quiz-banner-btn {
+    width: auto;
+    margin: 0;
+    padding: 0.55rem 1.2rem;
+    white-space: nowrap;
+}
