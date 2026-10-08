@@ -988,15 +988,43 @@ const Borsa = {
             try { Borsa.saveState(); } catch (_) {}
         },
 
-        _handleStockEvent(evt) {
-            const eType = String(evt && evt.eventType || "").toLowerCase();
-            if (!eType) return;
-            if (eType === "insert" || eType === "update") {
-                this.updateOneStockFromPayload(evt.new);
-            } else if (eType === "delete") {
-                const old = evt && evt.old;
-                if (old) this.removeOneStock(old.symbol || old.code);
+        // Tüm hisseler market_snapshot tablosundaki tek satırda gelir (her güncellemede tek mesaj).
+        _handleSnapshotEvent(evt) {
+            const row = evt && evt.new;
+            if (!row || !Array.isArray(row.stocks)) return;
+            const seen = new Set();
+            let changed = false;
+            row.stocks.forEach(item => {
+                const sym = String(item && item.symbol || "").trim().toUpperCase();
+                if (!sym) return;
+                seen.add(sym);
+                const old = Borsa.state.stocks[sym];
+                if (old &&
+                    old.price === Borsa.round2(Number(item.current_price)) &&
+                    old.previousClose === Borsa.round2(Number(item.previous_close)) &&
+                    old.name === String(item.name || "").trim() &&
+                    old.color === String(item.color || "").trim() &&
+                    old.riskType === item.risk_type) {
+                    return;
+                }
+                changed = true;
+                this.updateOneStockFromPayload(
+                    Object.assign({ updated_at: row.updated_at }, item),
+                    { render: false }
+                );
+            });
+            Object.keys(Borsa.state.stocks).forEach(sym => {
+                if (!seen.has(sym)) this.removeOneStock(sym);
+            });
+            if (!changed) return;
+            try { Borsa.renderStocksGrid(); } catch (_) {}
+            try { Borsa.renderTickerTape(); } catch (_) {}
+            try { Borsa.renderMarketCap(); } catch (_) {}
+            const selected = Borsa.state.stocks[Borsa.state.selectedStock];
+            if (selected) {
+                try { Borsa.updateLiveChart(selected); } catch (_) {}
             }
+            try { Borsa.saveState(); } catch (_) {}
         },
 
         _handleAppSettingsEvent(evt) {
@@ -1042,8 +1070,8 @@ const Borsa = {
                 this._chan = sb
                     .channel("borsa-stocks-public", { config: { broadcast: { self: false } } })
                     .on("postgres_changes",
-                        { event: "*", schema: "public", table: "stocks" },
-                        (payload) => this._handleStockEvent(payload)
+                        { event: "UPDATE", schema: "public", table: "market_snapshot", filter: "id=eq.1" },
+                        (payload) => this._handleSnapshotEvent(payload)
                     )
                     .subscribe(onStatus);
             } catch (e) {
