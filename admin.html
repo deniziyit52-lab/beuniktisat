@@ -83,6 +83,28 @@
 
         /* Basit ve temiz hizalama: her iki kart kendi içeriğine göre boyutlanır,
          * üstleri (top) aynı hizada oturur (align-items: start). */
+        /* Sağ taraf: grafik ve altında altın/döviz kartları */
+        .admin-top-side {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 0;
+        }
+        .admin-top-side > .panel-section { margin: 0; }
+        .admin-top-assets .stocks-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.6rem;
+        }
+        .admin-top-assets .stock-card { padding: 0.75rem; cursor: default; }
+        .admin-top-assets .stock-avatar { width: 32px; height: 32px; font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .admin-top-assets .stock-name { font-size: 0.85rem; }
+        .admin-top-assets .stock-symbol { font-size: 0.65rem; margin-bottom: 0.4rem; }
+        .admin-top-assets .stock-price { font-size: 1rem; }
+        .admin-top-assets .stock-change { font-size: 0.72rem; padding: 0.15rem 0.4rem; }
+        @media (max-width: 1300px) {
+            .admin-top-assets .stocks-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
         .admin-top-section > .panel-section {
             width: 100%;
             box-sizing: border-box;
@@ -358,13 +380,24 @@
                     <div id="stocksGrid" class="stocks-grid"></div>
                 </div>
 
-                <div class="panel-section admin-top-chart">
-                    <div class="section-header">
-                        <h2>📊 Fiyat Geçmişi</h2>
-                        <select id="stockSelector" class="stock-select"></select>
+                <div class="admin-top-side">
+                    <div class="panel-section admin-top-chart">
+                        <div class="section-header">
+                            <h2>📊 Fiyat Geçmişi</h2>
+                            <select id="stockSelector" class="stock-select"></select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="priceChart"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-container">
-                        <canvas id="priceChart"></canvas>
+
+                    <div class="panel-section admin-top-assets">
+                        <div class="section-header">
+                            <h2>🥇 Altın &amp; Döviz</h2>
+                            <span class="market-cap" id="assetsUpdatedAt"></span>
+                        </div>
+                        <div id="assetsGrid" class="stocks-grid"></div>
+                        <small class="field-hint">Gerçek piyasa fiyatları; buradan değiştirilemez. Alım-satım oyuncu sayfasından yapılır.</small>
                     </div>
                 </div>
             </section>
@@ -1736,6 +1769,7 @@
             runAdminGate();
         });
     </script>
+    <script src="assets.js"></script>
     <script src="admin-columns.js"></script>
     <script src="admin-settings.js"></script>
 </body>
