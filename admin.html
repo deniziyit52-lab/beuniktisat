@@ -375,7 +375,15 @@
                         </div>
                         <div class="form-group">
                             <label for="stockPrice">Başlangıç Fiyatı (₺)</label>
-                            <input type="number" id="stockPrice" placeholder="Örn: 85,50" min="0.05" step="0.01" required>
+                            <input type="number" id="stockPrice" placeholder="Örn: 85,50" min="1" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="stockRiskType">Tür</label>
+                            <select id="stockRiskType">
+                                <option value="guvenli">Güvenli</option>
+                                <option value="orta" selected>Orta</option>
+                                <option value="riskli">Riskli</option>
+                            </select>
                         </div>
                         <button type="submit" class="submit-btn">💾 Piyasaya Yeni Hisse Ekle</button>
                     </form>
@@ -397,6 +405,15 @@
                                 <label for="editName">Yeni İsim</label>
                                 <input type="text" id="editName" placeholder="(boş bırakırsanız değişmez)">
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editRiskType">Yeni Tür</label>
+                            <select id="editRiskType">
+                                <option value="">(değişmez)</option>
+                                <option value="guvenli">Güvenli</option>
+                                <option value="orta">Orta</option>
+                                <option value="riskli">Riskli</option>
+                            </select>
                         </div>
                         <div class="form-row" style="gap:0.6rem;">
                             <button type="submit" class="submit-btn" style="flex:2;">✍ Güncelle</button>
@@ -1029,11 +1046,13 @@
                 const symbol = document.getElementById("stockSymbol");
                 const name = document.getElementById("stockName");
                 const price = document.getElementById("stockPrice");
+                const riskType = document.getElementById("stockRiskType");
                 try {
                     const added = Borsa.addStock({
                         symbol: symbol.value,
                         name: name.value,
                         price: price.value,
+                        riskType: riskType.value,
                     });
                     await sbStockRpc("admin_add_stock", {
                         p_symbol: added.symbol,
@@ -1041,8 +1060,14 @@
                         p_price: Number(added.price),
                         p_color: added.color || null,
                     });
+                    if (added.riskType !== "orta") {
+                        await sbStockRpc("admin_set_stock_type", {
+                            p_symbol: added.symbol,
+                            p_risk_type: added.riskType,
+                        });
+                    }
                     showToast(`${added.name} (${added.symbol}) piyasaya eklendi — başlangıç ${BorsaFirebase ? BorsaFirebase.formatTL(added.price) : added.price.toFixed(2)}`);
-                    symbol.value = ""; name.value = ""; price.value = "";
+                    symbol.value = ""; name.value = ""; price.value = ""; riskType.value = "orta";
                     refreshSymbolDropdowns();
                 } catch (err) {
                     showErr(err.message || "Hisse eklenemedi.");
@@ -1060,6 +1085,7 @@
                 if (!oldSym) { showErr("Lütfen düzenlenecek hisseyi seçin."); return; }
                 const newSym = document.getElementById("editSymbol").value.trim();
                 const newName = document.getElementById("editName").value.trim();
+                const newRiskType = document.getElementById("editRiskType").value;
                 const cur = Borsa.state.stocks[oldSym];
                 if (!cur) { showErr("Hisse bulunamadı."); return; }
                 const nSym = newSym || cur.symbol;
@@ -1071,9 +1097,17 @@
                         p_new_symbol: upd.symbol,
                         p_new_name: upd.name,
                     });
+                    if (newRiskType && newRiskType !== upd.riskType) {
+                        await sbStockRpc("admin_set_stock_type", {
+                            p_symbol: upd.symbol,
+                            p_risk_type: newRiskType,
+                        });
+                        upd.riskType = newRiskType;
+                    }
                     showToast(`${upd.name} (${upd.symbol}) güncellendi.`);
                     document.getElementById("editSymbol").value = "";
                     document.getElementById("editName").value = "";
+                    document.getElementById("editRiskType").value = "";
                     refreshSymbolDropdowns();
                 } catch (err) {
                     showErr(err.message || "Güncelleme başarısız.");

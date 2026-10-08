@@ -1147,6 +1147,20 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     margin-bottom: 0.75rem;
 }
 
+.stock-risk {
+    margin-left: 0.5rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 1px solid currentColor;
+}
+
+.stock-risk--guvenli { color: #10b981; }
+.stock-risk--orta { color: #f59e0b; }
+.stock-risk--riskli { color: #ef4444; }
+
 .stock-price {
     font-size: 1.35rem;
     font-weight: 800;
