@@ -260,6 +260,7 @@
                     BorsaFirebase._emit();
                 }
                 const total = Number(data?.total || 0);
+                window.dispatchEvent(new CustomEvent("borsa:asset-traded"));
                 this.setFeedback("ok", side === "BUY"
                     ? `${fmtQty(qty)} ${meta.unit} ${meta.name} alındı, ${fmt(total)} ödendi.`
                     : `${fmtQty(qty)} ${meta.unit} ${meta.name} satıldı, ${fmt(total)} bakiyenize eklendi.`);

@@ -1264,6 +1264,7 @@
             });
             if (tab === "leaderboard")  loadLeaderboard(true);
             if (tab === "transactions") loadTransactions(true);
+            if (tab === "badges" && window.BorsaBadges) BorsaBadges.load();
         }
 
         function renderLeaderboard(list) {
@@ -1282,7 +1283,7 @@
                 return `<li class="leaderboard-item rank--${rank}">
                     <div class="lb-rank">${medal}</div>
                     <div>
-                        <div class="lb-name">${name}</div>
+                        <div class="lb-name">${name}${window.BorsaBadges ? ` <span class="lb-badges">${BorsaBadges.iconsMarkup(r.badges, 5)}</span>` : ""}</div>
                         <div class="lb-sub">${sub}</div>
                     </div>
                     <div class="lb-total">
@@ -1689,6 +1690,7 @@
     </script>
     <script src="assets.js"></script>
     <script src="quiz.js"></script>
+    <script src="badges.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>
@@ -1696,7 +1698,7 @@
         <div class="sidebar-header">
             <div>
                 <h2 class="sidebar-title">📊 Yarışma Merkezi</h2>
-                <div class="sidebar-sub">Liderlik Tablosu &amp; İşlem Geçmişi</div>
+                <div class="sidebar-sub">Liderlik, İşlem Geçmişi &amp; Rozetler</div>
             </div>
             <button id="sidebarCloseBtn" type="button" class="sidebar-close" aria-label="Menüyü Kapat">×</button>
         </div>
@@ -1707,6 +1709,9 @@
             </button>
             <button type="button" class="sidebar-tab" data-tab="transactions">
                 🧾 Son İşlemler
+            </button>
+            <button type="button" class="sidebar-tab" data-tab="badges">
+                🏅 Rozetlerim
             </button>
         </div>
 
@@ -1732,6 +1737,18 @@
                 <li class="transactions-empty">Önce giriş yapın.</li>
             </ul>
             <div class="sidebar-note">En son 50 işlem gösterilir. Komisyon ücreti <strong>%1</strong> olarak uygulanır.</div>
+        </section>
+
+        <!-- Rozetlerim -->
+        <section id="panelBadges" class="sidebar-panel">
+            <div class="panel-toprow">
+                <div class="panel-title">🏅 Rozetlerim</div>
+                <span id="badgesSummary" class="badges-summary"></span>
+            </div>
+            <div id="badgesGrid" class="badges-grid">
+                <p class="badges-empty">Yükleniyor…</p>
+            </div>
+            <div class="sidebar-note">Rozetler yaptıklarına göre kendiliğinden kazanılır ve bir kez kazanılan rozet kalıcıdır. Rozetlerin liderlik tablosunda adının yanında görünür.</div>
         </section>
 
         <!-- ==========================================================
