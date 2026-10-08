@@ -271,6 +271,7 @@
             const root = $("portfolioAssets");
             if (!root) return;
             const rows = ORDER.filter(sym => this.held(sym) > 0);
+            root.style.display = rows.length ? "block" : "none";
             if (!rows.length) { root.innerHTML = ""; return; }
             const body = rows.map(sym => {
                 const meta = ASSETS[sym];
@@ -318,7 +319,11 @@
                     <tbody>${body}</tbody>
                 </table>`;
             root.querySelectorAll("[data-asset-open]").forEach(btn => {
-                btn.addEventListener("click", () => this.open(btn.dataset.assetOpen));
+                btn.addEventListener("click", () => {
+                    // Portföy penceresi üstte kaldığı için önce o kapatılır.
+                    if (typeof window.closePortfolio === "function") window.closePortfolio();
+                    this.open(btn.dataset.assetOpen);
+                });
             });
         },
 
