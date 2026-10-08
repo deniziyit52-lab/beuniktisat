@@ -5948,3 +5948,44 @@ body.news-detail-modal-open {
     text-decoration: none;
 }
 .news-detail-source a:hover { background: #1e3a5f; color: #fff; }
+
+/* Sıkça Sorulan Sorular */
+.faq-panel {
+    grid-column: 1 / -1;
+    order: 4;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+    margin-top: 1rem;
+}
+.faq-panel .section-header { margin: 0; }
+.faq-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .faq-list { grid-template-columns: minmax(0, 1fr); }
+}
+.faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1.1rem;
+}
+.faq-item summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+.faq-item[open] summary { margin-bottom: 0.6rem; }
+.faq-item p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
