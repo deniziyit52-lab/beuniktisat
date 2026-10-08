@@ -134,7 +134,7 @@ function cleanText(value: string): string {
 // The provider cuts both fields short; the detail view shows whichever text is longer,
 // or both when they do not overlap. The full article is only available at the source URL.
 function buildSummary(description: string, rawContent: string): string {
-  const content = cleanText(rawContent.replace(/[+d+ chars]s*$/, ""));
+  const content = cleanText(rawContent.replace(/\[\+\d+ chars\]\s*$/, ""));
   if (!content) return description;
   const head = content.slice(0, 40);
   if (description.includes(head)) {
@@ -145,7 +145,7 @@ function buildSummary(description: string, rawContent: string): string {
 
 function safeUrl(value: string | null | undefined): string | null {
   const url = (value ?? "").trim();
-  return /^https?:///i.test(url) && url.length <= 600 ? url : null;
+  return /^https?:\/\//i.test(url) && url.length <= 600 ? url : null;
 }
 
 function normalizeForSearch(value: string): string {
