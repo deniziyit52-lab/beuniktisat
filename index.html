@@ -1280,10 +1280,13 @@
                 const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
                 const name = r.display_name ? escapeHtml(r.display_name) : ("Üye " + String(rank).padStart(2,"0"));
                 const sub = `Nakit ${fmt(Number(r.balance || 0))} · Varlıklar ${fmt(Number(r.stocks_value || 0))}`;
-                return `<li class="leaderboard-item rank--${rank}">
+                const me = r.is_me === true;
+                // İlk 10 dışında kalan oyuncunun kendi satırı, araya ayraç konarak listenin sonunda gösterilir.
+                const gap = me && rank > 10 ? `<li class="leaderboard-gap" aria-hidden="true">⋯</li>` : "";
+                return `${gap}<li class="leaderboard-item rank--${rank} ${me ? "is-me" : ""}"${me ? ` aria-current="true"` : ""}>
                     <div class="lb-rank">${medal}</div>
                     <div>
-                        <div class="lb-name">${name}${window.BorsaBadges ? ` <span class="lb-badges">${BorsaBadges.iconsMarkup(r.badges, 3)}</span>` : ""}</div>
+                        <div class="lb-name">${name}${me ? ` <span class="lb-me-tag">SEN</span>` : ""}${window.BorsaBadges ? ` <span class="lb-badges">${BorsaBadges.iconsMarkup(r.badges, 3)}</span>` : ""}</div>
                         <div class="lb-sub">${sub}</div>
                     </div>
                     <div class="lb-total">
