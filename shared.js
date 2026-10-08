@@ -440,7 +440,7 @@ const Borsa = {
             document.getElementById("newsModalFeed"),
         ].filter(Boolean);
         if (elements.length === 0) return;
-        const sorted = [...this.state.news].sort((a, b) => b.timestamp - a.timestamp);
+        const sorted = [...this.state.news].sort((a, b) => b.timestamp - a.timestamp).slice(0, this.NEWS_MAX);
         elements.forEach(el => {
             if (el.classList.contains("news-paper")) {
                 this._renderNewspaper(el, sorted);
@@ -478,11 +478,30 @@ const Borsa = {
         });
     },
 
+    // Gazetede en fazla NEWS_MAX haber durur, sayfa başına NEWS_PAGE_SIZE haber gösterilir.
+    NEWS_MAX: 20,
+    NEWS_PAGE_SIZE: 10,
+    _newsPage: 1,
+
     _renderNewspaper(el, news) {
+        const masthead = `
+            <header class="news-paper-masthead">
+                <div class="news-paper-top-border"></div>
+                <p class="news-paper-kicker">📰 PİYASA • HABER ARŞİVİ</p>
+                <h2 class="news-paper-name">EKONOMİ GAZETESİ</h2>
+                <div class="news-paper-bottom-border"></div>
+            </header>`;
+
         if (news.length === 0) {
-            el.innerHTML = `<p class="news-paper-empty">Henüz haber yok.</p>`;
+            el.innerHTML = `${masthead}<p class="news-paper-empty">Henüz haber yok. Yakında tekrar kontrol edin.</p>`;
             return;
         }
+
+        const pageCount = Math.ceil(news.length / this.NEWS_PAGE_SIZE);
+        const page = Math.min(Math.max(1, this._newsPage), pageCount);
+        this._newsPage = page;
+        const start = (page - 1) * this.NEWS_PAGE_SIZE;
+        const pageNews = news.slice(start, start + this.NEWS_PAGE_SIZE);
 
         const metaMarkup = n => {
             const impact = Number(n.impact) || 0;
@@ -495,9 +514,11 @@ const Borsa = {
             return `${targetInfo}${impactInfo}`;
         };
 
-        const lead = news[0];
-        const secondaryStories = news.slice(1).map((n, index) => `
-            <li class="news-paper-story" data-news-id="${n.id}" data-news-index="${index + 1}">
+        // Manşet yalnızca ilk sayfada; diğer sayfalarda bütün haberler sütunlarda.
+        const lead = page === 1 ? pageNews[0] : null;
+        const firstSecondary = lead ? 1 : 0;
+        const secondaryStories = pageNews.slice(firstSecondary).map((n, index) => `
+            <li class="news-paper-story" data-news-id="${n.id}" data-news-index="${start + firstSecondary + index}">
                 <h4>💰 ${this.escapeHtml(n.title)}</h4>
                 ${n.summary ? `<p class="news-paper-secondary-spot">${this.escapeHtml(n.summary)}</p>` : ""}
                 <div class="news-paper-story-meta">
@@ -507,14 +528,17 @@ const Borsa = {
             </li>
         `).join("");
 
+        const pager = pageCount > 1 ? `
+            <nav class="news-paper-pager" aria-label="Gazete sayfaları">
+                ${Array.from({ length: pageCount }, (_, i) => `
+                    <button type="button" data-news-page="${i + 1}" class="${i + 1 === page ? "is-active" : ""}"
+                        ${i + 1 === page ? 'aria-current="page"' : ""} aria-label="${i + 1}. sayfa">${i + 1}</button>`).join("")}
+            </nav>` : "";
+
         el.innerHTML = `
-            <header class="news-paper-masthead">
-                <div class="news-paper-top-border"></div>
-                <p class="news-paper-kicker">📰 PİYASA • HABER ARŞİVİ</p>
-                <h2 class="news-paper-name">EKONOMİ GAZETESİ</h2>
-                <div class="news-paper-bottom-border"></div>
-            </header>
-            <article class="news-paper-lead" data-news-id="${lead.id}" data-news-index="0">
+            ${masthead}
+            ${lead ? `
+            <article class="news-paper-lead" data-news-id="${lead.id}" data-news-index="${start}">
                 <p class="news-paper-section-label">🔥 GÜNÜN MANŞETİ</p>
                 <h3>💎 ${this.escapeHtml(lead.title)}</h3>
                 ${lead.summary ? `<p class="news-paper-spot">${this.escapeHtml(lead.summary)}</p>` : ""}
@@ -522,12 +546,21 @@ const Borsa = {
                     ${metaMarkup(lead)}
                     <time datetime="${new Date(lead.timestamp).toISOString()}">${this.formatNewsDateTime(lead.timestamp)}</time>
                 </div>
-            </article>
+            </article>` : ""}
             ${secondaryStories ? `<ol class="news-paper-columns">${secondaryStories}</ol>` : ""}
+            ${pager}
         `;
 
         // Add click handlers for expanded view
         this._bindNewsExpandHandlers(el, news);
+        el.querySelectorAll("[data-news-page]").forEach(button => {
+            button.addEventListener("click", () => {
+                this._newsPage = Number(button.dataset.newsPage) || 1;
+                this.renderNewsFeed();
+                const dialog = el.closest(".news-modal-dialog");
+                if (dialog) dialog.scrollTop = 0;
+            });
+        });
     },
 
     _bindNewsExpandHandlers(el, news) {
@@ -920,19 +953,14 @@ const Borsa = {
             const sb = this._sb();
             if (!sb) return;
             try {
-                const rows = [];
-                for (let from = 0; ; from += 1000) {
-                    const { data, error } = await sb
-                        .from("news_feed")
-                        .select("id, title, summary, stock_symbol, impact_pct, created_at")
-                        .order("created_at", { ascending: false })
-                        .range(from, from + 999);
-                    if (error) throw error;
-                    if (!Array.isArray(data)) {
-                        throw new Error("news_feed sorgusu geçerli bir kayıt listesi döndürmedi.");
-                    }
-                    rows.push(...data);
-                    if (data.length < 1000) break;
+                const { data: rows, error } = await sb
+                    .from("news_feed")
+                    .select("id, title, summary, stock_symbol, impact_pct, created_at")
+                    .order("created_at", { ascending: false })
+                    .limit(Borsa.NEWS_MAX);
+                if (error) throw error;
+                if (!Array.isArray(rows)) {
+                    throw new Error("news_feed sorgusu geçerli bir kayıt listesi döndürmedi.");
                 }
                 const mapped = rows.map(n => ({
                     id: Number(n.id || Date.now()),
@@ -942,11 +970,8 @@ const Borsa = {
                     impact: Number(n.impact_pct || 0),
                     timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
                 }));
-                const newsById = new Map(mapped.map(item => [String(item.id), item]));
-                Borsa.state.news.forEach(item => {
-                    if (!newsById.has(String(item.id))) newsById.set(String(item.id), item);
-                });
-                Borsa.state.news = [...newsById.values()].sort((a, b) => b.timestamp - a.timestamp);
+                // Veritabanı esas alınır; tarayıcıda kalmış eski haberler atılır.
+                Borsa.state.news = mapped.sort((a, b) => b.timestamp - a.timestamp);
                 Borsa.renderNewsFeed();
                 Borsa.saveState();
             } catch (e) {
@@ -969,6 +994,9 @@ const Borsa = {
             if (!item.title) return;
             if (Borsa.state.news.some(existing => String(existing.id) === String(item.id))) return;
             Borsa.state.news.unshift(item);
+            Borsa.state.news = Borsa.state.news
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, Borsa.NEWS_MAX);
             try { Borsa.renderNewsFeed(); } catch (_) {}
             try { Borsa.saveState(); } catch (_) {}
         },

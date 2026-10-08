@@ -326,11 +326,10 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Could not save fetched news." }, 500);
     }
 
-    // Check total count and keep only top 15 articles by importance_score and created_at
+    // Keep only the 20 most recent articles (the database trigger enforces the same limit)
     const { data: allArticles, error: countError } = await supabase
       .from("news_feed")
       .select("id")
-      .order("importance_score", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (countError) {
@@ -338,8 +337,8 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Could not check article count." }, 500);
     }
 
-    if (allArticles && allArticles.length > 15) {
-      const articlesToDelete = allArticles.slice(15);
+    if (allArticles && allArticles.length > 20) {
+      const articlesToDelete = allArticles.slice(20);
       const idsToDelete = articlesToDelete.map((article) => article.id);
 
       const { error: deleteError } = await supabase
