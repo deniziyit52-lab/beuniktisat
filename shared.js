@@ -833,9 +833,21 @@ ${sourceMarkup}
             };
         },
 
-        applyMarketStatus(isOpen) {
+        applyMarketStatus(isOpen, haltUntil) {
             this._marketStatusRevision++;
             Borsa.state.marketOpen = isOpen === true;
+            // Piyasa geneli devre kesici: haltUntil verilmediyse eski değer korunur.
+            if (haltUntil !== undefined) {
+                const t = haltUntil ? new Date(haltUntil).getTime() : 0;
+                Borsa.state.marketHaltUntil = Number.isFinite(t) ? t : 0;
+            }
+            clearTimeout(this._marketHaltTimer);
+            const haltLeft = (Borsa.state.marketHaltUntil || 0) - Date.now();
+            const marketHalted = Borsa.state.marketOpen && haltLeft > 0;
+            if (marketHalted) {
+                this._marketHaltTimer = setTimeout(
+                    () => this.applyMarketStatus(Borsa.state.marketOpen), haltLeft + 500);
+            }
             const pill = document.getElementById("marketStatusPill");
             if (pill) {
                 pill.textContent = Borsa.state.marketOpen ? "PİYASA AÇIK" : "PİYASA KAPALI";
@@ -848,10 +860,12 @@ ${sourceMarkup}
             }
             const hoursNote = document.getElementById("marketHoursNote");
             if (hoursNote) {
-                hoursNote.textContent = Borsa.state.marketOpen
+                hoursNote.textContent = marketHalted
+                    ? `⚡ Piyasa geneli devre kesici devrede. Hisse işlemleri ${new Date(Borsa.state.marketHaltUntil).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}'de yeniden açılır.`
+                    : Borsa.state.marketOpen
                     ? "🕘 Piyasa açık. Her gün 09:00–24:00 arası işlem yapılabilir."
                     : "🔒 Piyasa şu an kapalı. Her gün 09:00'da açılır, 24:00'te kapanır.";
-                hoursNote.classList.toggle("is-closed", !Borsa.state.marketOpen);
+                hoursNote.classList.toggle("is-closed", !Borsa.state.marketOpen || marketHalted);
             }
             document.querySelectorAll("[data-market-trade]").forEach(button => {
                 const disabled = !Borsa.state.marketOpen || button.dataset.tradeBusy === "true";
@@ -874,7 +888,7 @@ ${sourceMarkup}
             try {
                 const { data, error } = await sb
                     .from("market_settings")
-                    .select("is_market_open")
+                    .select("*")
                     .eq("id", 1)
                     .maybeSingle();
                 if (error) throw error;
@@ -882,7 +896,7 @@ ${sourceMarkup}
                     throw new Error("market_settings row id=1 is missing or invalid.");
                 }
                 if (revision === this._marketStatusRevision) {
-                    this.applyMarketStatus(data.is_market_open);
+                    this.applyMarketStatus(data.is_market_open, data.halt_until || null);
                 }
                 return true;
             } catch (e) {
@@ -1197,7 +1211,7 @@ ${sourceMarkup}
                         { event: "*", schema: "public", table: "market_settings", filter: "id=eq.1" },
                         (payload) => {
                             if (payload.new && typeof payload.new.is_market_open === "boolean") {
-                                this.applyMarketStatus(payload.new.is_market_open);
+                                this.applyMarketStatus(payload.new.is_market_open, payload.new.halt_until || null);
                             }
                         }
                     )

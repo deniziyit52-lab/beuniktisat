@@ -168,15 +168,15 @@
                 </details>
                 <details class="faq-item">
                     <summary>Hisse nasıl alınır ve satılır?</summary>
-                    <p>Hissenin kartına tıkla. Açılan pencerede adet yaz ya da harcamak istediğin tutarı gir; kaç adet alabileceğin kendiliğinden hesaplanır. Her alım ve satımda %1 komisyon kesilir. Elindekileri "Cüzdanım" bölümünden görebilir ve satabilirsin.</p>
+                    <p>Hissenin kartına tıkla. Açılan pencerede adet yaz ya da harcamak istediğin tutarı gir; kaç adet alabileceğin kendiliğinden hesaplanır. Her alım ve satımda %1 komisyon kesilir. Tek bir hissede toplam varlığının en fazla %40'ını tutabilirsin; paranı birkaç hisseye yayman gerekir. Elindekileri "Cüzdanım" bölümünden görebilir ve satabilirsin.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Fiyatlar neye göre değişiyor?</summary>
-                    <p>Üç şeye göre: hissenin kendi dalgalanması, yayınlanan oyun haberleri ve oyuncuların alım-satımları. Büyük bir alım fiyatı yukarı, büyük bir satış aşağı iter.</p>
+                    <p>Üç şeye göre: hissenin kendi dalgalanması, yayınlanan oyun haberleri ve oyuncuların alım-satımları. Büyük bir alım fiyatı yukarı, büyük bir satış aşağı iter; bu etkinin bir kısmı birkaç dakika içinde geri döner.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Devre kesici nedir?</summary>
-                    <p>Bir hisse kısa sürede yaklaşık %10 yükselir ya da düşerse o hissede işlemler birkaç dakikalığına durur. Kartın üstünde ne zaman açılacağı yazar. Gerçek borsalardaki gibi, ani hareketlerde herkese nefes aldırmak içindir.</p>
+                    <p>Bir hisse kısa sürede yaklaşık %10 yükselir ya da düşerse o hissede işlemler birkaç dakikalığına durur. Kartın üstünde ne zaman açılacağı yazar. Bütün hisselerin ortalaması gün içinde sert düşerse de piyasanın tamamı bir süre durur. Gerçek borsalardaki gibi, ani hareketlerde herkese nefes aldırmak içindir.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Altın, gümüş ve döviz nasıl çalışıyor?</summary>
@@ -885,6 +885,24 @@
         // =====================================================================
         const COMMISSION_RATE = 0.01;
 
+        // Tek hissede tutulabilecek en fazla pay; gerçek değer sunucudan okunur, kontrol de sunucuda yapılır.
+        let maxPositionPct = 0.40;
+        function loadGameRules() {
+            if (!window.sb || !window.sb.rpc) return;
+            window.sb.rpc("get_game_rules").then(({ data }) => {
+                const pct = Number(data && data.max_position_pct);
+                if (pct > 0 && pct <= 1) maxPositionPct = pct;
+            }, () => {});
+        }
+        function totalWealth() {
+            let total = Number(BorsaFirebase.balance() || 0);
+            Object.values(Borsa.state.stocks || {}).forEach(s => {
+                total += Number(BorsaFirebase.ownedQty(s.symbol) || 0) * Number(s.price || 0);
+            });
+            if (window.BorsaAssets) total += Number(BorsaAssets.portfolioTotals().value || 0);
+            return total;
+        }
+
         function calcTradeBreakdown(side, qty, price) {
             qty   = Math.max(0, Math.floor(Number(qty   || 0)));
             price = Number(price || 0);
@@ -1556,6 +1574,7 @@
                 updateTradeTotals("BUY");
             });
             if ($("tradeQuick")) $("tradeQuick").addEventListener("click", clearTradeAmount);
+            loadGameRules();
             document.querySelectorAll("#tradeQuick .chip-btn[data-qty]").forEach(btn => {
                 btn.addEventListener("click", () => {
                     $("tradeQty").value = btn.dataset.qty;
@@ -1574,7 +1593,10 @@
                     const bal = BorsaFirebase.balance();
                     if (!(bal > 0)) { $("tradeQty").value = 0; updateTradeTotals(); return; }
                     // bal >= qty * price * 1.01 => qty_max = floor( bal / (price * 1.01) )
-                    const max = Math.floor(bal / (price * (1 + COMMISSION_RATE)));
+                    const byCash = Math.floor(bal / (price * (1 + COMMISSION_RATE)));
+                    // Tek hisse sınırı: pozisyon, toplam varlığın belli bir yüzdesini geçemez.
+                    const byCap = Math.floor(maxPositionPct * totalWealth() / price) - BorsaFirebase.ownedQty(currentTradeSymbol);
+                    const max = Math.min(byCash, byCap);
                     $("tradeQty").value = Math.max(0, max);
                     updateTradeTotals("BUY");
                 });
