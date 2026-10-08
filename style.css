@@ -5926,3 +5926,25 @@ body.news-detail-modal-open {
     min-width: 0;
 }
 .trade-input input { width: 100%; box-sizing: border-box; }
+
+/* Haber detayı: kaynak ve haberin tamamına bağlantı */
+.news-detail-source {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: -1rem 0 2rem;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.9rem;
+    color: #4b5563;
+}
+.news-detail-source a {
+    padding: 0.55rem 1rem;
+    border: 2px solid #1e3a5f;
+    border-radius: 2px;
+    color: #1e3a5f;
+    font-weight: 700;
+    text-decoration: none;
+}
+.news-detail-source a:hover { background: #1e3a5f; color: #fff; }

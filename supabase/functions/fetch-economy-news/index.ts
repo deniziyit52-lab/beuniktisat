@@ -91,6 +91,9 @@ const NEWS_API_QUERY =
 interface NewsApiArticle {
   title?: string | null;
   description?: string | null;
+  content?: string | null;
+  url?: string | null;
+  source?: { name?: string | null } | null;
   publishedAt?: string | null;
 }
 
@@ -104,6 +107,8 @@ interface NewsApiResponse {
 interface NewsRecord {
   title: string;
   summary: string;
+  url: string | null;
+  source: string | null;
   created_at: string;
   importance_score: number;
 }
@@ -124,6 +129,23 @@ function cleanText(value: string): string {
     .replace(/&#39;/g, "'")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// The provider cuts both fields short; the detail view shows whichever text is longer,
+// or both when they do not overlap. The full article is only available at the source URL.
+function buildSummary(description: string, rawContent: string): string {
+  const content = cleanText(rawContent.replace(/[+d+ chars]s*$/, ""));
+  if (!content) return description;
+  const head = content.slice(0, 40);
+  if (description.includes(head)) {
+    return content.length > description.length ? content : description;
+  }
+  return `${description} ${content}`;
+}
+
+function safeUrl(value: string | null | undefined): string | null {
+  const url = (value ?? "").trim();
+  return /^https?:///i.test(url) && url.length <= 600 ? url : null;
 }
 
 function normalizeForSearch(value: string): string {
@@ -270,7 +292,9 @@ Deno.serve(async (request) => {
 
       candidateArticles.push({
         title,
-        summary: summary.slice(0, 500),
+        summary: buildSummary(summary, article.content ?? "").slice(0, 1000),
+        url: safeUrl(article.url),
+        source: cleanText(article.source?.name ?? "").slice(0, 80) || null,
         created_at: publishedAt.toISOString(),
         importance_score: calculateImportanceScore(title, summary),
       });
@@ -310,6 +334,8 @@ Deno.serve(async (request) => {
       id: Number(baseId + BigInt(index)),
       title: article.title,
       summary: article.summary,
+      url: article.url,
+      source: article.source,
       stock_symbol: null,
       impact_pct: 0,
       created_at: article.created_at,

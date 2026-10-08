@@ -626,6 +626,14 @@ const Borsa = {
 
         // Summary'ın tamamını göster (kırpmadan)
         const fullSummary = newsItem.summary || "";
+        // Gerçek haberlerde fiyat etkisi yoktur; etki kutuları yalnızca oyun haberlerinde gösterilir.
+        const hasImpact = impact !== 0 || Boolean(newsItem.target);
+        const sourceUrl = /^https?:///i.test(newsItem.url || "") ? newsItem.url : "";
+        const sourceMarkup = (newsItem.source || sourceUrl) ? `
+                        <div class="news-detail-source">
+                            ${newsItem.source ? `<span>Kaynak: <b>${this.escapeHtml(newsItem.source)}</b></span>` : ""}
+                            ${sourceUrl ? `<a href="${this.escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">Haberin tamamını oku ↗</a>` : ""}
+                        </div>` : "";
 
         modal.innerHTML = `
             <div class="news-detail-modal-dialog">
@@ -636,12 +644,13 @@ const Borsa = {
                         <h2 id="newsDetailTitle" class="news-detail-title">${this.escapeHtml(newsItem.title)}</h2>
                         <div class="news-detail-meta">
                             <span class="news-detail-stock">${targetInfo}</span>
-                            <span class="news-detail-impact ${impactClass}">${impactEmoji} ${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>
+                            ${hasImpact ? `<span class="news-detail-impact ${impactClass}">${impactEmoji} ${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>` : ""}
                             <time class="news-detail-time" datetime="${new Date(newsItem.timestamp).toISOString()}">${this.formatNewsDateTime(newsItem.timestamp)}</time>
                         </div>
                     </header>
                     <div class="news-detail-body">
                         ${fullSummary ? `<p class="news-detail-summary">${this.escapeHtml(fullSummary)}</p>` : "<p class='news-detail-summary'>Haber detayı bulunmuyor.</p>"}
+${sourceMarkup}
                         <div class="news-detail-stats">
                             <div class="stat-item">
                                 <span class="stat-label">📅 Tarih</span>
@@ -651,10 +660,10 @@ const Borsa = {
                                 <span class="stat-label">⏰ Saat</span>
                                 <span class="stat-value">${new Date(newsItem.timestamp).toLocaleTimeString('tr-TR')}</span>
                             </div>
-                            <div class="stat-item">
+                            ${hasImpact ? `<div class="stat-item">
                                 <span class="stat-label">📊 Etki</span>
                                 <span class="stat-value ${impactClass}">${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>
-                            </div>
+                            </div>` : ""}
                         </div>
                     </div>
                 </div>
@@ -982,11 +991,14 @@ const Borsa = {
             const sb = this._sb();
             if (!sb) return;
             try {
-                const { data: rows, error } = await sb
+                const fetchNews = (columns) => sb
                     .from("news_feed")
-                    .select("id, title, summary, stock_symbol, impact_pct, created_at")
+                    .select(columns)
                     .order("created_at", { ascending: false })
                     .limit(Borsa.NEWS_MAX);
+                let { data: rows, error } = await fetchNews("id, title, summary, stock_symbol, impact_pct, created_at, url, source");
+                // Kaynak sütunları henüz eklenmemişse eski sütunlarla okunur.
+                if (error) ({ data: rows, error } = await fetchNews("id, title, summary, stock_symbol, impact_pct, created_at"));
                 if (error) throw error;
                 if (!Array.isArray(rows)) {
                     throw new Error("news_feed sorgusu geçerli bir kayıt listesi döndürmedi.");
@@ -998,6 +1010,8 @@ const Borsa = {
                     target: String(n.stock_symbol || "").trim() || null,
                     impact: Number(n.impact_pct || 0),
                     timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
+                    url: String(n.url || ""),
+                    source: String(n.source || ""),
                 }));
                 // Veritabanı esas alınır; tarayıcıda kalmış eski haberler atılır.
                 Borsa.state.news = mapped.sort((a, b) => b.timestamp - a.timestamp);
@@ -1019,6 +1033,8 @@ const Borsa = {
                 target: String(n.stock_symbol || "").trim() || null,
                 impact: Number(n.impact_pct || 0),
                 timestamp: n.created_at ? new Date(n.created_at).getTime() : Date.now(),
+                url: String(n.url || ""),
+                source: String(n.source || ""),
             };
             if (!item.title) return;
             if (Borsa.state.news.some(existing => String(existing.id) === String(item.id))) return;
