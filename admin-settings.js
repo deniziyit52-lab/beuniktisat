@@ -118,7 +118,12 @@
                     </div>
                 </div>
 
-                <div class="panel-sub">📝 Sınav Bonusları</div>
+                <div class="panel-sub">📝 Sınav Süresi ve Bonusları</div>
+                ${engine.quiz_minutes == null ? "" : `
+                <div class="form-group">
+                    <label for="setQuizMinutes">Sınav süresi (dakika)</label>
+                    <input type="number" id="setQuizMinutes" step="1" min="1" max="120" value="${Number(engine.quiz_minutes)}">
+                </div>`}
                 <div id="setTiers">${tierRows}</div>
 
                 <button type="button" id="saveSettingsBtn" class="submit-btn" style="width:100%;">💾 Ayarları Kaydet</button>
@@ -160,6 +165,12 @@
             const btn = $("saveSettingsBtn");
             btn.disabled = true;
             try {
+                if ($("setQuizMinutes")) {
+                    const { error: minutesError } = await window.sb.rpc("admin_set_quiz_minutes", {
+                        p_minutes: Math.round(num($("setQuizMinutes"))),
+                    });
+                    if (minutesError) throw minutesError;
+                }
                 const { data, error } = await window.sb.rpc("admin_save_settings", {
                     p_settings: {
                         types,
