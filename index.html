@@ -221,8 +221,17 @@
 
             <div id="tradeLoggedInBlock" style="display:none;">
                 <div class="form-group" style="margin-top: 0.5rem;">
-                    <label for="tradeQty">Adet</label>
-                    <input type="number" id="tradeQty" min="1" step="1" value="1" placeholder="Almak / satmak istediğiniz adet">
+                    <div class="trade-inputs">
+                        <div class="trade-input">
+                            <label for="tradeQty">Adet</label>
+                            <input type="number" id="tradeQty" min="1" step="1" value="1" placeholder="Adet">
+                        </div>
+                        <div class="trade-input">
+                            <label for="tradeAmount">veya Tutar (₺)</label>
+                            <input type="number" id="tradeAmount" min="0" step="any" inputmode="decimal" placeholder="Örn: 5000">
+                        </div>
+                    </div>
+                    <small class="field-hint" id="tradeAmountHint">Tutar yazarsan, o parayla (komisyon dahil) alınabilecek adet kendiliğinden hesaplanır.</small>
 
                     <div class="trade-summary" id="tradeSummary">
                         <div class="trade-summary-row subtotal">
@@ -700,6 +709,7 @@
             const s = stockOf(sym);
             if (!s) return;
             currentTradeSymbol = sym;
+            clearTradeAmount();
             const modal = $("tradeModal");
             modal.style.display = "flex";
             modal.setAttribute("aria-hidden", "false");
@@ -800,6 +810,12 @@
             if (side === "BUY")  finalTotal = Math.round((subtotal + fee) * 100) / 100; // kullanıcı öder
             if (side === "SELL") finalTotal = Math.round((subtotal - fee) * 100) / 100; // kullanıcı alır
             return { qty, price, subtotal, fee, total: finalTotal, side };
+        }
+
+        const TRADE_AMOUNT_HINT = "Tutar yazarsan, o parayla (komisyon dahil) alınabilecek adet kendiliğinden hesaplanır.";
+        function clearTradeAmount() {
+            if ($("tradeAmount")) $("tradeAmount").value = "";
+            if ($("tradeAmountHint")) $("tradeAmountHint").textContent = TRADE_AMOUNT_HINT;
         }
 
         function updateTradeTotals(sideHint) {
@@ -1438,7 +1454,24 @@
             });
 
             // Trade quantity + quick chips
-            if ($("tradeQty")) $("tradeQty").addEventListener("input", () => updateTradeTotals());
+            if ($("tradeQty")) $("tradeQty").addEventListener("input", () => { clearTradeAmount(); updateTradeTotals(); });
+            // Tutar yazılınca: o parayla komisyon dahil alınabilecek adet hesaplanır.
+            if ($("tradeAmount")) $("tradeAmount").addEventListener("input", () => {
+                const s = stockOf(currentTradeSymbol);
+                const price = Number(s?.price || 0);
+                const amount = Number($("tradeAmount").value || 0);
+                const hint = $("tradeAmountHint");
+                if (!(price > 0) || !(amount > 0)) { if (hint) hint.textContent = TRADE_AMOUNT_HINT; return; }
+                const qty = Math.floor(amount / (price * (1 + COMMISSION_RATE)));
+                $("tradeQty").value = qty;
+                if (hint) {
+                    hint.textContent = qty > 0
+                        ? `${fmt(amount)} ile komisyon dahil en fazla ${qty} adet alınır.`
+                        : `Bu tutar bir adet almaya yetmiyor (bir adet komisyonla ${fmt(price * (1 + COMMISSION_RATE))}).`;
+                }
+                updateTradeTotals("BUY");
+            });
+            if ($("tradeQuick")) $("tradeQuick").addEventListener("click", clearTradeAmount);
             document.querySelectorAll("#tradeQuick .chip-btn[data-qty]").forEach(btn => {
                 btn.addEventListener("click", () => {
                     $("tradeQty").value = btn.dataset.qty;
