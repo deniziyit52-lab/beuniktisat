@@ -5912,3 +5912,17 @@ body.news-detail-modal-open {
     .assets-panel { order: 2; }
     .right-panel { order: 3; }
 }
+
+/* İşlem penceresi: adet ve tutar yan yana */
+.trade-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+.trade-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+}
+.trade-input input { width: 100%; box-sizing: border-box; }
