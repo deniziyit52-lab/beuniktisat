@@ -49,7 +49,7 @@
             </a>
             <div class="market-status">
                 <span class="status-dot"></span>
-                <span>PİYASA AÇIK</span>
+                <span id="marketStatusPill" aria-live="polite">PİYASA 09:00–24:00</span>
                 <a href="index.html" class="public-link" title="Piyasaya Dön">← Piyasaya Dön</a>
             </div>
         </div>
@@ -166,6 +166,22 @@
 
     <script>
         const $ = (id) => document.getElementById(id);
+
+        // Üstteki piyasa durumu gerçek duruma göre yazılır (tek okuma, canlı abonelik yok).
+        (async function showMarketStatus() {
+            const pill = $("marketStatusPill");
+            if (!pill || !window.sb) return;
+            try {
+                const { data, error } = await window.sb
+                    .from("market_settings")
+                    .select("is_market_open")
+                    .eq("id", 1)
+                    .maybeSingle();
+                if (error || !data || typeof data.is_market_open !== "boolean") return;
+                pill.textContent = data.is_market_open ? "PİYASA AÇIK" : "PİYASA KAPALI";
+                pill.closest(".market-status").classList.toggle("market-closed", !data.is_market_open);
+            } catch (_) {}
+        })();
 
         function setFeedback(type, msg) {
             const el = $("authFeedback");
