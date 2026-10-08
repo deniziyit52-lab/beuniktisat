@@ -52,6 +52,9 @@
                     </div>
 
                     <div id="userNav" class="nav-block" style="display:none;">
+                        <button id="quizBtn" class="portfolio-btn" type="button" title="Açılış sınavını çöz, bonus kazan" style="display:none;">
+                            📝 Sınav
+                        </button>
                         <button id="portfolioBtn" class="portfolio-btn" type="button" title="Portföyüm / Cüzdanım">
                             👛 Cüzdanım
                         </button>
@@ -1138,10 +1141,11 @@
                 return;
             }
             root.innerHTML = list.map(r => {
-                const rank = Number(r.rank || 0);
+                const rank = Number(r.rank_id || r.rank || 0);
+                const pct = Number(r.return_pct || 0);
                 const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
                 const name = r.display_name ? escapeHtml(r.display_name) : ("Üye " + String(rank).padStart(2,"0"));
-                const sub = `Nakit ${fmt(Number(r.balance || 0))} · Hisseler ${fmt(Number(r.market_value || 0))}`;
+                const sub = `Nakit ${fmt(Number(r.balance || 0))} · Varlıklar ${fmt(Number(r.stocks_value || 0))}`;
                 return `<li class="leaderboard-item rank--${rank}">
                     <div class="lb-rank">${medal}</div>
                     <div>
@@ -1149,8 +1153,8 @@
                         <div class="lb-sub">${sub}</div>
                     </div>
                     <div class="lb-total">
-                        <span class="big">${fmt(Number(r.total_net_worth || 0))}</span>
-                        <span class="sub">Toplam Net Değer</span>
+                        <span class="big ${pct >= 0 ? "pf-up" : "pf-down"}">${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%</span>
+                        <span class="sub">${fmt(Number(r.total_net_worth || 0))}</span>
                     </div>
                 </li>`;
             }).join("");
@@ -1530,6 +1534,7 @@
         });
     </script>
     <script src="assets.js"></script>
+    <script src="quiz.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>
@@ -1554,13 +1559,13 @@
         <!-- Liderlik Tablosu -->
         <section id="panelLeaderboard" class="sidebar-panel sidebar-panel--active">
             <div class="panel-toprow">
-                <div class="panel-title">💎 Top 10 En Değerli Portföy</div>
+                <div class="panel-title">💎 Top 10 En Yüksek Getiri</div>
                 <button id="refreshLeaderboardBtn" type="button" class="panel-refresh" title="Tazele">↻</button>
             </div>
             <ol id="leaderboardList" class="leaderboard-list">
                 <li class="leaderboard-empty">Yükleniyor…</li>
             </ol>
-            <div class="sidebar-note">Sıralama toplam net değere göre yapılır: Nakit Bakiye + Tüm Hisselerin Anlık Piyasa Değeri</div>
+            <div class="sidebar-note">Sıralama getiri yüzdesine göre yapılır: toplam varlığın (nakit + hisse + altın/döviz) başlangıç bakiyesine göre değişimi</div>
         </section>
 
         <!-- Son Islemler -->
