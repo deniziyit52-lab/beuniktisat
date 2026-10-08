@@ -384,18 +384,19 @@ BEGIN
     END IF;
 
     IF p_is_market_open THEN
-        -- Acilista devre kesiciler sifirlanir, referans guncel fiyat olur.
-        UPDATE public.stocks
-        SET breaker_ref = current_price,
-            halt_until = NULL
-        WHERE symbol IS NOT NULL;
-    ELSE
+        -- Acilista gunluk degisim yuzdesi ve devre kesiciler sifirlanir; yeni gun guncel fiyattan baslar.
         UPDATE public.stocks
         SET previous_close = current_price,
             change = 0,
             change_pct = 0,
+            breaker_ref = current_price,
             halt_until = NULL,
             updated_at = now()
+        WHERE symbol IS NOT NULL;
+    ELSE
+        -- Kapanista gunun degisimi ertesi sabaha kadar gorunur kalir.
+        UPDATE public.stocks
+        SET halt_until = NULL
         WHERE symbol IS NOT NULL;
     END IF;
 
