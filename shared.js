@@ -628,7 +628,7 @@ const Borsa = {
         const fullSummary = newsItem.summary || "";
         // Gerçek haberlerde fiyat etkisi yoktur; etki kutuları yalnızca oyun haberlerinde gösterilir.
         const hasImpact = impact !== 0 || Boolean(newsItem.target);
-        const sourceUrl = /^https?:///i.test(newsItem.url || "") ? newsItem.url : "";
+        const sourceUrl = /^https?:\/\//i.test(newsItem.url || "") ? newsItem.url : "";
         const sourceMarkup = (newsItem.source || sourceUrl) ? `
                         <div class="news-detail-source">
                             ${newsItem.source ? `<span>Kaynak: <b>${this.escapeHtml(newsItem.source)}</b></span>` : ""}
