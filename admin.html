@@ -114,22 +114,103 @@
             box-sizing: border-box;
 
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 24px;
             align-items: start;
+        }
+        /* Kartlar iki bağımsız sütunda alt alta dizilir; boşluk kalmaz. */
+        .admin-col {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            min-width: 0;
+        }
+        .admin-controls-grid .admin-card--feed { grid-column: 1 / -1; }
+        @media (max-width: 900px) {
+            .admin-controls-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+
+        .admin-card-note {
+            margin: 0 0 1rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .admin-card-note code {
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+            background: var(--bg-card);
+            font-size: 0.8rem;
+        }
+        .admin-tag {
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .admin-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+        .admin-btn-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .admin-btn-pair .submit-btn,
+        .admin-btn-pair .reset-btn {
+            margin: 0;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .main-container--admin .submit-btn:disabled,
+        .main-container--admin .reset-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .status-pill--good {
+            color: #4ade80;
+            border-color: rgba(74, 222, 128, 0.35);
+            background: rgba(22, 101, 52, 0.22);
+        }
+        .status-pill--bad {
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.45);
+            background: rgba(127, 29, 29, 0.3);
+        }
+        body.light-mode .status-pill--good { color: #15803d; background: rgba(34, 197, 94, 0.1); }
+        body.light-mode .status-pill--bad { color: #b91c1c; background: rgba(239, 68, 68, 0.08); }
+        .checkrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+        .checkrow input[type="checkbox"] {
+            flex: none;
+            width: 18px;
+            height: 18px;
+            min-width: 0;
+            min-height: 0;
+            margin: 0;
+            padding: 0;
+            accent-color: #3b82f6;
         }
         .admin-controls-grid .admin-card {
             width: 100%;
             box-sizing: border-box;
             margin: 0;
             position: static;
-        }
-
-        /* Geniş ekranlarda Haber Akışı tek satırda 2 kolon kaplasın */
-        @media (min-width: 1000px) {
-            .admin-controls-grid .admin-card--feed {
-                grid-column: span 2;
-            }
         }
 
         /* ---------- RESPONSIVE ---------- */
@@ -291,246 +372,246 @@
             <!-- ========== 2. ALT BÖLÜM: YALNIZCA ADMİN KONTROLLERİ (GRID) ========== -->
             <section class="admin-controls-grid">
 
-                <div class="panel-section admin-card admin-card--news">
-                    <div class="section-header">
-                        <h2>📰 Son Dakika Haberi Yayınla</h2>
+                <div class="admin-col">
+                    <div class="panel-section admin-card admin-card--news">
+                        <div class="section-header">
+                            <h2>📰 Son Dakika Haberi Yayınla</h2>
+                        </div>
+                        <form id="newsForm" class="news-form">
+                            <div class="form-group">
+                                <label for="newsTitle">Haber Başlığı</label>
+                                <input type="text" id="newsTitle" placeholder="Örn: Deniz FF aldı" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newsSummary">Alt Bilgi / Spot (Opsiyonel)</label>
+                                <textarea id="newsSummary" rows="3" maxlength="500"
+                                    placeholder="Haberin kısa özeti veya manşet spotu..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="targetPerson">Hedef Hisse</label>
+                                    <select id="targetPerson" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="impactPct">Etki %</label>
+                                    <input type="number" id="impactPct" placeholder="Örn: -15" step="0.5" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="submit-btn">🚀 Haber Yayınla & Piyasayı Hareket Ettir</button>
+                        </form>
                     </div>
-                    <form id="newsForm" class="news-form">
-                        <div class="form-group">
-                            <label for="newsTitle">Haber Başlığı</label>
-                            <input type="text" id="newsTitle" placeholder="Örn: Deniz FF aldı" required>
+
+                    <div class="panel-section admin-card admin-card--silent">
+                        <div class="section-header">
+                            <h2>🎛 Sessiz Fiyat Manipülasyonu</h2>
+                            <span class="admin-tag">Haber akışında görünmez</span>
                         </div>
-                        <div class="form-group">
-                            <label for="newsSummary">Alt Bilgi / Spot (Opsiyonel)</label>
-                            <textarea id="newsSummary" rows="3" maxlength="500"
-                                placeholder="Haberin kısa özeti veya manşet spotu..."></textarea>
-                        </div>
-                        <div class="form-row">
+
+                        <form id="silentPriceForm" class="news-form">
                             <div class="form-group">
-                                <label for="targetPerson">Hedef Kişi</label>
-                                <select id="targetPerson" required></select>
+                                <label for="silentSymbol">Hedef Hisse</label>
+                                <select id="silentSymbol" required></select>
                             </div>
-                            <div class="form-group">
-                                <label for="impactPct">Etki %</label>
-                                <input type="number" id="impactPct" placeholder="Örn: -15" step="0.5" required>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="silentExactPrice">Tam Fiyat (₺)</label>
+                                    <input type="number" id="silentExactPrice" placeholder="Örn: 120,00" min="0.05" step="0.01">
+                                    <small class="field-hint">Dilerseniz bu alanı boş bırakıp +% / -% kullanın</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="silentPct">Yüzde Değişim (%)</label>
+                                    <input type="number" id="silentPct" placeholder="Örn: -10 veya +7" step="0.5">
+                                    <small class="field-hint">Pozitif = yukarı, Negatif = aşağı (haber yayınlanmaz)</small>
+                                </div>
                             </div>
+
+                            <div class="form-row" style="gap:0.6rem;">
+                                <button type="button" id="silentBumpUp" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#059669,#10b981); border-color: #059669;">▲ +5% Hızlı</button>
+                                <button type="button" id="silentBumpDown" class="reset-btn" style="flex:1; margin:0; color:#fff; background: linear-gradient(135deg,#b91c1c,#ef4444); border-color: #b91c1c;">▼ -5% Hızlı</button>
+                            </div>
+
+                            <button type="submit" class="submit-btn" style="width:100%;">🎯 Fiyatı Sessizce Uygula</button>
+                        </form>
+                    </div>
+
+                    <div class="panel-section admin-card admin-card--whisper">
+                        <div class="section-header">
+                            <h2>📡 Fısıltı ve Tüyo Merkezi</h2>
+                            <span class="admin-tag">Gizli tüyo</span>
                         </div>
-                        <button type="submit" class="submit-btn">🚀 Haber Yayınla & Piyasayı Hareket Ettir</button>
-                    </form>
+
+                        <form id="whisperForm" class="news-form">
+                            <div class="panel-sub">🔐 Fısıltı Ayarları</div>
+
+                            <div class="form-group">
+                                <label for="whisperSymbol">Hedef Hisse</label>
+                                <select id="whisperSymbol" required></select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="whisperTargetUser">Hedef Kullanıcı</label>
+                                <select id="whisperTargetUser">
+                                    <option value="">Herkes / Rastgele</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="whisperMessage">Fısıltı Mesajı (Kullanıcıya Gizlice Gidecek)</label>
+                                <textarea id="whisperMessage" rows="3" maxlength="280" required
+                                    placeholder="Gizli duyum: Bu hisse senedinde büyük bir kurumsal anlaşma bekleniyor..."></textarea>
+                                <small class="field-hint">En fazla 280 karakter. Kullanıcı bunu diğerlerinden ÖNCE görür.</small>
+                            </div>
+
+                            <div>
+                                <label class="checkrow" for="whisperFake" title="Gerçek dışı haber sızdır (ters işlem)">
+                                    <input type="checkbox" id="whisperFake">
+                                    <span>Asılsız / Yalan Tüyo mu?</span>
+                                </label>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="whisperImpactPct">3dk Sonra Yayınlanacak Haberin Etkisi (%)</label>
+                                    <input type="number" id="whisperImpactPct" value="6" step="0.5" min="-25" max="25">
+                                    <small class="field-hint">+ yukarı it, - aşağı çek. 0 = fiyat etkisi yok</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="whisperPublicTitle">3dk Sonra Yayınlanacak Haber Başlığı</label>
+                                    <input type="text" id="whisperPublicTitle" maxlength="140"
+                                        placeholder="Kurumsal anlaşma açıklandı... (+ etkili)">
+                                    <small class="field-hint">Boş bırakırsanız otomatik "⚠ Gelişme: [Sembol]" başlığı atanır.</small>
+                                </div>
+                            </div>
+
+                            <div id="whisperProgress" class="whisper-progress" style="display:none;">
+                                <div class="wp-bar"><div id="whisperBar" class="wp-bar-inner"></div></div>
+                                <div id="whisperCountdown" class="wp-countdown">⏱ 3 dakika bekleniyor…</div>
+                            </div>
+
+                            <div id="whisperOutput" class="whisper-output" style="display:none;"></div>
+
+                            <button type="submit" class="submit-btn" style="width:100%;
+                                background: linear-gradient(135deg,#7c3aed,#ec4899); border-color: #7c3aed;">
+                                🕶 Seçilen Kullanıcıya / Herkese Gönder &amp; 3 Dakika Sonra Yayınla
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
-                <div class="panel-section admin-card admin-card--maintenance maintenance-admin-panel">
-                    <div class="section-header">
-                        <h2>🛠 Sistem Bakım Modu</h2>
-                        <span id="maintStatusPill" class="status-pill status-pill--off">Bakım: Kapalı</span>
-                    </div>
-                    <div class="panel-sub maintenance-hint">
-                        Bakım modu açıkken kullanıcılar otomatik olarak <code>maintenance.html</code> sayfasına
-                        yönlendirilir. Yönetici hesabı yönlendirilmez; <code>?bypass=admin</code> acil erişim
-                        bağlantısı da mevcut tarayıcı sekmesinde bakım kontrolünü atlar.
-                    </div>
-                    <div class="maintenance-toggle-row">
-                        <label class="switch-toggle">
-                            <input type="checkbox" id="maintToggle">
-                            <span class="switch-slider">
-                                <span class="switch-knob"></span>
-                            </span>
-                        </label>
-                        <div class="maint-toggle-labels">
-                            <div class="maint-label on">Bakım Modunu Aç</div>
-                            <div class="maint-label off">Bakım Modunu Kapat</div>
-                            <div id="maintLastStatus" class="maint-status-text">Son durum: Yükleniyor…</div>
+                <div class="admin-col">
+                    <div class="panel-section admin-card admin-card--maintenance">
+                        <div class="section-header">
+                            <h2>🔔 Seans Kontrolü</h2>
+                            <span id="marketAdminStatus" class="status-pill status-pill--off">Piyasa durumu yükleniyor…</span>
+                        </div>
+                        <p class="admin-card-note">Piyasa her gün 09:00'da kendiliğinden açılır, 24:00'te kapanır. Buradan elle de açıp kapatabilirsin; kapalıyken alım-satım durur.</p>
+                        <div class="admin-btn-pair">
+                            <button type="button" id="closeMarketBtn" class="reset-btn">Piyasayı Kapat</button>
+                            <button type="button" id="openMarketBtn" class="submit-btn">Piyasayı Aç</button>
                         </div>
                     </div>
-                </div>
 
-                <div class="panel-section admin-card admin-card--maintenance">
-                    <div class="section-header">
-                        <h2>🔔 Seans Kontrolü</h2>
-                        <span id="marketAdminStatus" class="status-pill status-pill--off">Piyasa durumu yükleniyor…</span>
-                    </div>
-                    <p class="panel-sub">Piyasa kapatıldığında güncel fiyatlar seans kapanışı olarak kaydedilir ve alım-satım durdurulur.</p>
-                    <div class="maintenance-toggle-row" style="gap:0.75rem;">
-                        <button type="button" id="closeMarketBtn" class="reset-btn">Piyasayı Kapat</button>
-                        <button type="button" id="openMarketBtn" class="submit-btn">Piyasayı Aç</button>
-                    </div>
-                </div>
+                    <div class="panel-section admin-card admin-card--crud">
+                        <div class="section-header">
+                            <h2>🧩 Hisse Yönetimi</h2>
+                        </div>
 
-                <div class="panel-section admin-card admin-card--crud">
-                    <div class="section-header">
-                        <h2>🧩 Hisse Yönetimi (CRUD)</h2>
-                    </div>
-
-                    <h3 class="panel-sub">➕ Yeni Hisse Ekle</h3>
-                    <form id="addStockForm" class="news-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="stockName">Şirket Adı</label>
-                                <input type="text" id="stockName" placeholder="Örn: Kozlu Gıda" required>
+                        <h3 class="panel-sub">➕ Yeni Hisse Ekle</h3>
+                        <form id="addStockForm" class="news-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="stockName">Şirket Adı</label>
+                                    <input type="text" id="stockName" placeholder="Örn: Kozlu Gıda" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="stockSymbol">Sembol (KOD)</label>
+                                    <input type="text" id="stockSymbol" maxlength="5" placeholder="Örn: KZLGD" required>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="stockSymbol">Sembol (KOD)</label>
-                                <input type="text" id="stockSymbol" maxlength="5" placeholder="Örn: KZLGD" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="stockPrice">Başlangıç Fiyatı (₺)</label>
-                            <input type="number" id="stockPrice" placeholder="Örn: 85,50" min="1" step="0.01" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="stockRiskType">Tür</label>
-                            <select id="stockRiskType">
-                                <option value="guvenli">Güvenli</option>
-                                <option value="orta" selected>Orta</option>
-                                <option value="riskli">Riskli</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="submit-btn">💾 Piyasaya Yeni Hisse Ekle</button>
-                    </form>
-
-                    <h3 class="panel-sub">✏ Mevcut Hisseyi Düzenle / Sil</h3>
-                    <form id="editStockForm" class="news-form">
-                        <div class="form-group">
-                            <label for="editSymbolSelect">Düzenlenecek Hisse</label>
-                            <select id="editSymbolSelect" required>
-                                <option value="">Seçiniz...</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="editSymbol">Yeni Sembol</label>
-                                <input type="text" id="editSymbol" maxlength="5" placeholder="(boş bırakırsanız değişmez)">
+                                <label for="stockPrice">Başlangıç Fiyatı (₺)</label>
+                                <input type="number" id="stockPrice" placeholder="Örn: 85,50" min="1" step="0.01" required>
                             </div>
                             <div class="form-group">
-                                <label for="editName">Yeni İsim</label>
-                                <input type="text" id="editName" placeholder="(boş bırakırsanız değişmez)">
+                                <label for="stockRiskType">Tür</label>
+                                <select id="stockRiskType">
+                                    <option value="guvenli">Güvenli</option>
+                                    <option value="orta" selected>Orta</option>
+                                    <option value="riskli">Riskli</option>
+                                </select>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="editRiskType">Yeni Tür</label>
-                            <select id="editRiskType">
-                                <option value="">(değişmez)</option>
-                                <option value="guvenli">Güvenli</option>
-                                <option value="orta">Orta</option>
-                                <option value="riskli">Riskli</option>
-                            </select>
-                        </div>
-                        <div class="form-row" style="gap:0.6rem;">
-                            <button type="submit" class="submit-btn" style="flex:2;">✍ Güncelle</button>
-                            <button type="button" id="deleteStockBtn" class="reset-btn" style="flex:1; margin:0;">🗑 Tamamen Sil</button>
-                        </div>
-                    </form>
-                </div>
+                            <button type="submit" class="submit-btn">💾 Piyasaya Yeni Hisse Ekle</button>
+                        </form>
 
-                <div class="panel-section admin-card admin-card--user-delete">
-                    <div class="section-header">
-                        <h2>Kullanıcı Sil</h2>
-                    </div>
-                    <p class="admin-delete-user-copy">Kullanıcının hesabı, portföyü ve işlem geçmişi kalıcı olarak silinir.</p>
-                    <form id="deleteUserForm" class="news-form">
-                        <div class="form-group">
-                            <label for="deleteUserEmail">Kullanıcı e-posta adresi</label>
-                            <input id="deleteUserEmail" type="email" maxlength="254" autocomplete="off" placeholder="ornek@eposta.com" required>
-                        </div>
-                        <button id="deleteUserOpenConfirmBtn" type="submit" class="reset-btn admin-delete-user-trigger">Kullanıcı Sil</button>
-                    </form>
-                </div>
-
-                <div class="panel-section admin-card admin-card--silent">
-                    <div class="section-header">
-                        <h2>🎛 Sessiz Fiyat Manipülasyonu</h2>
-                        <span class="market-cap" style="font-size:0.72rem; opacity:0.8;">Haber akışında görünmez</span>
+                        <h3 class="panel-sub">✏ Mevcut Hisseyi Düzenle / Sil</h3>
+                        <form id="editStockForm" class="news-form">
+                            <div class="form-group">
+                                <label for="editSymbolSelect">Düzenlenecek Hisse</label>
+                                <select id="editSymbolSelect" required>
+                                    <option value="">Seçiniz...</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editSymbol">Yeni Sembol</label>
+                                    <input type="text" id="editSymbol" maxlength="5" placeholder="(boş bırakırsanız değişmez)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editName">Yeni İsim</label>
+                                    <input type="text" id="editName" placeholder="(boş bırakırsanız değişmez)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editRiskType">Yeni Tür</label>
+                                <select id="editRiskType">
+                                    <option value="">(değişmez)</option>
+                                    <option value="guvenli">Güvenli</option>
+                                    <option value="orta">Orta</option>
+                                    <option value="riskli">Riskli</option>
+                                </select>
+                            </div>
+                            <div class="form-row" style="gap:0.6rem;">
+                                <button type="submit" class="submit-btn" style="flex:2;">✍ Güncelle</button>
+                                <button type="button" id="deleteStockBtn" class="reset-btn" style="flex:1; margin:0;">🗑 Tamamen Sil</button>
+                            </div>
+                        </form>
                     </div>
 
-                    <form id="silentPriceForm" class="news-form">
-                        <div class="form-group">
-                            <label for="silentSymbol">Hedef Hisse</label>
-                            <select id="silentSymbol" required></select>
+                    <div class="panel-section admin-card admin-card--maintenance maintenance-admin-panel">
+                        <div class="section-header">
+                            <h2>🛠 Sistem Bakım Modu</h2>
+                            <span id="maintStatusPill" class="status-pill status-pill--off">Bakım: Kapalı</span>
                         </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="silentExactPrice">Tam Fiyat (₺)</label>
-                                <input type="number" id="silentExactPrice" placeholder="Örn: 120,00" min="0.05" step="0.01">
-                                <small class="field-hint">Dilerseniz bu alanı boş bırakıp +% / -% kullanın</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="silentPct">Yüzde Değişim (%)</label>
-                                <input type="number" id="silentPct" placeholder="Örn: -10 veya +7" step="0.5">
-                                <small class="field-hint">Pozitif = yukarı, Negatif = aşağı (haber yayınlanmaz)</small>
-                            </div>
-                        </div>
-
-                        <div class="form-row" style="gap:0.6rem;">
-                            <button type="button" id="silentBumpUp" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#059669,#10b981); border-color: #059669;">▲ +5% Hızlı</button>
-                            <button type="button" id="silentBumpDown" class="reset-btn" style="flex:1; margin:0; background: linear-gradient(135deg,#b91c1c,#ef4444); border-color: #b91c1c;">▼ -5% Hızlı</button>
-                        </div>
-
-                        <button type="submit" class="submit-btn" style="width:100%;">🎯 Fiyatı Sessizce Uygula</button>
-                    </form>
-                </div>
-
-                <div class="panel-section admin-card admin-card--whisper">
-                    <div class="section-header">
-                        <h2>📡 Fısıltı ve Tüyo Merkezi</h2>
-                        <span class="market-cap" style="font-size:0.72rem; opacity:0.8;">Asimetrik Bilgi / Insider Trading Simülasyonu</span>
-                    </div>
-
-                    <form id="whisperForm" class="news-form">
-                        <div class="panel-sub">🔐 Fısıltı Ayarları</div>
-
-                        <div class="form-group">
-                            <label for="whisperSymbol">Hedef Hisse</label>
-                            <select id="whisperSymbol" required></select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="whisperTargetUser">Hedef Kullanıcı</label>
-                            <select id="whisperTargetUser">
-                                <option value="">Herkes / Rastgele</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="whisperMessage">Fısıltı Mesajı (Kullanıcıya Gizlice Gidecek)</label>
-                            <textarea id="whisperMessage" rows="3" maxlength="280" required
-                                placeholder="Gizli duyum: Bu hisse senedinde büyük bir kurumsal anlaşma bekleniyor..."></textarea>
-                            <small class="field-hint">En fazla 280 karakter. Kullanıcı bunu diğerlerinden ÖNCE görür.</small>
-                        </div>
-
-                        <div class="form-row" style="align-items:center;">
-                            <label class="checkrow" for="whisperFake" title="Gerçek dışı haber sızdır (ters işlem)">
-                                <input type="checkbox" id="whisperFake">
-                                <span>Asılsız / Yalan Tüyo mu?</span>
+                        <p class="admin-card-note">Bakım modu açıkken oyuncular bakım sayfasına yönlendirilir; yönetici hesabı etkilenmez. Acil durumda adresin sonuna <code>?bypass=admin</code> ekleyerek girebilirsin.</p>
+                        <div class="maintenance-toggle-row">
+                            <label class="switch-toggle">
+                                <input type="checkbox" id="maintToggle">
+                                <span class="switch-slider">
+                                    <span class="switch-knob"></span>
+                                </span>
                             </label>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="whisperImpactPct">3dk Sonra Yayınlanacak Haberin Etkisi (%)</label>
-                                <input type="number" id="whisperImpactPct" value="6" step="0.5" min="-25" max="25">
-                                <small class="field-hint">+ yukarı it, - aşağı çek. 0 = fiyat etkisi yok</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="whisperPublicTitle">3dk Sonra Yayınlanacak Haber Başlığı</label>
-                                <input type="text" id="whisperPublicTitle" maxlength="140"
-                                    placeholder="Kurumsal anlaşma açıklandı... (+ etkili)">
-                                <small class="field-hint">Boş bırakırsanız otomatik "⚠ Gelişme: [Sembol]" başlığı atanır.</small>
+                            <div class="maint-toggle-labels">
+                                <div class="maint-label on">Bakım Modunu Aç</div>
+                                <div class="maint-label off">Bakım Modunu Kapat</div>
+                                <div id="maintLastStatus" class="maint-status-text">Son durum: Yükleniyor…</div>
                             </div>
                         </div>
+                    </div>
 
-                        <div id="whisperProgress" class="whisper-progress" style="display:none;">
-                            <div class="wp-bar"><div id="whisperBar" class="wp-bar-inner"></div></div>
-                            <div id="whisperCountdown" class="wp-countdown">⏱ 3 dakika bekleniyor…</div>
+                    <div class="panel-section admin-card admin-card--user-delete">
+                        <div class="section-header">
+                            <h2>🗑 Kullanıcı Sil</h2>
                         </div>
-
-                        <div id="whisperOutput" class="whisper-output" style="display:none;"></div>
-
-                        <button type="submit" class="submit-btn" style="width:100%;
-                            background: linear-gradient(135deg,#7c3aed,#ec4899); border-color: #7c3aed;">
-                            🕶 Seçilen Kullanıcıya / Herkese Gönder &amp; 3 Dakika Sonra Yayınla
-                        </button>
-                    </form>
+                        <p class="admin-card-note">Kullanıcının hesabı, portföyü ve işlem geçmişi kalıcı olarak silinir.</p>
+                        <form id="deleteUserForm" class="news-form">
+                            <div class="form-group">
+                                <label for="deleteUserEmail">Kullanıcı e-posta adresi</label>
+                                <input id="deleteUserEmail" type="email" maxlength="254" autocomplete="off" placeholder="ornek@eposta.com" required>
+                            </div>
+                            <button id="deleteUserOpenConfirmBtn" type="submit" class="reset-btn admin-delete-user-trigger">Kullanıcı Sil</button>
+                        </form>
+                    </div>
                 </div>
 
                 <div class="panel-section admin-card admin-card--feed admin-card--settings">
@@ -546,7 +627,7 @@
                 <div class="panel-section admin-card admin-card--feed">
                     <div class="section-header">
                         <h2>🔴 Canlı Haber Akışı</h2>
-                        <button id="resetBtn" class="reset-btn">Haber Arşivini Temizle</button>
+                        <div class="admin-header-actions"><button id="openNewsModal" type="button" class="btn btn--ghost" aria-haspopup="dialog" aria-controls="newsModal" aria-expanded="false">📰 Gazeteyi Aç</button><button id="resetBtn" class="reset-btn">Haber Arşivini Temizle</button></div>
                     </div>
                     <button id="fetchRealNewsBtn" type="button" class="submit-btn" style="width:100%; margin-bottom:0.75rem;">🌐 Gerçek Ekonomi Haberlerini Çek</button>
                     <div id="newsFeed" class="news-feed"></div>
@@ -585,9 +666,6 @@
                 <div id="newsModalFeed" class="news-feed news-paper"></div>
             </section>
         </div>
-        <button id="openNewsModal" type="button" class="news-fab" aria-haspopup="dialog" aria-controls="newsModal" aria-expanded="false">
-            📰 Haberler
-        </button>
     </div>
 
     <!-- KVKK / Aydınlatma Metni Modal -->
@@ -1006,8 +1084,9 @@
                 const isOpen = Borsa.state.marketOpen === true;
                 if (status) {
                     status.textContent = isOpen ? "Piyasa açık" : "Piyasa kapalı";
-                    status.classList.toggle("status-pill--on", isOpen);
-                    status.classList.toggle("status-pill--off", !isOpen);
+                    status.classList.remove("status-pill--on", "status-pill--off");
+                    status.classList.toggle("status-pill--good", isOpen);
+                    status.classList.toggle("status-pill--bad", !isOpen);
                 }
                 if (closeBtn) closeBtn.disabled = busy || !isOpen;
                 if (openBtn) openBtn.disabled = busy || isOpen;

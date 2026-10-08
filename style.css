@@ -5774,19 +5774,62 @@ body.news-detail-modal-open {
 }
 
 /* Admin: oyun ayarları */
-.settings-table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
+#adminSettingsBody input[type="number"],
+#adminSettingsBody input[type="text"],
+#adminSettingsBody textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    min-height: 42px;
+    outline: none;
+    font-family: inherit;
+}
+#adminSettingsBody input:focus,
+#adminSettingsBody textarea:focus {
+    border-color: var(--accent-bright);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+#adminSettingsBody .panel-sub { margin-top: 1.5rem; }
+#adminSettingsBody .panel-sub:first-child { margin-top: 0.3rem; }
+#adminSettingsBody .table-scroll { overflow-x: auto; }
+.settings-table { width: 100%; min-width: 620px; border-collapse: separate; border-spacing: 0.5rem 0.4rem; margin: 0 -0.5rem; }
 .settings-table th,
-.settings-table td { padding: 0.35rem 0.4rem; text-align: left; white-space: normal; font-size: 0.8rem; vertical-align: bottom; }
-.settings-table tbody th { white-space: nowrap; }
-.settings-table input { width: 100%; min-width: 70px; }
+.settings-table td { padding: 0; text-align: left; vertical-align: middle; }
+.settings-table thead th {
+    padding-bottom: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    vertical-align: bottom;
+}
+.settings-table tbody th { padding-right: 0.5rem; font-size: 0.9rem; font-weight: 700; white-space: nowrap; }
 .settings-question {
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 0.6rem 0.8rem;
-    margin-bottom: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--bg-card);
 }
-.settings-question summary { cursor: pointer; font-weight: 600; }
-.settings-question[open] summary { margin-bottom: 0.6rem; }
-.settings-option { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
-.settings-option input[type="radio"] { width: auto; min-height: 0; flex-shrink: 0; }
+.settings-question summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; line-height: 1.4; }
+.settings-question[open] summary { margin-bottom: 0.8rem; }
+.settings-question[open] { background: transparent; }
+.settings-question .form-group { margin-bottom: 0.6rem; }
+.settings-question .submit-btn { margin-top: 0.6rem; }
+.settings-option { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.45rem; }
+#adminSettingsBody .settings-option input[type="radio"] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    accent-color: #22c55e;
+}
 .settings-option input[type="text"] { flex: 1; }
