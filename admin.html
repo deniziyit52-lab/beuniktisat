@@ -533,10 +533,20 @@
                     </form>
                 </div>
 
+                <div class="panel-section admin-card admin-card--feed admin-card--settings">
+                    <div class="section-header">
+                        <h2>⚙ Oyun Ayarları</h2>
+                        <button id="adminSettingsRefresh" type="button" class="panel-refresh" title="Yeniden yükle">↻</button>
+                    </div>
+                    <div id="adminSettingsBody" class="news-form">
+                        <p class="field-hint">Ayarlar yükleniyor…</p>
+                    </div>
+                </div>
+
                 <div class="panel-section admin-card admin-card--feed">
                     <div class="section-header">
                         <h2>🔴 Canlı Haber Akışı</h2>
-                        <button id="resetBtn" class="reset-btn">Piyasayı Sıfırla</button>
+                        <button id="resetBtn" class="reset-btn">Haber Arşivini Temizle</button>
                     </div>
                     <div id="newsFeed" class="news-feed"></div>
                 </div>
@@ -1559,5 +1569,6 @@
             runAdminGate();
         });
     </script>
+    <script src="admin-settings.js"></script>
 </body>
 </html>

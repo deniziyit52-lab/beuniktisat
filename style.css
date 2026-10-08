@@ -5702,3 +5702,21 @@ body.news-detail-modal-open {
     padding: 0.55rem 1.2rem;
     white-space: nowrap;
 }
+
+/* Admin: oyun ayarları */
+.settings-table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
+.settings-table th,
+.settings-table td { padding: 0.35rem 0.4rem; text-align: left; white-space: normal; font-size: 0.8rem; vertical-align: bottom; }
+.settings-table tbody th { white-space: nowrap; }
+.settings-table input { width: 100%; min-width: 70px; }
+.settings-question {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.5rem;
+}
+.settings-question summary { cursor: pointer; font-weight: 600; }
+.settings-question[open] summary { margin-bottom: 0.6rem; }
+.settings-option { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+.settings-option input[type="radio"] { width: auto; min-height: 0; flex-shrink: 0; }
+.settings-option input[type="text"] { flex: 1; }
