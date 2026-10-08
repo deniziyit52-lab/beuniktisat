@@ -1283,7 +1283,7 @@
                 return `<li class="leaderboard-item rank--${rank}">
                     <div class="lb-rank">${medal}</div>
                     <div>
-                        <div class="lb-name">${name}${window.BorsaBadges ? ` <span class="lb-badges">${BorsaBadges.iconsMarkup(r.badges, 5)}</span>` : ""}</div>
+                        <div class="lb-name">${name}${window.BorsaBadges ? ` <span class="lb-badges">${BorsaBadges.iconsMarkup(r.badges, 3)}</span>` : ""}</div>
                         <div class="lb-sub">${sub}</div>
                     </div>
                     <div class="lb-total">
@@ -1745,10 +1745,11 @@
                 <div class="panel-title">🏅 Rozetlerim</div>
                 <span id="badgesSummary" class="badges-summary"></span>
             </div>
+            <div id="badgesFeatureHint" class="badges-feature-hint"></div>
             <div id="badgesGrid" class="badges-grid">
                 <p class="badges-empty">Yükleniyor…</p>
             </div>
-            <div class="sidebar-note">Rozetler yaptıklarına göre kendiliğinden kazanılır ve bir kez kazanılan rozet kalıcıdır. Rozetlerin liderlik tablosunda adının yanında görünür.</div>
+            <div class="sidebar-note">Rozetler yaptıklarına göre kendiliğinden kazanılır ve bir kez kazanılan rozet kalıcıdır. Kazandıklarından en fazla 3 tanesini "☆ Göster" ile seçip liderlik tablosunda adının yanında gösterebilirsin.</div>
         </section>
 
         <!-- ==========================================================
