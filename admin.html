@@ -900,26 +900,9 @@
             }
         }
 
-        function sbPushStock(stock, mode = "upsert") {
-            if (!window.sb || !window.sb.from) return Promise.reject(new Error("Supabase bağlantısı hazır değil."));
-            const sb = window.sb;
-            const row = {
-                symbol: stock.symbol,
-                name: stock.name,
-                color: stock.color || "#3b82f6",
-                current_price: Number(stock.price || 0),
-                previous_close: Number(stock.previousClose || stock.price || 0),
-                change: Number(stock.change || 0),
-                change_pct: Number(stock.changePct || 0),
-                shares: Number(stock.shares || 100000),
-            };
-            if (mode === "delete") {
-                return sb.from("stocks").delete().eq("symbol", stock.symbol).then(r => {
-                    if (r.error) throw r.error;
-                    return r;
-                });
-            }
-            return sb.from("stocks").upsert([row], { onConflict: "symbol" }).then(r => {
+        function sbStockRpc(fn, args) {
+            if (!window.sb || !window.sb.rpc) return Promise.reject(new Error("Supabase bağlantısı hazır değil."));
+            return window.sb.rpc(fn, args).then(r => {
                 if (r.error) throw r.error;
                 return r;
             });
@@ -1052,7 +1035,12 @@
                         name: name.value,
                         price: price.value,
                     });
-                    await sbPushStock(added, "upsert");
+                    await sbStockRpc("admin_add_stock", {
+                        p_symbol: added.symbol,
+                        p_name: added.name,
+                        p_price: Number(added.price),
+                        p_color: added.color || null,
+                    });
                     showToast(`${added.name} (${added.symbol}) piyasaya eklendi — başlangıç ${BorsaFirebase ? BorsaFirebase.formatTL(added.price) : added.price.toFixed(2)}`);
                     symbol.value = ""; name.value = ""; price.value = "";
                     refreshSymbolDropdowns();
@@ -1078,11 +1066,11 @@
                 const nName = newName || cur.name;
                 try {
                     const upd = Borsa.editStock(oldSym, { symbol: nSym, name: nName });
-                    if (oldSym !== nSym) {
-                        // Delete old row, then insert new row.
-                        await sbPushStock({ symbol: oldSym }, "delete");
-                    }
-                    await sbPushStock(upd, "upsert");
+                    await sbStockRpc("admin_edit_stock", {
+                        p_old_symbol: oldSym,
+                        p_new_symbol: upd.symbol,
+                        p_new_name: upd.name,
+                    });
                     showToast(`${upd.name} (${upd.symbol}) güncellendi.`);
                     document.getElementById("editSymbol").value = "";
                     document.getElementById("editName").value = "";
@@ -1100,7 +1088,7 @@
                 if (!confirm(`"${name} (${oldSym})" hissesini piyasadan TAMAMEN silmek istediğinize emin misiniz?`)) return;
                 try {
                     Borsa.deleteStock(oldSym);
-                    await sbPushStock({ symbol: oldSym }, "delete");
+                    await sbStockRpc("admin_delete_stock", { p_symbol: oldSym });
                     showToast(`${name} (${oldSym}) piyasadan kaldırıldı.`);
                     refreshSymbolDropdowns();
                 } catch (err) {
@@ -1317,7 +1305,6 @@
                                 Borsa.renderNewsFeed();
                                 Borsa.renderMarketCap();
                                 Borsa.renderChart();
-                                sbPushStock(Borsa.state.stocks[sym], "upsert").catch(() => {});
                                 showToast(`📰 "${stockName}" için gecikmeli haber yayınlandı (%${impactPct >= 0 ? "+" : ""}${impactPct}).`);
                             },
                         });
