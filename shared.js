@@ -848,24 +848,25 @@ ${sourceMarkup}
                 this._marketHaltTimer = setTimeout(
                     () => this.applyMarketStatus(Borsa.state.marketOpen), haltLeft + 500);
             }
+            this._renderMarketHaltBanner(marketHalted);
             const pill = document.getElementById("marketStatusPill");
             if (pill) {
-                pill.textContent = Borsa.state.marketOpen ? "PİYASA AÇIK" : "PİYASA KAPALI";
-                pill.setAttribute("aria-label", Borsa.state.marketOpen ? "Piyasa açık" : "Piyasa kapalı");
+                pill.textContent = marketHalted ? "İŞLEMLER DURDU" : Borsa.state.marketOpen ? "PİYASA AÇIK" : "PİYASA KAPALI";
+                pill.setAttribute("aria-label", marketHalted ? "Piyasa geneli devre kesici devrede" : Borsa.state.marketOpen ? "Piyasa açık" : "Piyasa kapalı");
                 const status = pill.closest(".market-status");
                 if (status) {
-                    status.classList.toggle("market-open", Borsa.state.marketOpen);
-                    status.classList.toggle("market-closed", !Borsa.state.marketOpen);
+                    status.classList.toggle("market-open", Borsa.state.marketOpen && !marketHalted);
+                    status.classList.toggle("market-closed", !Borsa.state.marketOpen || marketHalted);
                 }
             }
             const hoursNote = document.getElementById("marketHoursNote");
             if (hoursNote) {
-                hoursNote.textContent = marketHalted
-                    ? `⚡ Piyasa geneli devre kesici devrede. Hisse işlemleri ${new Date(Borsa.state.marketHaltUntil).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}'de yeniden açılır.`
-                    : Borsa.state.marketOpen
+                // Piyasa geneli duruşta bilgi büyük uyarı kutusunda verilir; bu şerit gizlenir.
+                hoursNote.style.display = marketHalted ? "none" : "";
+                hoursNote.textContent = Borsa.state.marketOpen
                     ? "🕘 Piyasa açık. Her gün 09:00–24:00 arası işlem yapılabilir."
                     : "🔒 Piyasa şu an kapalı. Her gün 09:00'da açılır, 24:00'te kapanır.";
-                hoursNote.classList.toggle("is-closed", !Borsa.state.marketOpen || marketHalted);
+                hoursNote.classList.toggle("is-closed", !Borsa.state.marketOpen);
             }
             document.querySelectorAll("[data-market-trade]").forEach(button => {
                 const disabled = !Borsa.state.marketOpen || button.dataset.tradeBusy === "true";
@@ -876,6 +877,48 @@ ${sourceMarkup}
             window.dispatchEvent(new CustomEvent("borsa:market-status-updated", {
                 detail: { isMarketOpen: Borsa.state.marketOpen },
             }));
+        },
+
+        // Piyasa geneli devre kesici: sayfanın en üstünde geri sayımlı büyük uyarı kutusu.
+        _renderMarketHaltBanner(halted) {
+            clearInterval(this._marketHaltTick);
+            const main = document.querySelector("main.main-container");
+            let banner = document.getElementById("marketHaltBanner");
+            if (!halted || !main) {
+                if (banner) banner.remove();
+                return;
+            }
+            if (!banner) {
+                banner = document.createElement("div");
+                banner.id = "marketHaltBanner";
+                banner.className = "market-halt-banner";
+                banner.setAttribute("role", "alert");
+                banner.innerHTML = `
+                    <div class="market-halt-icon" aria-hidden="true">⚡</div>
+                    <div class="market-halt-text">
+                        <strong>PİYASA GENELİ DEVRE KESİCİ DEVREDE</strong>
+                        <span>Hisselerin ortalaması gün içinde sert düştüğü için bütün hisse alım-satımları geçici olarak durduruldu. Fiyatlar bu süre boyunca değişmez; altın ve döviz işlemleri açık.</span>
+                    </div>
+                    <div class="market-halt-clock">
+                        <span class="market-halt-label">Yeniden açılışa kalan</span>
+                        <span class="market-halt-countdown" id="marketHaltCountdown">--:--</span>
+                        <span class="market-halt-label" id="marketHaltAt"></span>
+                    </div>`;
+                main.prepend(banner);
+            }
+            const until = Borsa.state.marketHaltUntil;
+            const at = document.getElementById("marketHaltAt");
+            if (at) {
+                at.textContent = "Açılış: " + new Date(until).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+            }
+            const tick = () => {
+                const el = document.getElementById("marketHaltCountdown");
+                if (!el) return;
+                const left = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+                el.textContent = `${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+            };
+            tick();
+            this._marketHaltTick = setInterval(tick, 1000);
         },
 
         async refreshMarketStatus() {
