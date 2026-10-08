@@ -5617,3 +5617,19 @@ body.news-detail-modal-open {
     white-space: normal;
     overflow-wrap: anywhere;
 }
+
+/* Devre kesici: işlemleri durdurulmuş hisse */
+.stock-card.halted {
+    border-color: rgba(245, 158, 11, 0.6);
+}
+.stock-halt {
+    margin-top: 0.6rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}

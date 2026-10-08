@@ -102,6 +102,14 @@ const Borsa = {
     // Admin: yeni hisse ekle. color opsiyonel, atanmazsa rastgele.
     RISK_TYPES: { guvenli: "Güvenli", orta: "Orta", riskli: "Riskli" },
 
+    isHalted(stock) {
+        return !!(stock && stock.haltUntil && stock.haltUntil > Date.now());
+    },
+
+    haltEndsAt(stock) {
+        return new Date(stock.haltUntil).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+    },
+
     addStock({ symbol, name, price, riskType }) {
         symbol = String(symbol || "").trim().toUpperCase();
         name = String(name || "").trim();
@@ -202,11 +210,22 @@ const Borsa = {
         if (!grid) return;
         const symbols = Object.keys(this.state.stocks);
         grid.innerHTML = "";
+        // Devre kesici süresi dolunca etiket kalksın diye en yakın bitiş anında yeniden çizilir.
+        clearTimeout(this._haltTimer);
+        const now = Date.now();
+        const nextHaltEnd = symbols
+            .map(sym => this.state.stocks[sym].haltUntil || 0)
+            .filter(t => t > now)
+            .sort((a, b) => a - b)[0];
+        if (nextHaltEnd) {
+            this._haltTimer = setTimeout(() => this.renderStocksGrid({ onSelect }), nextHaltEnd - now + 500);
+        }
         symbols.forEach(sym => {
             const s = this.state.stocks[sym];
             const isUp = s.changePct >= 0;
+            const halted = this.isHalted(s);
             const card = document.createElement("div");
-            card.className = `stock-card ${isUp ? "up" : "down"} ${this.state.selectedStock === sym ? "selected" : ""}`;
+            card.className = `stock-card ${isUp ? "up" : "down"} ${halted ? "halted" : ""} ${this.state.selectedStock === sym ? "selected" : ""}`;
             card.dataset.symbol = sym;
             card.innerHTML = `
                 <div class="stock-avatar" style="background: linear-gradient(135deg, ${s.color}, ${s.color}aa);">
@@ -221,6 +240,7 @@ const Borsa = {
                             ${isUp ? "▲" : "▼"} ${Math.abs(s.changePct).toFixed(2)}%
                         </div>
                     </div>
+                    ${halted ? `<div class="stock-halt">⚡ DEVRE KESİCİ · ${this.haltEndsAt(s)}'de açılır</div>` : ""}
                 </div>
             `;
             card.addEventListener("click", () => {
@@ -736,6 +756,7 @@ const Borsa = {
                 history,
                 shares: Math.max(1, Math.floor(shares)),
                 riskType: Borsa.RISK_TYPES[row.risk_type] ? row.risk_type : "orta",
+                haltUntil: row.halt_until ? new Date(row.halt_until).getTime() : null,
                 _src: "supabase",
                 _updatedAt: updatedAt,
             };
@@ -1004,7 +1025,8 @@ const Borsa = {
                     old.previousClose === Borsa.round2(Number(item.previous_close)) &&
                     old.name === String(item.name || "").trim() &&
                     old.color === String(item.color || "").trim() &&
-                    old.riskType === item.risk_type) {
+                    old.riskType === item.risk_type &&
+                    (old.haltUntil || null) === (item.halt_until ? new Date(item.halt_until).getTime() : null)) {
                     return;
                 }
                 changed = true;
