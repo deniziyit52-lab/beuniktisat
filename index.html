@@ -128,11 +128,27 @@
             </div>
             <div id="assetsGrid" class="stocks-grid"></div>
         </section>
+    </main>
 
-        <section class="faq-panel" id="sss">
-            <div class="section-header">
-                <h2>❓ Sıkça Sorulan Sorular</h2>
-            </div>
+    <div id="newsModal" class="news-modal-overlay" aria-hidden="true">
+        <section class="news-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="newsModalTitle">
+            <button id="closeNewsModal" type="button" class="news-modal-close" aria-label="Haberleri kapat" title="Kapat">×</button>
+            <div id="newsFeed" class="news-feed news-paper"></div>
+        </section>
+    </div>
+
+    <!-- Sıkça Sorulan Sorular: sağ alttaki küçük düğmeyle açılır -->
+    <button id="faqBtn" type="button" class="faq-fab" aria-label="Sıkça Sorulan Sorular" title="Sıkça Sorulan Sorular" aria-haspopup="dialog" aria-controls="faqModal">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.9A8.5 8.5 0 1 1 21 11.5z"/>
+            <path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.3c-.7.4-1.2.9-1.2 1.7"/>
+            <path d="M12 16.2h.01"/>
+        </svg>
+    </button>
+    <div id="faqModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card faq-modal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
+            <button type="button" class="modal-close" id="faqCloseBtn" aria-label="Kapat">×</button>
+            <h2 id="faqTitle" class="faq-title">Sıkça Sorulan Sorular</h2>
             <div class="faq-list">
                 <details class="faq-item">
                     <summary>Bu oyun nedir, nasıl başlarım?</summary>
@@ -183,15 +199,27 @@
                     <p>Önce sayfayı yenile. Sorun sürerse İktisat Topluluğu yönetimine haber ver; hangi işlemi yaparken ne olduğunu yazman çözümü hızlandırır.</p>
                 </details>
             </div>
-        </section>
-    </main>
-
-    <div id="newsModal" class="news-modal-overlay" aria-hidden="true">
-        <section class="news-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="newsModalTitle">
-            <button id="closeNewsModal" type="button" class="news-modal-close" aria-label="Haberleri kapat" title="Kapat">×</button>
-            <div id="newsFeed" class="news-feed news-paper"></div>
-        </section>
+        </div>
     </div>
+    <script>
+        (function () {
+            const btn = document.getElementById("faqBtn");
+            const modal = document.getElementById("faqModal");
+            const closeBtn = document.getElementById("faqCloseBtn");
+            if (!btn || !modal || !closeBtn) return;
+            const setOpen = (open) => {
+                modal.style.display = open ? "flex" : "none";
+                modal.setAttribute("aria-hidden", String(!open));
+                if (open) closeBtn.focus(); else btn.focus();
+            };
+            btn.addEventListener("click", () => setOpen(true));
+            closeBtn.addEventListener("click", () => setOpen(false));
+            modal.addEventListener("click", (e) => { if (e.target === modal) setOpen(false); });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && modal.style.display === "flex") setOpen(false);
+            });
+        })();
+    </script>
 
     <footer class="footer">
         <div class="footer-inner">
