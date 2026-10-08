@@ -1070,6 +1070,14 @@ window.BorsaMaintenance = (function () {
 
         if (!_supabaseReadyHandlerInstalled) {
             _supabaseReadyHandlerInstalled = true;
+            // Yedek kontrol: canlı bildirim kaçarsa (bağlantı kopukluğu, uyuyan sekme) açık sayfa
+            // en geç bir dakika içinde bakım durumunu kendisi sorar. Sekmeye dönüldüğünde de sorulur.
+            window.setInterval(() => {
+                if (!document.hidden) checkAndRedirect();
+            }, 60000);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) checkAndRedirect();
+            });
             window.addEventListener("borsa:supabase-ready", () => {
                 subscribeRealtime();
                 checkAndRedirect();
