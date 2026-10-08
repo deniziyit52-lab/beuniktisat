@@ -118,6 +118,34 @@
                     </div>
                 </div>
 
+                ${engine.max_position_pct == null ? "" : `
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="setMaxPosition">Tek hissede en fazla pay (%)</label>
+                        <input type="number" id="setMaxPosition" step="1" min="5" max="100" value="${toPct(engine.max_position_pct)}">
+                    </div>
+                    <div class="form-group">
+                        <label for="setRevertShare">İşlem etkisinin geri dönen kısmı (%)</label>
+                        <input type="number" id="setRevertShare" step="5" min="0" max="100" value="${toPct(engine.impact_revert_share)}">
+                    </div>
+                </div>
+
+                <div class="panel-sub">🛑 Piyasa Geneli Devre Kesici</div>
+                <p class="field-hint">Hisselerin gün içindeki ortalama düşüşü bu yüzdelere ulaşınca bütün hisse işlemleri durur. Süre 0 ise piyasa gün sonuna kadar kapanır.</p>
+                <div id="setMarketLevels">
+                    ${(Array.isArray(engine.market_breaker_levels) ? engine.market_breaker_levels : []).map(l => `
+                    <div class="form-row settings-level">
+                        <div class="form-group">
+                            <label>Ortalama düşüş (%)</label>
+                            <input type="number" step="0.5" min="0.5" data-level="drop" value="${toPct(l.drop)}">
+                        </div>
+                        <div class="form-group">
+                            <label>Durma süresi (dakika)</label>
+                            <input type="number" step="1" min="0" data-level="minutes" value="${Number(l.minutes)}">
+                        </div>
+                    </div>`).join("")}
+                </div>`}
+
                 <div class="panel-sub">📝 Sınav Süresi ve Bonusları</div>
                 ${engine.quiz_minutes == null ? "" : `
                 <div class="form-group">
@@ -170,6 +198,19 @@
                         p_minutes: Math.round(num($("setQuizMinutes"))),
                     });
                     if (minutesError) throw minutesError;
+                }
+                if ($("setMaxPosition")) {
+                    const { error: rulesError } = await window.sb.rpc("admin_save_market_rules", {
+                        p_rules: {
+                            max_position_pct: fromPct($("setMaxPosition").value),
+                            impact_revert_share: fromPct($("setRevertShare").value),
+                            market_breaker_levels: [...root.querySelectorAll(".settings-level")].map(row => ({
+                                drop: fromPct(row.querySelector('[data-level="drop"]').value),
+                                minutes: Math.round(num(row.querySelector('[data-level="minutes"]'))),
+                            })),
+                        },
+                    });
+                    if (rulesError) throw rulesError;
                 }
                 const { data, error } = await window.sb.rpc("admin_save_settings", {
                     p_settings: {
