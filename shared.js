@@ -1742,3 +1742,69 @@ if (document.readyState === "loading") {
 } else {
     Borsa.bindNewsModal();
 }
+
+/* Arka plandaki sekme için canlı bağlantıyı duraklatma.
+ * Sekme bir dakikadan uzun süre görünmez kalırsa bütün canlı kanallar kapatılır (bağlantı düşer);
+ * sekmeye dönülünce veriler yeniden okunur ve kanallar yeniden açılır.
+ * Yönetici panelinde uygulanmaz. */
+(function () {
+    const GRACE_MS = 60 * 1000;
+    let timer = null;
+    let suspended = false;
+
+    function suspend() {
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (suspended || !sb || typeof sb.removeChannel !== "function" || !document.hidden) return;
+        suspended = true;
+        try { Borsa.Realtime.stop(); Borsa.Realtime._newsChan = null; } catch (_) {}
+        try {
+            const assets = window.BorsaAssets;
+            if (assets && assets._chan) { sb.removeChannel(assets._chan); assets._chan = null; assets._started = false; }
+        } catch (_) {}
+        try {
+            const fb = window.BorsaFirebase;
+            if (fb && fb._profileListener) { sb.removeChannel(fb._profileListener); fb._profileListener = null; }
+        } catch (_) {}
+        try {
+            const wr = window.WhisperRealtime;
+            if (wr && wr._chan) { sb.removeChannel(wr._chan); wr._chan = null; }
+        } catch (_) {}
+        console.log("[Canlı] Sekme arka planda; canlı bağlantı duraklatıldı.");
+    }
+
+    async function resume() {
+        if (!suspended) return;
+        suspended = false;
+        console.log("[Canlı] Sekmeye dönüldü; veriler yenileniyor.");
+        try {
+            Borsa.Realtime.start();
+            await Borsa.Realtime._loadInitialStocksFromDB();
+            Borsa.Realtime._loadInitialNewsFromDB();
+            if (typeof Borsa.renderCommon === "function") Borsa.renderCommon();
+            const selected = Borsa.state.selectedStock;
+            if (selected) Borsa.Realtime.loadPriceHistory(selected).then(() => Borsa.renderChart());
+        } catch (e) {
+            console.warn("[Canlı] Yeniden bağlanma hatası:", e && e.message || e);
+        }
+        try { if (window.BorsaAssets) window.BorsaAssets.start(); } catch (_) {}
+        try {
+            const fb = window.BorsaFirebase;
+            const user = fb && fb._user;
+            if (user && user.id) {
+                fb._installProfileListener(user.id);
+                if (typeof fb.refreshUserDoc === "function") fb.refreshUserDoc();
+                if (window.WhisperRealtime && typeof fb.subscribeWhisperRealtime === "function") {
+                    fb.subscribeWhisperRealtime(() => {})();
+                }
+            }
+        } catch (_) {}
+        window.dispatchEvent(new CustomEvent("borsa:live-resumed"));
+    }
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.getElementById("adminBody")) return;
+        clearTimeout(timer);
+        if (document.hidden) timer = setTimeout(suspend, GRACE_MS);
+        else resume();
+    });
+})();
