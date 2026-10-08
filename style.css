@@ -1157,6 +1157,10 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     border: 1px solid currentColor;
 }
 
+.assets-header { margin-top: 1.75rem; }
+
+#portfolioAssets .portfolio-table { margin-top: 1rem; }
+
 .stock-risk--guvenli { color: #10b981; }
 .stock-risk--orta { color: #f59e0b; }
 .stock-risk--riskli { color: #ef4444; }

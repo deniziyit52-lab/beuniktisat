@@ -90,6 +90,12 @@
                 <span class="market-cap" id="totalMarketCap"></span>
             </div>
             <div id="stocksGrid" class="stocks-grid"></div>
+
+            <div class="section-header assets-header">
+                <h2>🥇 Altın &amp; Döviz</h2>
+                <span class="market-cap" id="assetsUpdatedAt"></span>
+            </div>
+            <div id="assetsGrid" class="stocks-grid"></div>
         </section>
 
         <section class="right-panel">
@@ -234,6 +240,75 @@
         </div>
     </div>
 
+    <div id="assetModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card trade-modal" role="dialog" aria-modal="true" aria-labelledby="assetName">
+            <button type="button" class="modal-close" id="assetCloseBtn" aria-label="Kapat">×</button>
+
+            <div class="trade-header">
+                <div class="trade-avatar" id="assetAvatar">🥇</div>
+                <div>
+                    <h3 id="assetName" class="trade-name">Altın</h3>
+                    <div class="trade-symbol" id="assetUnit">TL / gram</div>
+                </div>
+                <div class="trade-price-col">
+                    <div class="trade-price" id="assetPrice">—</div>
+                    <div class="trade-change" id="assetChange">—</div>
+                </div>
+            </div>
+
+            <div class="trade-grid">
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Kullanılabilir Bakiye</span>
+                    <span class="trade-stat-value user-only" id="assetBalance">—</span>
+                    <span class="trade-stat-value guest-only">Giriş yapın</span>
+                </div>
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Sahip Olunan</span>
+                    <span class="trade-stat-value user-only" id="assetOwned">0</span>
+                    <span class="trade-stat-value guest-only">Giriş yapın</span>
+                </div>
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Alış Fiyatı</span>
+                    <span class="trade-stat-value" id="assetBuyPrice">—</span>
+                </div>
+                <div class="trade-stat">
+                    <span class="trade-stat-label">Satış Fiyatı</span>
+                    <span class="trade-stat-value" id="assetSellPrice">—</span>
+                </div>
+            </div>
+
+            <div id="assetGuestBanner" class="trade-guest-banner">
+                🔑 Alışveriş yapmak için
+                <a href="login.html" style="color:var(--accent-bright); font-weight:700; text-decoration:none;">Giriş Yapın veya Kayıt Olun</a>
+            </div>
+
+            <div id="assetLoggedInBlock" style="display:none;">
+                <div class="form-group" style="margin-top: 0.5rem;">
+                    <label for="assetQty" id="assetQtyLabel">Miktar</label>
+                    <input type="number" id="assetQty" min="0.0001" step="0.0001" value="1" inputmode="decimal" placeholder="Almak / satmak istediğiniz miktar">
+
+                    <div class="trade-summary">
+                        <div class="trade-summary-row total buy" id="assetTotalRow">
+                            <span class="label" id="assetTotalLabel">Ödenecek Tutar (yaklaşık)</span>
+                            <span class="value" id="assetTotal">0,00 TL</span>
+                        </div>
+                    </div>
+
+                    <div class="trade-quick">
+                        <button type="button" class="chip-btn chip-max" id="assetMaxBuyBtn">Max Al</button>
+                        <button type="button" class="chip-btn chip-sellall" id="assetSellAllBtn">Tümünü Sat</button>
+                    </div>
+                    <div id="assetFeedback" role="status" aria-live="polite" style="display:none; margin-top:0.75rem; padding:0.55rem 0.8rem; border-radius:8px; font-size:0.85rem; text-align:center;"></div>
+                </div>
+
+                <div class="trade-actions">
+                    <button type="button" id="assetBuyBtn" class="action-btn buy-btn" data-market-trade disabled>💹 Al</button>
+                    <button type="button" id="assetSellBtn" class="action-btn sell-btn" data-market-trade disabled>📉 Sat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Portfolio / Wallet Modal -->
     <div id="portfolioModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
         <div class="modal-card portfolio-modal" role="dialog" aria-modal="true" aria-labelledby="portfolioTitle">
@@ -290,6 +365,7 @@
                     <div class="portfolio-empty-title">Henüz hisse sahibi değilsiniz</div>
                     <div class="portfolio-empty-desc">Piyasadaki üye kartlarından birine tıklayarak ilk alışverişinizi yapın.</div>
                 </div>
+                <div id="portfolioAssets"></div>
             </div>
         </div>
     </div>
@@ -582,9 +658,11 @@
                 });
             }
             stockValue = Math.round(stockValue * 100) / 100;
-            totalCost = Math.round(totalCost * 100) / 100;
-            const unrealized = stockValue - totalCost;
-            const netWorth = bal + stockValue;
+            const assetTotals = window.BorsaAssets ? BorsaAssets.portfolioTotals() : { value: 0, cost: 0 };
+            if (window.BorsaAssets) BorsaAssets.renderPortfolio();
+            totalCost = Math.round((totalCost + assetTotals.cost) * 100) / 100;
+            const unrealized = stockValue + assetTotals.value - totalCost;
+            const netWorth = bal + stockValue + assetTotals.value;
             $("portfolioBalance").textContent = fmt(bal);
             $("portfolioCost").textContent = fmt(totalCost);
             $("portfolioStockValue").textContent = fmt(stockValue);
@@ -1098,7 +1176,7 @@
                             ${isBuy ? "💹 Alım" : "📉 Satış"}
                             <span class="sym">${escapeHtml(String(tx.stock_symbol || "—"))}</span>
                         </div>
-                        <div class="tx-sub">${qty.toLocaleString("tr-TR")} Adet × ${fmt(pps)}</div>
+                        <div class="tx-sub">${qty.toLocaleString("tr-TR", { maximumFractionDigits: 4 })} ${escapeHtml(tx.unit || "Adet")} × ${fmt(pps)}</div>
                     </div>
                     <div class="tx-right">
                         <span class="price">${isBuy ? "-" : "+"}${fmt(total)}</span>
@@ -1238,6 +1316,11 @@
                     if (kickoffAuth() || _tries > 240) clearInterval(_iv);
                 }, 250);
             }
+
+            window.addEventListener("borsa:asset-prices-updated", () => {
+                const pm = $("portfolioModal");
+                if (pm && pm.style.display === "flex") renderPortfolio();
+            });
 
             window.addEventListener("borsa:stock-updated", (event) => {
                 const symbol = event.detail?.symbol;
@@ -1440,6 +1523,7 @@
             }
         });
     </script>
+    <script src="assets.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>

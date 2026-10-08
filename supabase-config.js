@@ -329,6 +329,7 @@ window.BorsaFirebase = {
             displayName: row.display_name || row.displayName || row.email || "",
             balance: Number(row.balance ?? 0),
             portfolio: this._normalizePortfolioKeys(row.portfolio),
+            assets: (row.assets && typeof row.assets === "object") ? row.assets : {},
         };
     },
 
@@ -545,6 +546,7 @@ window.BorsaFirebase = {
             display_name: this._userDoc?.displayName || "",
             balance: out.balance ?? this._userDoc?.balance ?? 0,
             portfolio: out.portfolio ?? this._userDoc?.portfolio ?? {},
+            assets: this._userDoc?.assets,
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
@@ -586,6 +588,7 @@ window.BorsaFirebase = {
             display_name: this._userDoc?.displayName || "",
             balance: out.balance ?? this._userDoc?.balance ?? 0,
             portfolio: out.portfolio ?? this._userDoc?.portfolio ?? {},
+            assets: this._userDoc?.assets,
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
@@ -662,7 +665,28 @@ window.BorsaFirebase = {
                 console.warn("[Borsa] İşlem dökümü hatası:", error.message);
                 return [];
             }
-            return Array.isArray(data) ? data : [];
+            const rows = Array.isArray(data) ? data : [];
+            // Altın/döviz işlemleri ayrı tabloda; aynı listeye eklenir.
+            const assetRes = await this.db()
+                .from("asset_transactions")
+                .select("id, asset, side, quantity, price, created_at")
+                .eq("user_id", this._user.id)
+                .order("created_at", { ascending: false })
+                .limit(50);
+            if (assetRes.error || !Array.isArray(assetRes.data)) return rows;
+            const meta = window.BorsaAssets ? window.BorsaAssets.ASSETS : {};
+            const assetRows = assetRes.data.map(tx => ({
+                id: "asset-" + tx.id,
+                type: tx.side,
+                stock_symbol: meta[tx.asset]?.name || tx.asset,
+                quantity: tx.quantity,
+                price_per_share: tx.price,
+                unit: meta[tx.asset]?.unit || "Adet",
+                created_at: tx.created_at,
+            }));
+            return rows.concat(assetRows)
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 50);
         } catch (e) {
             console.warn("[Borsa] İşlem dökümü okunamadı:", e);
             return [];
