@@ -1807,4 +1807,11 @@ if (document.readyState === "loading") {
         if (document.hidden) timer = setTimeout(suspend, GRACE_MS);
         else resume();
     });
+    // Tarayıcı arka plandaki sekmeyi dondurursa zamanlayıcı çalışmaz; dondurulmadan hemen önce duraklatılır.
+    document.addEventListener("freeze", () => {
+        if (document.getElementById("adminBody")) return;
+        clearTimeout(timer);
+        suspend();
+    });
+    document.addEventListener("resume", () => { if (!document.hidden) resume(); });
 })();
