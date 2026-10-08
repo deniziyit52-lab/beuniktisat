@@ -1,4 +1,4 @@
-/* Altın, gümüş, dolar ve euro: fiyat gösterimi + alım satım.
+/* Altın, gümüş ve dövizler: fiyat gösterimi + alım satım.
  * Fiyatlar asset_prices tablosundaki tek satırdan okunur; işlem execute_asset_trade RPC'si ile yapılır.
  */
 (function () {
@@ -7,8 +7,12 @@
         XAG: { name: "Gümüş", unit: "gram", icon: "🥈", color: "#94a3b8" },
         USD: { name: "Dolar", unit: "adet", icon: "$", color: "#10b981" },
         EUR: { name: "Euro", unit: "adet", icon: "€", color: "#3b82f6" },
+        GBP: { name: "Sterlin", unit: "adet", icon: "£", color: "#8b5cf6" },
+        CHF: { name: "İsviçre Frangı", unit: "adet", icon: "₣", color: "#ef4444" },
+        CAD: { name: "Kanada Doları", unit: "adet", icon: "C$", color: "#f97316" },
+        AUD: { name: "Avustralya Doları", unit: "adet", icon: "A$", color: "#14b8a6" },
     };
-    const ORDER = ["XAU", "XAG", "USD", "EUR"];
+    const ORDER = ["XAU", "XAG", "USD", "EUR", "GBP", "CHF", "CAD", "AUD"];
 
     const $ = (id) => document.getElementById(id);
     const fmt = (n) => BorsaFirebase.formatTL(n);
@@ -102,6 +106,8 @@
             ORDER.forEach(sym => {
                 const meta = ASSETS[sym];
                 const price = this.mid(sym);
+                // Fiyatı henüz gelmemiş yeni dövizler gösterilmez.
+                if (!(price > 0) && this.state.updatedAt) return;
                 const pct = this.changePct(sym);
                 const isUp = pct >= 0;
                 const card = document.createElement("div");
