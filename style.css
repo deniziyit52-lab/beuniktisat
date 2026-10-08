@@ -6540,3 +6540,77 @@ body.light-mode .leaderboard-list .leaderboard-item.is-me .lb-name { color: #924
 @media (prefers-reduced-motion: reduce) {
     .leaderboard-list .leaderboard-item.is-me { animation: none; }
 }
+
+/* Bakım sayfası: tahmini açılış, güvence notu, otomatik dönüş */
+.maintenance-eta {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    margin: 1.2rem auto 0;
+    padding: 0.8rem 1.4rem;
+    width: fit-content;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.1);
+}
+.maintenance-eta-countdown {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+}
+.maintenance-eta-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #93c5fd;
+}
+.maintenance-safe {
+    margin-top: 1.2rem;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.08);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #d1fae5;
+    text-align: left;
+}
+.maintenance-auto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+.maintenance-auto-dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulseGreen 2s infinite;
+}
+.maintenance-retry {
+    display: block;
+    margin: 0.9rem auto 0;
+    min-height: 44px;
+    padding: 0.6rem 1.6rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.maintenance-admin-link {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-size: 0.7rem;
+    color: #64748b;
+    text-decoration: none;
+}
+.maintenance-admin-link:hover { color: #94a3b8; text-decoration: underline; }
+body.light-mode .maintenance-eta-countdown { color: #1e3a8a; }
+body.light-mode .maintenance-eta-label { color: #1d4ed8; }
+body.light-mode .maintenance-safe { color: #14532d; }
+body.light-mode .maintenance-auto { color: #475569; }
