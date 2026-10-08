@@ -682,6 +682,24 @@
                                 <div id="maintLastStatus" class="maint-status-text">Son durum: Yükleniyor…</div>
                             </div>
                         </div>
+
+                        <div class="panel-sub">📝 Bakım Sayfasında Görünecekler</div>
+                        <form id="maintInfoForm" class="news-form">
+                            <div class="form-group">
+                                <label for="maintMessageInput">Oyunculara Not (Opsiyonel)</label>
+                                <textarea id="maintMessageInput" rows="2" maxlength="400" placeholder="Örn: Yeni hisseler ekleniyor, birazdan açılıyoruz."></textarea>
+                                <small class="field-hint">Boş bırakırsan genel bir bakım mesajı gösterilir.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="maintUntilInput">Tahmini Açılış Saati (Opsiyonel)</label>
+                                <input type="time" id="maintUntilInput">
+                                <small class="field-hint">Bakım sayfasında geri sayım olarak görünür. Geçmiş bir saat yazarsan yarın o saat kabul edilir.</small>
+                            </div>
+                            <div class="admin-btn-pair">
+                                <button type="submit" class="submit-btn">💾 Notu Kaydet</button>
+                                <button type="button" id="maintInfoClearBtn" class="reset-btn">Temizle</button>
+                            </div>
+                        </form>
                     </div>
 
                     <div class="panel-section admin-card admin-card--user-delete">
@@ -1140,6 +1158,59 @@
                 if (lastStatus) lastStatus.textContent = "Son durum: OKUMA HATASI — " + (e.message || "");
                 showErr(e.message || "Bakım durumu okunamadı.");
                 _applyUi(false, { silent: true });
+            }
+
+            // Bakım sayfasında görünecek not ve tahmini açılış saati
+            const infoForm = document.getElementById("maintInfoForm");
+            const messageInput = document.getElementById("maintMessageInput");
+            const untilInput = document.getElementById("maintUntilInput");
+            if (infoForm && messageInput && untilInput && window.sb) {
+                try {
+                    const { data } = await window.sb.from("app_settings").select("*").eq("id", 1).maybeSingle();
+                    if (data) {
+                        messageInput.value = data.maintenance_message || "";
+                        const t = data.maintenance_until ? new Date(data.maintenance_until) : null;
+                        // Yalnızca ileri bir saat kutuya yazılır; geçmişte kalmış saat boş gösterilir.
+                        untilInput.value = t && t.getTime() > Date.now()
+                            ? String(t.getHours()).padStart(2, "0") + ":" + String(t.getMinutes()).padStart(2, "0")
+                            : "";
+                    }
+                } catch (_) {}
+
+                const saveInfo = async (message, timeText) => {
+                    let until = null;
+                    if (timeText) {
+                        const [hh, mm] = timeText.split(":").map(Number);
+                        const d = new Date();
+                        d.setHours(hh, mm, 0, 0);
+                        if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+                        until = d.toISOString();
+                    }
+                    const { error } = await window.sb.rpc("admin_set_maintenance_info", {
+                        p_message: message || null,
+                        p_until: until,
+                    });
+                    if (error) throw new Error(error.message || "Bakım notu kaydedilemedi.");
+                };
+                infoForm.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    try {
+                        await saveInfo(messageInput.value.trim(), untilInput.value);
+                        showToast("Bakım notu kaydedildi.");
+                    } catch (err) {
+                        showErr(err.message);
+                    }
+                });
+                document.getElementById("maintInfoClearBtn").addEventListener("click", async () => {
+                    try {
+                        await saveInfo("", "");
+                        messageInput.value = "";
+                        untilInput.value = "";
+                        showToast("Bakım notu temizlendi.");
+                    } catch (err) {
+                        showErr(err.message);
+                    }
+                });
             }
 
             // Kullanıcı toggle'ı değiştirirse DB'ye UPSERT

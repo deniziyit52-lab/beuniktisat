@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
 </head>
 <body class="body-auth">
     <main class="auth-wrap auth-wrap--full maintenance-wrap">
@@ -21,33 +23,34 @@
                 <span class="seal-strip seal-strip--bottom"></span>
                 <span class="seal-strip seal-strip--left"></span>
             </div>
-            <h1 class="maintenance-title">Borsa Geçici Olarak İşleme Kapatılmıştır</h1>
-            <div class="maintenance-subtitle">Sistem Bakımda</div>
+            <h1 class="maintenance-title">Kısa Bir Mola: Bakımdayız</h1>
+            <div class="maintenance-subtitle">Borsa geçici olarak kapalı</div>
             <div class="maintenance-divider"></div>
-            <p class="maintenance-desc">
-                Değerli Üyelerimiz, İktisat Topluluğu borsa simülasyonu şu anda planlı bakım
-                çalışmaları nedeniyle geçici olarak kullanıma kapalıdır. Yöneticilerimiz sistem
-                güncellemeleri ve iyileştirmeleri tamamladıktan sonra en kısa sürede tekrar hizmetinize
-                sunulacaktır. Anlayışınız için teşekkür ederiz.
+
+            <p id="maintMessage" class="maintenance-desc">
+                Oyunu daha iyi hale getirmek için kısa bir bakım yapıyoruz. En kısa sürede yeniden açılacağız.
             </p>
-            <div class="admin-bypass-box" style="display:block; margin-top:1.4rem; padding:1rem 1.1rem; border-radius:12px; border:1px solid rgba(0,255,136,0.25); background:linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,255,136,0.02)); box-shadow:0 0 0 1px rgba(0,255,136,0.08) inset;">
-                <div style="font-weight:800; color:#e5e7eb; font-size:0.95rem; margin-bottom:0.65rem;">Siteye dön</div>
-                <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-                    <a href="index.html" class="btn btn--primary" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:700;">
-                        Ana sayfa
-                    </a>
-                    <a href="login.html" class="btn btn--ghost" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:600;">
-                        Giriş
-                    </a>
-                    <a href="admin.html" class="btn btn--ghost" style="flex:1 1 160px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-weight:600;">
-                        Yönetici paneli
-                    </a>
-                </div>
+
+            <div id="maintEta" class="maintenance-eta" style="display:none;" role="status">
+                <span class="maintenance-eta-label">Tahmini açılışa kalan</span>
+                <span id="maintCountdown" class="maintenance-eta-countdown">--:--</span>
+                <span id="maintEtaAt" class="maintenance-eta-label"></span>
             </div>
+
+            <div class="maintenance-safe">
+                🔒 <strong>Paran güvende.</strong> Bakiyen, hisselerin, altın ve dövizlerin olduğu gibi duruyor; bakım sırasında fiyatlar değişmez.
+            </div>
+
+            <div class="maintenance-auto">
+                <span class="maintenance-auto-dot" aria-hidden="true"></span>
+                <span id="maintStatus">Bakım bitince bu sayfa kendiliğinden açılır; beklemen yeterli.</span>
+            </div>
+            <button id="maintRetryBtn" type="button" class="btn btn--primary maintenance-retry">Şimdi Kontrol Et</button>
 
             <div class="maintenance-footer">
                 <div class="maintenance-copy">© 2026 Zonguldak Bülent Ecevit Üniversitesi İktisat Topluluğu - Tüm Hakları Saklıdır.</div>
                 <div class="maintenance-dev">Designed &amp; Developed by <span class="maintenance-dev-names">Deniz İyit &amp; Ahmet Yavuz Karaköse</span></div>
+                <a href="admin.html" class="maintenance-admin-link">Yönetici girişi</a>
             </div>
         </div>
     </main>
@@ -58,6 +61,79 @@
                 var pref = localStorage.getItem("borsa_theme_pref_v1");
                 if (pref === "light") document.body.classList.add("light-mode");
             } catch (e) {}
+        })();
+
+        // Bakım durumunu düzenli aralıklarla sorar; bakım bittiyse oyuncuyu ana sayfaya alır.
+        (function () {
+            const POLL_MS = 20000;
+            const DEFAULT_MESSAGE = document.getElementById("maintMessage").textContent.trim();
+            const $ = (id) => document.getElementById(id);
+            let until = 0;
+            let checking = false;
+
+            function renderCountdown() {
+                const box = $("maintEta");
+                const left = Math.ceil((until - Date.now()) / 1000);
+                if (!until || left <= 0) {
+                    // Tahmini saat geçtiyse geri sayım yerine sade bir bilgi gösterilir.
+                    box.style.display = until ? "flex" : "none";
+                    if (until) {
+                        $("maintCountdown").textContent = "Az kaldı";
+                        $("maintEtaAt").textContent = "Son rötuşlar yapılıyor";
+                    }
+                    return;
+                }
+                box.style.display = "flex";
+                const h = Math.floor(left / 3600);
+                const m = Math.floor((left % 3600) / 60);
+                const s = left % 60;
+                const pad = (n) => String(n).padStart(2, "0");
+                $("maintCountdown").textContent = h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+                $("maintEtaAt").textContent = "Tahmini açılış: " +
+                    new Date(until).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+            }
+
+            async function check(manual) {
+                if (checking) return;
+                if (!window.sb || !window.sb.from) {
+                    if (manual) $("maintStatus").textContent = "Bağlantı kuruluyor, birazdan tekrar dene.";
+                    return;
+                }
+                checking = true;
+                if (manual) $("maintStatus").textContent = "Kontrol ediliyor…";
+                try {
+                    const { data, error } = await window.sb
+                        .from("app_settings")
+                        .select("*")
+                        .eq("id", 1)
+                        .maybeSingle();
+                    if (error || !data) throw new Error(error ? error.message : "kayıt yok");
+                    if (data.maintenance_mode === false) {
+                        $("maintStatus").textContent = "Bakım bitti, oyuna dönülüyor…";
+                        window.location.replace(new URL("index.html", window.location.href).toString());
+                        return;
+                    }
+                    const message = String(data.maintenance_message || "").trim();
+                    $("maintMessage").textContent = message || DEFAULT_MESSAGE;
+                    const t = data.maintenance_until ? new Date(data.maintenance_until).getTime() : 0;
+                    until = Number.isFinite(t) ? t : 0;
+                    renderCountdown();
+                    $("maintStatus").textContent = manual
+                        ? "Bakım sürüyor. Bittiği an bu sayfa kendiliğinden açılacak."
+                        : "Bakım bitince bu sayfa kendiliğinden açılır; beklemen yeterli.";
+                } catch (e) {
+                    if (manual) $("maintStatus").textContent = "Şu an kontrol edilemedi; birazdan yeniden denenecek.";
+                } finally {
+                    checking = false;
+                }
+            }
+
+            $("maintRetryBtn").addEventListener("click", () => check(true));
+            window.addEventListener("borsa:supabase-ready", () => check(false));
+            document.addEventListener("visibilitychange", () => { if (!document.hidden) check(false); });
+            setInterval(() => { if (!document.hidden) check(false); }, POLL_MS);
+            setInterval(renderCountdown, 1000);
+            check(false);
         })();
     </script>
 </body>
