@@ -198,6 +198,7 @@
             const user = BorsaFirebase.currentUser();
             $("assetGuestBanner").style.display = user ? "none" : "flex";
             $("assetLoggedInBlock").style.display = user ? "block" : "none";
+            $("assetClosedNote").style.display = Borsa.state.marketOpen === true ? "none" : "block";
             this.updateTotals();
         },
 
@@ -342,6 +343,7 @@
                 this.updateTotals("SELL");
             });
             BorsaFirebase.onChange(() => this.updateModal());
+            window.addEventListener("borsa:market-status-updated", () => this.updateModal());
             this.renderGrid();
         },
     };

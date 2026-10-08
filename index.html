@@ -285,7 +285,7 @@
             <div id="assetLoggedInBlock" style="display:none;">
                 <div class="form-group" style="margin-top: 0.5rem;">
                     <label for="assetQty" id="assetQtyLabel">Miktar</label>
-                    <input type="number" id="assetQty" min="0.0001" step="0.0001" value="1" inputmode="decimal" placeholder="Almak / satmak istediğiniz miktar">
+                    <input type="number" id="assetQty" min="0" step="any" value="1" inputmode="decimal" placeholder="Almak / satmak istediğiniz miktar">
 
                     <div class="trade-summary">
                         <div class="trade-summary-row total buy" id="assetTotalRow">
@@ -300,6 +300,8 @@
                     </div>
                     <div id="assetFeedback" role="status" aria-live="polite" style="display:none; margin-top:0.75rem; padding:0.55rem 0.8rem; border-radius:8px; font-size:0.85rem; text-align:center;"></div>
                 </div>
+
+                <div id="assetClosedNote" role="status" style="display:none; margin-top:0.75rem; padding:0.55rem 0.8rem; border-radius:8px; font-size:0.85rem; text-align:center; background:rgba(239,68,68,0.1); color:var(--red-bright); border:1px solid rgba(239,68,68,0.3);">🔒 Piyasa kapalı. Alım satım piyasa açıldığında yapılabilir.</div>
 
                 <div class="trade-actions">
                     <button type="button" id="assetBuyBtn" class="action-btn buy-btn" data-market-trade disabled>💹 Al</button>
