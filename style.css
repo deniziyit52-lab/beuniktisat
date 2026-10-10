@@ -6614,3 +6614,14 @@ body.light-mode .maintenance-eta-countdown { color: #1e3a8a; }
 body.light-mode .maintenance-eta-label { color: #1d4ed8; }
 body.light-mode .maintenance-safe { color: #14532d; }
 body.light-mode .maintenance-auto { color: #475569; }
+
+/* Cüzdan özeti: altı kutu (üçerli iki sıra) ve kutu altı açıklamaları */
+@media (min-width: 901px) {
+    .portfolio-summary { grid-template-columns: repeat(3, 1fr); }
+}
+.portfolio-stat-hint {
+    margin-top: 0.3rem;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    color: var(--text-muted);
+}

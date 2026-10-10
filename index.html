@@ -451,8 +451,14 @@
                     <div class="portfolio-stat-value" id="portfolioNetWorth">—</div>
                 </div>
                 <div class="portfolio-stat portfolio-stat-pl">
-                    <div class="portfolio-stat-label">Gerçekleşmemiş K / Z</div>
+                    <div class="portfolio-stat-label">Toplam Getiri</div>
+                    <div class="portfolio-stat-value" id="portfolioTotalReturn">—</div>
+                    <div class="portfolio-stat-hint">Başlangıç parana göre; liderlikteki rakam budur.</div>
+                </div>
+                <div class="portfolio-stat">
+                    <div class="portfolio-stat-label">Elindekilerin K / Z'si</div>
                     <div class="portfolio-stat-value" id="portfolioUnrealized">—</div>
+                    <div class="portfolio-stat-hint">Alış fiyatına göre; komisyonlar ve geçmiş satışlar dahil değil.</div>
                 </div>
             </div>
 
@@ -787,6 +793,19 @@
                              <span class="pf-pnl-pct ${unrealized >= 0 ? "pf-up" : "pf-down"}" style="margin-left:0.5rem;">${unrealized >= 0 ? "+" : ""}${uPct.toFixed(2)}%</span>`;
             uEl.classList.toggle("pf-up", unrealized >= 0);
             uEl.classList.toggle("pf-down", unrealized < 0);
+
+            // Toplam getiri: liderlik tablosuyla aynı hesap (toplam varlık / başlangıç parası).
+            const rEl = $("portfolioTotalReturn");
+            if (rEl) {
+                const doc = BorsaFirebase.currentUserData ? BorsaFirebase.currentUserData() : null;
+                const start = Number(doc && doc.startingBalance) > 0 ? Number(doc.startingBalance) : 100000;
+                const gain = netWorth - start;
+                const pct = gain / start * 100;
+                rEl.innerHTML = `<span class="pf-pnl-tl">${gain >= 0 ? "▲" : "▼"} ${fmt(Math.abs(gain))}</span>
+                                 <span class="pf-pnl-pct ${gain >= 0 ? "pf-up" : "pf-down"}" style="margin-left:0.5rem;">${gain >= 0 ? "+" : ""}${pct.toFixed(2)}%</span>`;
+                rEl.classList.toggle("pf-up", gain >= 0);
+                rEl.classList.toggle("pf-down", gain < 0);
+            }
         }
 
         function openTrade(sym) {

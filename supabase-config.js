@@ -330,6 +330,8 @@ window.BorsaFirebase = {
             balance: Number(row.balance ?? 0),
             portfolio: this._normalizePortfolioKeys(row.portfolio),
             assets: (row.assets && typeof row.assets === "object") ? row.assets : {},
+            // Getiri yüzdesi bu tutara göre hesaplanır (100.000 + sınav bonusu).
+            startingBalance: Number(row.starting_balance ?? row.startingBalance ?? 100000),
         };
     },
 
@@ -547,6 +549,7 @@ window.BorsaFirebase = {
             balance: out.balance ?? this._userDoc?.balance ?? 0,
             portfolio: out.portfolio ?? this._userDoc?.portfolio ?? {},
             assets: this._userDoc?.assets,
+            starting_balance: this._userDoc?.startingBalance,
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
@@ -589,6 +592,7 @@ window.BorsaFirebase = {
             balance: out.balance ?? this._userDoc?.balance ?? 0,
             portfolio: out.portfolio ?? this._userDoc?.portfolio ?? {},
             assets: this._userDoc?.assets,
+            starting_balance: this._userDoc?.startingBalance,
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
