@@ -75,6 +75,10 @@
                             <input type="text" data-q="option" value="${esc(opt)}">
                         </div>`).join("")}
                     <small class="field-hint">Soldaki yuvarlak, doğru cevabı işaretler.</small>
+                    <div class="form-group">
+                        <label>Açıklama (öğrenci cevabı işaretleyince görür)</label>
+                        <textarea rows="2" maxlength="600" data-q="explanation" placeholder="Doğru cevabın neden doğru olduğunu bir iki cümleyle anlat.">${esc(q.explanation || "")}</textarea>
+                    </div>
                     <button type="button" class="submit-btn" data-q="save">Bu Soruyu Kaydet</button>
                 </details>`).join("");
 
@@ -248,6 +252,7 @@
                     p_question: question,
                     p_options: options,
                     p_correct_index: picked ? Number(picked.value) : null,
+                    p_explanation: (box.querySelector('[data-q="explanation"]') || {}).value || null,
                 });
                 if (error) throw error;
                 box.querySelector("summary").textContent = question.trim();
