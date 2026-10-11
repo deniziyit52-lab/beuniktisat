@@ -31,7 +31,7 @@ ALTER TABLE public.daily_quiz_attempts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.daily_questions, public.daily_quiz_attempts FROM anon, authenticated;
 
 ALTER TABLE public.engine_settings
-    ADD COLUMN IF NOT EXISTS daily_quiz_reward NUMERIC NOT NULL DEFAULT 100 CHECK (daily_quiz_reward >= 0);
+    ADD COLUMN IF NOT EXISTS daily_quiz_reward NUMERIC NOT NULL DEFAULT 500 CHECK (daily_quiz_reward >= 0);
 ALTER TABLE public.engine_settings
     ADD COLUMN IF NOT EXISTS daily_quiz_size INTEGER NOT NULL DEFAULT 10 CHECK (daily_quiz_size BETWEEN 1 AND 30);
 
@@ -174,7 +174,7 @@ BEGIN
 
     SELECT daily_quiz_reward, daily_quiz_size INTO _reward, _size
     FROM public.engine_settings WHERE id = 1;
-    _reward := coalesce(_reward, 100);
+    _reward := coalesce(_reward, 500);
     _size := coalesce(_size, 10);
 
     SELECT * INTO _attempt
@@ -323,8 +323,8 @@ BEGIN
         _correct := _chosen = _question.correct_index;
 
         IF _correct THEN
-            SELECT coalesce(daily_quiz_reward, 100) INTO _reward FROM public.engine_settings WHERE id = 1;
-            _added := coalesce(_reward, 100);
+            SELECT coalesce(daily_quiz_reward, 500) INTO _reward FROM public.engine_settings WHERE id = 1;
+            _added := coalesce(_reward, 500);
         END IF;
 
         UPDATE public.daily_quiz_attempts
