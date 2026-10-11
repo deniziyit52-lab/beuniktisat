@@ -6757,3 +6757,65 @@ body.light-mode .stock-limit--down { color: #b91c1c; }
     text-decoration: underline;
     cursor: pointer;
 }
+
+/* Giriş / kayıt formları: düzenli aralıklar, taşmayan alanlar, tam genişlik düğme */
+#loginForm > * + *,
+#signupForm > * + * { margin-top: 1rem; }
+#loginForm .form-group input,
+#signupForm .form-group input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+#signupForm .form-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+#signupForm .form-row .form-group { min-width: 0; }
+@media (max-width: 480px) {
+    #signupForm .form-row { grid-template-columns: minmax(0, 1fr); }
+}
+#loginForm .submit-btn,
+#signupForm .submit-btn {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    margin-top: 1.25rem;
+}
+#signupForm .signup-bonus { margin-bottom: 0; }
+#signupForm .signup-consent {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    align-items: start;
+    column-gap: 0.7rem;
+    margin: 1.1rem 0 0;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+#signupForm .signup-consent input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 0;
+    min-height: 0;
+    margin: 0.15rem 0 0;
+    padding: 0;
+}
+#signupForm .signup-consent span { min-width: 0; }
+#signupForm .kvkk-inline-link {
+    display: inline;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    line-height: inherit;
+    vertical-align: baseline;
+}
