@@ -155,61 +155,104 @@
     <div id="faqModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
         <div class="modal-card faq-modal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
             <button type="button" class="modal-close" id="faqCloseBtn" aria-label="Kapat">×</button>
-            <h2 id="faqTitle" class="faq-title">Sıkça Sorulan Sorular</h2>
+            <div class="faq-header">
+                <div class="faq-header-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.9A8.5 8.5 0 1 1 21 11.5z"/>
+                        <path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.3c-.7.4-1.2.9-1.2 1.7"/>
+                        <path d="M12 16.2h.01"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="faqTitle" class="faq-title">Sıkça Sorulan Sorular</h2>
+                    <div class="faq-sub">Aradığını yaz ya da bir konu seç.</div>
+                </div>
+            </div>
+            <input type="search" id="faqSearch" class="faq-search" placeholder="🔍 Soru ara: komisyon, devre kesici, rozet…" autocomplete="off" aria-label="Sorularda ara">
+            <div class="faq-chips" role="group" aria-label="Konular">
+                <button type="button" class="faq-chip is-active" data-faq-cat="all">Tümü</button>
+                <button type="button" class="faq-chip" data-faq-cat="baslangic">🚀 Başlangıç</button>
+                <button type="button" class="faq-chip" data-faq-cat="islem">💹 Alım-Satım</button>
+                <button type="button" class="faq-chip" data-faq-cat="kural">⚖️ Piyasa Kuralları</button>
+                <button type="button" class="faq-chip" data-faq-cat="sinav">🧠 Sınav ve Sorular</button>
+                <button type="button" class="faq-chip" data-faq-cat="yaris">🏆 Liderlik ve Rozetler</button>
+            </div>
             <div class="faq-list">
-                <details class="faq-item">
-                    <summary>Bu oyun nedir, nasıl başlarım?</summary>
+                <details class="faq-item" data-cat="baslangic">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🎮</span><span class="faq-item-q">Bu oyun nedir, nasıl başlarım?</span></summary>
                     <p>Sanal parayla oynanan bir borsa oyunudur; gerçek para yoktur. Kayıt olunca hesabına 100.000 ₺ sanal bakiye gelir. Bu parayla hisse, altın ve döviz alıp satar, paranı büyütmeye çalışırsın.</p>
                 </details>
-                <details class="faq-item">
-                    <summary>Açılış sınavı ne işe yarar?</summary>
-                    <p>İlk girişte karşına çıkan kısa bir iktisat sınavıdır. Süreli ve tek seferliktir; süre "Şimdi Çöz"e basınca başlar ve durmaz. Doğru sayına göre başlangıç bakiyene 30.000 ₺'ye kadar bonus eklenir. Çözmek zorunlu değildir.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Günün soruları nedir?</summary>
-                    <p>Her gün isteyen herkes için 10 yeni iktisat ve finans sorusu açılır. Çözmek zorunlu değildir. Her soruyu işaretlediğin an doğru cevabı ve kısa açıklamasını görürsün; her doğru cevap bakiyene küçük bir ödül ekler. Üst üste çözdüğün günler "seri" olarak sayılır. Sorular gece yarısı yenilenir.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Piyasa hangi saatlerde açık?</summary>
+                <details class="faq-item" data-cat="baslangic">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🕘</span><span class="faq-item-q">Piyasa hangi saatlerde açık?</span></summary>
                     <p>Her gün 09:00–24:00 arası. Piyasa kapalıyken fiyatlar durur ve alım-satım yapılamaz. Her sabah açılışta hisselerin günlük değişim yüzdesi sıfırlanır; cüzdanın aynen kalır.</p>
                 </details>
-                <details class="faq-item">
-                    <summary>Güvenli, Orta ve Riskli ne demek?</summary>
-                    <p>Hissenin ne kadar oynak olduğunu gösterir. Güvenli hisseler gün içinde az oynar, Riskli hisseler sert yükselip düşebilir. Kazanma ihtimali büyüdükçe kaybetme ihtimali de büyür.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Hisse nasıl alınır ve satılır?</summary>
-                    <p>Hissenin kartına tıkla. Açılan pencerede adet yaz ya da harcamak istediğin tutarı gir; kaç adet alabileceğin kendiliğinden hesaplanır. Her alım ve satımda %1 komisyon kesilir. Tek bir hissede toplam varlığının en fazla %40'ını tutabilirsin; paranı birkaç hisseye yayman gerekir. Elindekileri "Cüzdanım" bölümünden görebilir ve satabilirsin.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Fiyatlar neye göre değişiyor?</summary>
-                    <p>Üç şeye göre: hissenin kendi dalgalanması, yayınlanan oyun haberleri ve oyuncuların alım-satımları. Büyük bir alım fiyatı yukarı, büyük bir satış aşağı iter; bu etkinin bir kısmı birkaç dakika içinde geri döner.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Devre kesici nedir?</summary>
-                    <p>Bir hisse gün içinde yaklaşık %7 yükselir ya da düşerse o hissede işlemler birkaç dakikalığına durur. Kartın üstünde ne zaman açılacağı yazar. Bütün hisselerin ortalaması gün içinde sert düşerse de piyasanın tamamı bir süre durur. Ayrıca bir hisse bir günde en fazla %20 yükselebilir ya da düşebilir (tavan / taban); sınıra dayanan hissenin kartında "TAVAN" ya da "TABAN" yazar. Gerçek borsalardaki gibi, ani hareketlerde herkese nefes aldırmak içindir.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Altın, gümüş ve döviz nasıl çalışıyor?</summary>
-                    <p>Fiyatları gerçek piyasadan alınır ve piyasa açıkken 5 dakikada bir güncellenir; oyuncuların işlemleri bu fiyatları etkilemez. Küsuratlı miktar alabilirsin (örneğin 2,5 gram altın). Alış ve satış fiyatı arasında küçük bir fark vardır.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Haberler fiyatları etkiler mi?</summary>
-                    <p>Gazetede iki tür haber olur. Gerçek ekonomi haberleri bilgi amaçlıdır, fiyatları oynatmaz. Oyun yönetiminin yayınladığı haberler ise ilgili hisseyi yükseltebilir ya da düşürebilir. Bazen sana özel bir tüyo da gelebilir; her tüyo doğru çıkmaz.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Liderlik tablosu nasıl hesaplanıyor?</summary>
-                    <p>Sıralama getiri yüzdesine göredir: toplam varlığın (bakiye, hisseler, altın ve döviz) başlangıç parana göre yüzde kaç arttı. Sınav bonusu başlangıç parana eklendiği için sıralamada tek başına avantaj sağlamaz.</p>
-                </details>
-                <details class="faq-item">
-                    <summary>Şirketler gerçek mi?</summary>
+                <details class="faq-item" data-cat="baslangic">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🏢</span><span class="faq-item-q">Şirketler gerçek mi?</span></summary>
                     <p>Hayır. Bütün şirketler Zonguldak ve üniversite temalı uydurma şirketlerdir; gerçek şirketlerle ilgisi yoktur. Buradaki sonuçlar yatırım tavsiyesi değildir.</p>
                 </details>
-                <details class="faq-item">
-                    <summary>Bir sorun yaşarsam ne yapmalıyım?</summary>
-                    <p>Önce sayfayı yenile. Sorun sürerse İktisat Topluluğu yönetimine haber ver; hangi işlemi yaparken ne olduğunu yazman çözümü hızlandırır.</p>
+                <details class="faq-item" data-cat="baslangic">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🛟</span><span class="faq-item-q">Bir sorun yaşarsam ne yapmalıyım?</span></summary>
+                    <p>Önce sayfayı yenile. Sorun sürerse İktisat Topluluğu Yönetim Kurulu'na haber ver; hangi işlemi yaparken ne olduğunu yazman çözümü hızlandırır.</p>
+                </details>
+                <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🛒</span><span class="faq-item-q">Hisse nasıl alınır ve satılır?</span></summary>
+                    <p>Hissenin kartına tıkla. Açılan pencerede adet yaz ya da harcamak istediğin tutarı gir; kaç adet alabileceğin kendiliğinden hesaplanır. Her alım ve satımda %1 komisyon kesilir. Elindekileri "Cüzdanım" bölümünden görebilir ve satabilirsin.</p>
+                </details>
+                <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🎚️</span><span class="faq-item-q">Güvenli, Orta ve Riskli ne demek?</span></summary>
+                    <p>Hissenin ne kadar oynak olduğunu gösterir. Güvenli hisseler gün içinde az oynar, Riskli hisseler sert yükselip düşebilir. Kazanma ihtimali büyüdükçe kaybetme ihtimali de büyür.</p>
+                </details>
+                <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🥇</span><span class="faq-item-q">Altın, gümüş ve döviz nasıl çalışıyor?</span></summary>
+                    <p>Fiyatları gerçek piyasadan alınır ve piyasa açıkken 5 dakikada bir güncellenir; oyuncuların işlemleri bu fiyatları etkilemez. Küsuratlı miktar alabilirsin (örneğin 2,5 gram altın). Alış ve satış fiyatı arasında küçük bir fark vardır.</p>
+                </details>
+                <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">👛</span><span class="faq-item-q">Cüzdandaki iki kâr-zarar rakamı neden farklı?</span></summary>
+                    <p>"Toplam Getiri", başlangıç parana göre bütün varlığının ne kadar değiştiğini gösterir; liderlikteki rakam budur. "Elindekilerin K/Z'si" ise yalnızca şu an tuttuğun varlıkların alış fiyatına göre durumudur; ödediğin komisyonları ve daha önce sattıklarını saymaz.</p>
+                </details>
+                <details class="faq-item" data-cat="kural">
+                    <summary><span class="faq-item-icon" aria-hidden="true">📈</span><span class="faq-item-q">Fiyatlar neye göre değişiyor?</span></summary>
+                    <p>Üç şeye göre: hissenin kendi dalgalanması, yayınlanan oyun haberleri ve oyuncuların alım-satımları. Büyük bir alım fiyatı yukarı, büyük bir satış aşağı iter; bu etkinin bir kısmı birkaç dakika içinde geri döner.</p>
+                </details>
+                <details class="faq-item" data-cat="kural">
+                    <summary><span class="faq-item-icon" aria-hidden="true">⚡</span><span class="faq-item-q">Devre kesici nedir?</span></summary>
+                    <p>Bir hisse gün içinde yaklaşık %7 yükselir ya da düşerse o hissede işlemler birkaç dakikalığına durur; kartın üstünde ne zaman açılacağı yazar. Bütün hisselerin ortalaması sert düşerse piyasanın tamamı bir süre durur. Gerçek borsalardaki gibi, ani hareketlerde herkese nefes aldırmak içindir.</p>
+                </details>
+                <details class="faq-item" data-cat="kural">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🔺</span><span class="faq-item-q">Tavan ve taban ne demek?</span></summary>
+                    <p>Bir hisse bir günde, açılış fiyatına göre en fazla %20 yükselebilir ya da düşebilir. Sınıra dayanan hissenin kartında "TAVAN" ya da "TABAN" yazar. Sınır her sabah açılışta yeniden kurulur.</p>
+                </details>
+                <details class="faq-item" data-cat="kural">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🧺</span><span class="faq-item-q">Neden bütün paramı tek hisseye yatıramıyorum?</span></summary>
+                    <p>Tek bir hissede toplam varlığının en fazla %40'ını tutabilirsin. Amaç, paranı birkaç hisseye yayarak riski dağıtmayı (çeşitlendirmeyi) denemen. "Max Al" düğmesi bu sınıra göre hesap yapar.</p>
+                </details>
+                <details class="faq-item" data-cat="kural">
+                    <summary><span class="faq-item-icon" aria-hidden="true">📰</span><span class="faq-item-q">Haberler fiyatları etkiler mi?</span></summary>
+                    <p>Gazetede iki tür haber olur. Gerçek ekonomi haberleri bilgi amaçlıdır, fiyatları oynatmaz. Oyun yönetiminin yayınladığı haberler ise ilgili hisseyi yükseltebilir ya da düşürebilir. Bazen sana özel bir tüyo da gelebilir; her tüyo doğru çıkmaz.</p>
+                </details>
+                <details class="faq-item" data-cat="sinav">
+                    <summary><span class="faq-item-icon" aria-hidden="true">📝</span><span class="faq-item-q">Açılış sınavı ne işe yarar?</span></summary>
+                    <p>İlk girişte karşına çıkan kısa bir iktisat sınavıdır. Süreli ve tek seferliktir; süre "Şimdi Çöz"e basınca başlar ve durmaz. Her soruyu işaretlediğin an doğru cevabı ve açıklamasını görürsün; işaretlediğin cevap değişmez. Doğru sayına göre başlangıç bakiyene 30.000 ₺'ye kadar bonus eklenir. Çözmek zorunlu değildir.</p>
+                </details>
+                <details class="faq-item" data-cat="sinav">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🧠</span><span class="faq-item-q">Günün soruları nedir?</span></summary>
+                    <p>Her gün isteyen herkes için 10 yeni iktisat ve finans sorusu açılır. Çözmek zorunlu değildir, süre de yoktur. Her soruyu işaretlediğin an doğru cevabı ve kısa açıklamasını görürsün; her doğru cevap bakiyene ödül ekler. Üst üste çözdüğün günler "seri" olarak sayılır. Sorular gece yarısı yenilenir.</p>
+                </details>
+                <details class="faq-item" data-cat="yaris">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🏆</span><span class="faq-item-q">Liderlik tablosu nasıl hesaplanıyor?</span></summary>
+                    <p>Sıralama getiri yüzdesine göredir: toplam varlığın (bakiye, hisseler, altın ve döviz) başlangıç parana göre yüzde kaç arttı. Tabloda yalnızca en az bir işlem yapmış oyuncular yer alır. Kendi satırın parlak görünür; ilk 10'da değilsen sıran listenin altında gösterilir.</p>
+                </details>
+                <details class="faq-item" data-cat="yaris">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🏅</span><span class="faq-item-q">Rozetler nasıl kazanılır?</span></summary>
+                    <p>Rozetler yaptıklarına göre kendiliğinden gelir: belirli sayıda işlem, dengeli bir portföy, yüksek getiri, sınav başarısı gibi. Menüdeki "Rozetlerim" bölümünde her rozetin şartı yazar. Kazandığın rozet kalıcıdır; en fazla 3 tanesini liderlik tablosunda adının yanında gösterebilirsin.</p>
+                </details>
+                <details class="faq-item" data-cat="yaris">
+                    <summary><span class="faq-item-icon" aria-hidden="true">✍️</span><span class="faq-item-q">Gazetedeki köşe yazıları nedir?</span></summary>
+                    <p>Hocalarımızın ve konukların kendi adlarıyla yazdığı piyasa yorumlarıdır. Bazı yazılarda bir hisse için tahmin bulunur; süre dolunca tahminin tutup tutmadığı yazının altında gösterilir. Köşe yazıları yazarın kişisel görüşüdür.</p>
                 </details>
             </div>
+            <p id="faqEmpty" class="faq-empty" style="display:none;">Bu aramaya uyan soru bulunamadı. Başka bir kelime dene ya da "Tümü"ne bas.</p>
+            <div class="faq-footer">Cevabını bulamadın mı? İktisat Topluluğu Yönetim Kurulu'na ulaşabilirsin.</div>
         </div>
     </div>
     <script>
@@ -218,6 +261,40 @@
             const modal = document.getElementById("faqModal");
             const closeBtn = document.getElementById("faqCloseBtn");
             if (!btn || !modal || !closeBtn) return;
+            const search = document.getElementById("faqSearch");
+            const empty = document.getElementById("faqEmpty");
+            const items = [...modal.querySelectorAll(".faq-item")];
+            const chips = [...modal.querySelectorAll(".faq-chip")];
+            let category = "all";
+            // Türkçe harflere duyarsız arama için sadeleştirme.
+            const fold = (s) => String(s || "").toLocaleLowerCase("tr-TR")
+                .replace(/ı/g, "i").replace(/ğ/g, "g").replace(/ü/g, "u")
+                .replace(/ş/g, "s").replace(/ö/g, "o").replace(/ç/g, "c");
+
+            function applyFilter() {
+                const term = fold(search.value.trim());
+                let shown = 0;
+                items.forEach(item => {
+                    const match = (category === "all" || item.dataset.cat === category)
+                        && (!term || fold(item.textContent).includes(term));
+                    item.style.display = match ? "" : "none";
+                    if (!match) item.open = false;
+                    if (match) shown++;
+                });
+                empty.style.display = shown === 0 ? "block" : "none";
+            }
+
+            chips.forEach(chip => chip.addEventListener("click", () => {
+                category = chip.dataset.faqCat;
+                chips.forEach(c => c.classList.toggle("is-active", c === chip));
+                applyFilter();
+            }));
+            search.addEventListener("input", applyFilter);
+            // Aynı anda tek soru açık kalır.
+            items.forEach(item => item.addEventListener("toggle", () => {
+                if (item.open) items.forEach(other => { if (other !== item) other.open = false; });
+            }));
+
             const setOpen = (open) => {
                 modal.style.display = open ? "flex" : "none";
                 modal.setAttribute("aria-hidden", String(!open));
