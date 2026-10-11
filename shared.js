@@ -205,6 +205,34 @@ const Borsa = {
         }, 50);
     },
 
+    // Günlük tavan/taban oranı (kesir). Sunucudan okunur; kuralı sunucu uygular, burası yalnızca etiket içindir.
+    dailyLimitPct: 0,
+    _gameRulesLoaded: false,
+
+    loadGameRules() {
+        if (this._gameRulesLoaded) return;
+        const sb = (typeof window.sb !== "undefined" && window.sb) ? window.sb : null;
+        if (!sb || !sb.rpc) return;
+        this._gameRulesLoaded = true;
+        sb.rpc("get_game_rules").then(({ data }) => {
+            const limit = Number(data && data.daily_limit_pct);
+            if (limit > 0 && limit <= 1) {
+                this.dailyLimitPct = limit;
+                try { this.renderStocksGrid(); } catch (_) {}
+            }
+        }, () => { this._gameRulesLoaded = false; });
+    },
+
+    // Hisse bugünkü tavanındaysa 1, tabanındaysa -1, değilse 0.
+    atDailyLimit(stock) {
+        const limit = this.dailyLimitPct * 100;
+        if (!(limit > 0)) return 0;
+        const pct = Number(stock.changePct || 0);
+        if (pct >= limit - 0.02) return 1;
+        if (pct <= -limit + 0.02) return -1;
+        return 0;
+    },
+
     renderStocksGrid({ onSelect } = {}) {
         const grid = document.getElementById("stocksGrid");
         if (!grid) return;
@@ -241,6 +269,8 @@ const Borsa = {
                         </div>
                     </div>
                     ${halted ? `<div class="stock-halt">⚡ DEVRE KESİCİ · ${this.haltEndsAt(s)}'de açılır</div>` : ""}
+                    ${this.atDailyLimit(s) > 0 ? `<div class="stock-limit stock-limit--up" title="Bugün daha fazla yükselemez">🔺 TAVAN</div>` : ""}
+                    ${this.atDailyLimit(s) < 0 ? `<div class="stock-limit stock-limit--down" title="Bugün daha fazla düşemez">🔻 TABAN</div>` : ""}
                 </div>
             `;
             card.addEventListener("click", () => {
@@ -1453,6 +1483,7 @@ ${sourceMarkup}
             }
             this._bound = true;
             this._enabled = true;
+            Borsa.loadGameRules();
             const onStatus = (st) => {
                 this._lastStatus = st;
                 console.log(`[Realtime] Bağlantı durumu: ${st}`);

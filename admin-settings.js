@@ -111,6 +111,12 @@
                         <input type="number" id="setBreakerMinutes" step="1" min="1" value="${Number(engine.breaker_minutes)}">
                     </div>
                 </div>
+                ${engine.daily_limit_pct == null ? "" : `
+                <div class="form-group">
+                    <label for="setDailyLimit">Günlük tavan / taban (%)</label>
+                    <input type="number" id="setDailyLimit" step="1" min="5" max="100" value="${toPct(engine.daily_limit_pct)}">
+                    <small class="field-hint">Bir hisse, günün açılış fiyatına göre bu yüzdeden fazla yükselemez ya da düşemez. %100 yazarsan sınır fiilen kalkar.</small>
+                </div>`}
                 <div class="form-row">
                     <div class="form-group">
                         <label for="setMaxImpact">Tek işlemde en fazla fiyat etkisi (%)</label>
@@ -203,6 +209,12 @@
             const btn = $("saveSettingsBtn");
             btn.disabled = true;
             try {
+                if ($("setDailyLimit")) {
+                    const { error: limitError } = await window.sb.rpc("admin_set_daily_limit", {
+                        p_limit: fromPct($("setDailyLimit").value),
+                    });
+                    if (limitError) throw limitError;
+                }
                 if ($("setDailyReward")) {
                     const { error: dailyError } = await window.sb.rpc("admin_set_daily_quiz_reward", {
                         p_reward: num($("setDailyReward")),
