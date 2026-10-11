@@ -6826,3 +6826,6 @@ input[type="radio"] {
     min-width: 0;
     min-height: 0;
 }
+/* Kayıt formu: isteğe bağlı ikinci onay kutusu */
+#signupForm .signup-consent--optional { margin-top: 0.6rem; border-style: dashed; }
+#signupForm .signup-consent em { font-style: normal; color: var(--text-muted); }
