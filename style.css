@@ -6723,3 +6723,37 @@ button.quiz-option.is-picked { border-color: var(--accent-bright); background: r
 .stock-limit--down { color: #fca5a5; background: rgba(239, 68, 68, 0.16); border: 1px solid rgba(239, 68, 68, 0.45); }
 body.light-mode .stock-limit--up { color: #15803d; }
 body.light-mode .stock-limit--down { color: #b91c1c; }
+
+/* KVKK metni: liste ve kayıt formundaki onay kutusu */
+.kvkk-section ul { margin: 0 0 0.9rem; padding-left: 1.2rem; }
+.kvkk-section li { margin-bottom: 0.35rem; line-height: 1.55; font-size: 0.88rem; color: var(--text-secondary); }
+.kvkk-section li strong { color: var(--text-primary); }
+.signup-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.2rem 0 0.9rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.signup-consent input[type="checkbox"] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    accent-color: #3b82f6;
+}
+.kvkk-inline-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-bright);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
