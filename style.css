@@ -6829,3 +6829,6 @@ input[type="radio"] {
 /* Kayıt formu: isteğe bağlı ikinci onay kutusu */
 #signupForm .signup-consent--optional { margin-top: 0.6rem; border-style: dashed; }
 #signupForm .signup-consent em { font-style: normal; color: var(--text-muted); }
+
+/* Admin: e-posta duyuru listesi */
+.mailing-list { max-height: 260px; overflow-y: auto; }
