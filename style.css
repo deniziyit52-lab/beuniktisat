@@ -7004,3 +7004,157 @@ input[type="radio"] {
     .faq-modal .faq-item p { padding-left: 1rem; }
     .faq-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.3rem; }
 }
+
+/* SSS konu düğmeleri: dar ekranda sıkışıp üst üste binmez, yana kaydırılır */
+.faq-chip { flex: none; }
+.faq-chips { scrollbar-width: none; }
+.faq-chips::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+ *  TELEFON ÜST ÇUBUĞU (≤ 680px): iki sıkı satır
+ *  1. satır: menü + logo + piyasa durumu
+ *  2. satır: cüzdan, bakiye, tema, profil, çıkış
+ * ============================================================ */
+@media (max-width: 680px) {
+    header.header .header-inner {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 0.4rem 0.5rem !important;
+        padding: 0.45rem 0.7rem !important;
+    }
+    header.header .header-left {
+        order: 1;
+        flex: 1 1 0 !important;
+        width: auto !important;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start !important;
+        gap: 0.5rem;
+    }
+    header.header .header-center {
+        order: 2;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin: 0 !important;
+    }
+    header.header .header-right {
+        order: 3;
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+    header.header .sidebar-hamburger {
+        flex: none;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    header.header .logo { min-width: 0; gap: 0.45rem; }
+    header.header .logo-symbol { flex: none; width: 32px; height: 32px; font-size: 1rem; }
+    header.header .logo-text-wrap { min-width: 0; }
+    header.header .logo-text {
+        display: block;
+        max-width: 100%;
+        font-size: 0.8rem !important;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    header.header .logo-sub { display: none !important; }
+
+    header.header .market-status {
+        height: 30px !important;
+        min-height: 30px !important;
+        padding: 3px 9px !important;
+        gap: 6px !important;
+        font-size: 0.66rem !important;
+        flex-wrap: nowrap !important;
+        white-space: nowrap;
+    }
+    header.header #currentTime,
+    header.header .admin-clock { display: none !important; }
+
+    header.header .header-right-group {
+        display: flex !important;
+        width: 100%;
+        margin: 0 !important;
+        gap: 0.4rem !important;
+    }
+    header.header .nav-block {
+        width: 100%;
+        margin: 0 !important;
+        gap: 0.4rem !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+    }
+    header.header .nav-block > * {
+        margin: 0 !important;
+        height: 36px !important;
+        min-height: 36px !important;
+    }
+    header.header .portfolio-btn {
+        flex: 1 1 0;
+        justify-content: center;
+        padding: 0 0.6rem !important;
+        font-size: 0.8rem !important;
+        white-space: nowrap;
+    }
+    header.header .user-balance,
+    header.header .user-balance-card {
+        flex: 1 1 0;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center;
+        gap: 0.35rem;
+        min-width: 0;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 0.6rem !important;
+    }
+    header.header .balance-label { margin: 0 !important; font-size: 0.58rem !important; }
+    header.header .balance-value { font-size: 0.85rem !important; white-space: nowrap; }
+    header.header .theme-toggle {
+        flex: none;
+        width: 36px !important;
+        min-width: 36px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 !important;
+    }
+    header.header .user-chip {
+        flex: none;
+        justify-content: center;
+        width: 36px;
+        max-width: none !important;
+        padding: 0 !important;
+        border: 0 !important;
+        background: none !important;
+    }
+    header.header .user-chip .user-meta { display: none !important; }
+    header.header .user-avatar { width: 32px; height: 32px; }
+    header.header .logout-btn,
+    header.header .header-right-group .btn {
+        flex: none;
+        min-width: 0 !important;
+        height: 36px;
+        min-height: 36px !important;
+        padding: 0 0.7rem !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+    }
+    header.header .login-cta { flex: 1 1 auto !important; justify-content: center; }
+
+    /* Yönetici paneli: öğeler daha fazla olduğu için ikinci satır gerekirse alt alta kırılır. */
+    header.header .header-inner--admin .header-right-group {
+        flex-wrap: wrap !important;
+        justify-content: center;
+    }
+    header.header .header-inner--admin .header-item { margin: 0 !important; }
+    header.header .header-center-group { gap: 0.4rem !important; flex-wrap: nowrap; }
+    header.header .admin-banner-chip { padding: 0.3rem 0.55rem; font-size: 0.6rem; white-space: nowrap; }
+}
