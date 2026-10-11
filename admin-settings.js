@@ -157,6 +157,12 @@
                     <input type="number" id="setQuizMinutes" step="1" min="1" max="120" value="${Number(engine.quiz_minutes)}">
                 </div>`}
                 <div id="setTiers">${tierRows}</div>
+                ${engine.daily_quiz_reward == null ? "" : `
+                <div class="form-group">
+                    <label for="setDailyReward">Günün soruları: doğru cevap başına ödül (₺)</label>
+                    <input type="number" id="setDailyReward" step="10" min="0" max="10000" value="${Number(engine.daily_quiz_reward)}">
+                    <small class="field-hint">Günde ${Number(engine.daily_quiz_size || 10)} soru sorulur. 0 yazarsan ödül verilmez, sorular yalnızca öğrenmek için çözülür.</small>
+                </div>`}
 
                 <button type="button" id="saveSettingsBtn" class="submit-btn" style="width:100%;">💾 Ayarları Kaydet</button>
 
@@ -197,6 +203,12 @@
             const btn = $("saveSettingsBtn");
             btn.disabled = true;
             try {
+                if ($("setDailyReward")) {
+                    const { error: dailyError } = await window.sb.rpc("admin_set_daily_quiz_reward", {
+                        p_reward: num($("setDailyReward")),
+                    });
+                    if (dailyError) throw dailyError;
+                }
                 if ($("setQuizMinutes")) {
                     const { error: minutesError } = await window.sb.rpc("admin_set_quiz_minutes", {
                         p_minutes: Math.round(num($("setQuizMinutes"))),

@@ -92,6 +92,13 @@
                 </div>
                 <button id="quizBtn" type="button" class="submit-btn quiz-banner-btn">Sınavı Çöz</button>
             </div>
+            <div id="dailyBanner" class="quiz-banner daily-banner" style="display:none;">
+                <div class="quiz-banner-text">
+                    <strong data-daily="title">🧠 Günün soruları</strong>
+                    <span data-daily="text"></span>
+                </div>
+                <button type="button" class="submit-btn quiz-banner-btn" data-daily="open">Soruları Çöz</button>
+            </div>
             <div class="section-header">
                 <h2>📈 Canlı Piyasa</h2>
                 <span class="market-cap" id="totalMarketCap"></span>
@@ -157,6 +164,10 @@
                 <details class="faq-item">
                     <summary>Açılış sınavı ne işe yarar?</summary>
                     <p>İlk girişte karşına çıkan kısa bir iktisat sınavıdır. Süreli ve tek seferliktir; süre "Şimdi Çöz"e basınca başlar ve durmaz. Doğru sayına göre başlangıç bakiyene 30.000 ₺'ye kadar bonus eklenir. Çözmek zorunlu değildir.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Günün soruları nedir?</summary>
+                    <p>Her gün isteyen herkes için 10 yeni iktisat ve finans sorusu açılır. Çözmek zorunlu değildir. Her soruyu işaretlediğin an doğru cevabı ve kısa açıklamasını görürsün; her doğru cevap bakiyene küçük bir ödül ekler. Üst üste çözdüğün günler "seri" olarak sayılır. Sorular gece yarısı yenilenir.</p>
                 </details>
                 <details class="faq-item">
                     <summary>Piyasa hangi saatlerde açık?</summary>
@@ -1713,6 +1724,7 @@
     <script src="assets.js"></script>
     <script src="quiz.js"></script>
     <script src="badges.js"></script>
+    <script src="daily.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>

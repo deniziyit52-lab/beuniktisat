@@ -6680,3 +6680,31 @@ button.quiz-option.is-picked { border-color: var(--accent-bright); background: r
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Günün soruları kutusu ve gün sonu özeti */
+.daily-banner {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(239, 68, 68, 0.1));
+}
+.daily-banner.is-done {
+    border-color: rgba(34, 197, 94, 0.4);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.08));
+}
+.daily-banner.is-done .quiz-banner-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    box-shadow: none;
+}
+.daily-summary {
+    margin: 0 0 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    background: rgba(34, 197, 94, 0.1);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+.daily-summary strong { display: block; margin-bottom: 0.15rem; }
+.daily-summary span { color: var(--text-secondary); }
+.quiz-modal { position: relative; }
