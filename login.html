@@ -115,6 +115,10 @@
                     <input type="checkbox" id="signupConsent" required>
                     <span><button type="button" class="kvkk-inline-link" data-open-kvkk>Aydınlatma Metni</button>'ni okudum; adımın ve oyun sonuçlarımın liderlik tablosunda yayınlanmasına açık rıza veriyorum.</span>
                 </label>
+                <label class="signup-consent signup-consent--optional" for="signupEmailOptIn">
+                    <input type="checkbox" id="signupEmailOptIn">
+                    <span>Topluluğun etkinlik ve oyun duyurularının e-posta adresime gönderilmesini kabul ediyorum. <em>(İsteğe bağlı)</em></span>
+                </label>
                 <div class="signup-bonus">
                     🎁 Yeni hesaplara <strong>100.000 TL</strong> sanal başlangıç parası!
                 </div>
@@ -197,6 +201,7 @@
                     <h3>Açık Rıza Metni</h3>
                     <p>Simülasyon bir yarışma niteliği taşıdığından, oyuna katılan kullanıcıların <strong>adı ve soyadı</strong>; <strong>getiri yüzdesi, toplam varlığı, nakit ve varlık tutarları, sıralaması ve rozetleri</strong> ile birlikte liderlik tablosunda yayınlanır. Liderlik tablosu, siteye giren herkes tarafından görülebilir.</p>
                     <p>Hesap oluştururken ilgili kutuyu işaretleyerek, yukarıdaki Aydınlatma Metni'ni okuduğunuzu ve adınız ile oyun sonuçlarınızın liderlik tablosunda bu şekilde yayınlanmasına <strong>açık rıza</strong> verdiğinizi kabul etmiş olursunuz.</p>
+                    <p><strong>E-posta ile bilgilendirme (isteğe bağlı):</strong> Hesap oluştururken ikinci kutuyu da işaretlerseniz, e-posta adresinizin topluluğun etkinlik ve oyun duyurularını size göndermek amacıyla kullanılmasına açık rıza vermiş olursunuz. Bu kutuyu işaretlemek zorunlu değildir; işaretlemeden de hesap açabilir ve oyunu eksiksiz kullanabilirsiniz.</p>
                     <p>Rızanızı dilediğiniz zaman geri alabilirsiniz. Bunun için ZBEÜ İktisat Topluluğu Yönetim Kurulu'na başvurmanız yeterlidir; rızanızı geri almanız hâlinde hesabınız ve liderlik tablosundaki kaydınız silinir.</p>
                 </section>
             </div>
@@ -440,6 +445,11 @@
                         return;
                     }
                     // Auto-signIn başarılı (email confirm kapalı veya otomatik onay)
+                    // İsteğe bağlı e-posta bilgilendirme onayı (işaretlendiyse) hesaba kaydedilir.
+                    if (user && $("signupEmailOptIn").checked && window.sb && window.sb.rpc) {
+                        try { await window.sb.rpc("set_email_opt_in", { p_opt_in: true }); }
+                        catch (optErr) { console.warn("[SignUp] e-posta onayı kaydedilemedi:", optErr); }
+                    }
                     if (user) _redirectAfterLogin(user);
                 } catch (err) {
                     console.error("[SignUp] signUp hatası:", {
