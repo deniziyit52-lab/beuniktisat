@@ -6832,3 +6832,67 @@ input[type="radio"] {
 
 /* Admin: e-posta duyuru listesi */
 .mailing-list { max-height: 260px; overflow-y: auto; }
+
+/* Alt bilgideki geliştirici bağlantısı */
+.dev-link { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+.dev-link:hover { color: var(--accent-bright); border-bottom-style: solid; }
+
+/* Gizli imza kartı (logoya beş kez tıklayınca) */
+.logo-symbol { cursor: default; user-select: none; }
+.signature-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10060;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(4px);
+    animation: badgeFadeIn 0.3s ease both;
+}
+.signature-overlay.is-leaving { animation: badgeFadeOut 0.3s ease both; }
+.signature-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: min(320px, 86vw);
+    padding: 2rem 2.2rem 1.6rem;
+    border-radius: 18px;
+    border: 1px solid rgba(139, 92, 246, 0.45);
+    background: linear-gradient(160deg, #111827, #1e1b4b);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 40px rgba(99, 102, 241, 0.25);
+    text-align: center;
+    animation: signatureIn 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.signature-symbol {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 0.6rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #14b8a6, #3b82f6);
+    color: #fff;
+    font-size: 2rem;
+    font-weight: 900;
+}
+.signature-kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #a5b4fc; }
+.signature-role { margin-top: 0.8rem; font-size: 0.82rem; color: #94a3b8; }
+.signature-name { font-size: 1.9rem; font-weight: 900; line-height: 1.15; color: #fff; }
+.signature-link {
+    margin-top: 1rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(165, 180, 252, 0.5);
+    color: #c7d2fe;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+.signature-link:hover { background: rgba(99, 102, 241, 0.25); color: #fff; }
+.signature-hint { margin-top: 1rem; font-size: 0.7rem; color: #64748b; }
+@keyframes signatureIn {
+    from { opacity: 0; transform: scale(0.8) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
