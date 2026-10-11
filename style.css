@@ -6896,3 +6896,7 @@ input[type="radio"] {
     from { opacity: 0; transform: scale(0.8) translateY(12px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* Gizli jenerik: ödül satırı */
+.signature-reward { min-height: 1.2rem; margin-top: 0.9rem; max-width: 18rem; font-size: 0.85rem; line-height: 1.45; color: #94a3b8; }
+.signature-reward.is-new { color: #86efac; font-weight: 800; font-size: 1rem; animation: badgeRise 0.5s ease both; }
