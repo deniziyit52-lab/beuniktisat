@@ -6819,3 +6819,10 @@ body.light-mode .stock-limit--down { color: #b91c1c; }
     line-height: inherit;
     vertical-align: baseline;
 }
+/* Genel "input { padding ... !important }" kuralı onay kutularını şişirmesin. */
+input[type="checkbox"],
+input[type="radio"] {
+    padding: 0 !important;
+    min-width: 0;
+    min-height: 0;
+}
