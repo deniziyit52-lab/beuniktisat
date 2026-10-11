@@ -1,0 +1,15 @@
+# Siteyle birlikte yayinlanmamasi gerekenler.
+# Veritabani dosyalari sinav sorularinin cevaplarini ve oyun kurallarini icerir;
+# herkese acik sitede indirilebilir olmamalidir.
+supabase
+src
+CLAUDE.md
+CLAUDE.MD
+README.md
+package.json
+package-lock.json
+next.config.js
+postcss.config.js
+tailwind.config.ts
+tsconfig.json
+.eslintrc.json
