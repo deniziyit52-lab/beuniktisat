@@ -54,7 +54,7 @@
         // Yeni şifre yalnızca bu kutuda, yönetici sayfadan ayrılana ya da kutuyu kapatana kadar görünür.
         _showResult(data, password) {
             const box = $("tempPasswordResult");
-            const loginUrl = window.location.origin + "/giris";
+            const loginUrl = window.location.origin + "/login";
             this._message = `Borsa oyunu için geçici şifren: ${password}\nGiriş: ${loginUrl}`;
             box.innerHTML = `
                 <p>✅ <strong>${esc(data.name || data.email)}</strong> (${esc(data.email)}) için yeni şifre:</p>

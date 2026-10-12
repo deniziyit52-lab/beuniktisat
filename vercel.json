@@ -9,12 +9,12 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/",          "destination": "/index.html" },
-    { "source": "/giris",     "destination": "/login.html" },
+    { "source": "/giris",     "destination": "/login" },
     { "source": "/login",     "destination": "/login.html" },
-    { "source": "/kayit",     "destination": "/login.html" },
-    { "source": "/signup",    "destination": "/login.html" },
+    { "source": "/kayit",     "destination": "/login" },
+    { "source": "/signup",    "destination": "/login" },
     { "source": "/admin",     "destination": "/admin.html" },
-    { "source": "/panel",     "destination": "/admin.html" },
-    { "source": "/bakim",     "destination": "/maintenance.html" }
+    { "source": "/panel",     "destination": "/admin" },
+    { "source": "/bakim",     "destination": "/maintenance" }
   ]
 }
