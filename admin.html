@@ -723,6 +723,29 @@
                         <div id="mailingList" class="mailing-list"><p class="field-hint">Yükleniyor…</p></div>
                     </div>
 
+                    <div class="panel-section admin-card admin-card--user-password">
+                        <div class="section-header">
+                            <h2>🔑 Geçici Şifre Ver</h2>
+                        </div>
+                        <p class="admin-card-note">Şifresini unutan üyeye yeni bir şifre belirler ve üyenin açık kalmış oturumlarını kapatır. Şifreyi üyeye sen iletirsin; üye o şifreyle giriş yapar. Yönetici hesaplarının şifresi buradan değiştirilemez.</p>
+                        <form id="tempPasswordForm" class="news-form">
+                            <div class="form-group">
+                                <label for="tempPasswordEmail">Üyenin e-posta adresi</label>
+                                <input id="tempPasswordEmail" type="email" maxlength="254" autocomplete="off" placeholder="ornek@eposta.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tempPasswordValue">Geçici şifre</label>
+                                <div class="temp-password-row">
+                                    <input id="tempPasswordValue" type="text" minlength="6" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="En az 6 karakter" required>
+                                    <button id="tempPasswordGenerate" type="button" class="btn btn--ghost">🎲 Üret</button>
+                                </div>
+                                <small class="field-hint">"Üret" düğmesi, telefonda yazması kolay rastgele bir şifre önerir.</small>
+                            </div>
+                            <button id="tempPasswordSubmit" type="submit" class="submit-btn">🔑 Şifreyi Değiştir</button>
+                        </form>
+                        <div id="tempPasswordResult" class="temp-password-result" style="display:none;" aria-live="polite"></div>
+                    </div>
+
                     <div class="panel-section admin-card admin-card--user-delete">
                         <div class="section-header">
                             <h2>🗑 Kullanıcı Sil</h2>
@@ -1908,6 +1931,7 @@
     <script src="signature.js"></script>
     <script src="admin-columns.js"></script>
     <script src="admin-mailing.js"></script>
+    <script src="admin-password.js"></script>
     <script src="admin-settings.js"></script>
 </body>
 </html>

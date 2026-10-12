@@ -7186,3 +7186,89 @@ input[type="radio"] {
 @media (max-width: 680px) {
     header.header .logo { align-items: center; }
 }
+
+/* Giriş / kayıt: "Beni hatırla" satırı ve "Şifremi unuttum" yardımı */
+.auth-options {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.remember-me {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    min-width: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.remember-me input[type="checkbox"] {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: 0.08rem 0 0;
+    accent-color: #3b82f6;
+}
+.remember-me small {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+.auth-link {
+    flex: none;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent-bright);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+}
+.auth-link:hover { text-decoration: underline; }
+.auth-note {
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-card);
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+/* Admin: geçici şifre kartı */
+.temp-password-row { display: flex; align-items: stretch; gap: 0.5rem; }
+.temp-password-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+}
+.temp-password-row .btn { flex: none; height: auto; white-space: nowrap; }
+.temp-password-result {
+    margin-top: 0.9rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.08);
+    font-size: 0.86rem;
+    line-height: 1.55;
+}
+.temp-password-result p { margin: 0 0 0.45rem; }
+.temp-password-result code {
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    user-select: all;
+}
+.temp-password-result .admin-btn-pair { margin-top: 0.7rem; }

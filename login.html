@@ -86,6 +86,16 @@
                     <label for="loginPassword">Şifre</label>
                     <input type="password" id="loginPassword" placeholder="Şifrenizi girin" autocomplete="current-password" required minlength="6">
                 </div>
+                <div class="auth-options">
+                    <label class="remember-me" for="loginRemember">
+                        <input type="checkbox" id="loginRemember">
+                        <span>Beni hatırla<small>Ortak bilgisayarda işaretlemeyin.</small></span>
+                    </label>
+                    <button type="button" id="forgotPasswordBtn" class="auth-link" aria-expanded="false" aria-controls="forgotPasswordNote">Şifremi unuttum</button>
+                </div>
+                <div id="forgotPasswordNote" class="auth-note" style="display:none;">
+                    Şifrenizi unuttuysanız İktisat Topluluğu Yönetim Kurulu'na haber verin. Size geçici bir şifre verilir; o şifreyle giriş yapıp kaldığınız yerden devam edersiniz.
+                </div>
                 <button type="submit" class="submit-btn">🔐 Giriş Yap</button>
                 <p style="text-align:center; margin-top:1rem; font-size:0.8rem; color:var(--text-muted);">
                     Hesabınız yok mu? <span class="tab-switch" data-goto="signup" style="color:var(--accent-bright); cursor:pointer; font-weight:600;">Kayıt olun</span>
@@ -122,6 +132,10 @@
                 <div class="signup-bonus">
                     🎁 Yeni hesaplara <strong>100.000 TL</strong> sanal başlangıç parası!
                 </div>
+                <label class="remember-me" for="signupRemember">
+                    <input type="checkbox" id="signupRemember">
+                    <span>Beni hatırla<small>Ortak bilgisayarda işaretlemeyin.</small></span>
+                </label>
                 <button type="submit" class="submit-btn">✅ Hesap Oluştur & Başla</button>
                 <p style="text-align:center; margin-top:1rem; font-size:0.8rem; color:var(--text-muted);">
                     Zaten hesabınız var mı? <span class="tab-switch" data-goto="login" style="color:var(--accent-bright); cursor:pointer; font-weight:600;">Giriş yapın</span>
@@ -256,6 +270,33 @@
         document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
         document.querySelectorAll(".tab-switch").forEach(s => s.addEventListener("click", () => switchTab(s.dataset.goto)));
 
+        // "Beni hatırla": bu cihazda daha önce yapılan seçim geçerlidir. Hiç seçilmediyse telefonda
+        // işaretli, bilgisayarda (ortak kullanılıyor olabilir) işaretsiz gelir.
+        (function initRememberMe() {
+            const boxes = [$("loginRemember"), $("signupRemember")].filter(Boolean);
+            let checked = null;
+            try { checked = window.BorsaFirebase ? BorsaFirebase.rememberChoice() : null; } catch (_) {}
+            if (checked === null) {
+                checked = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+                    || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            }
+            boxes.forEach(box => {
+                box.checked = checked;
+                box.addEventListener("change", () => boxes.forEach(other => { other.checked = box.checked; }));
+            });
+        })();
+
+        (function bindForgotPassword() {
+            const btn = $("forgotPasswordBtn");
+            const note = $("forgotPasswordNote");
+            if (!btn || !note) return;
+            btn.addEventListener("click", () => {
+                const open = note.style.display === "none";
+                note.style.display = open ? "block" : "none";
+                btn.setAttribute("aria-expanded", String(open));
+            });
+        })();
+
         // ============================================================
         //  KRİTİK: `BorsaFirebase` objesi MUTLAKA hazır olunca bağlan.
         //  CDN yarım yüklenmişse direkt `BorsaFirebase.onChange(...)` çağrısı
@@ -374,7 +415,7 @@
                 try {
                     // Önce auth listenerlarını kesin bağla (henüz yok ise)
                     _attachAuthListeners();
-                    const user = await BorsaFirebase.signIn(email, pass);
+                    const user = await BorsaFirebase.signIn(email, pass, $("loginRemember").checked);
                     console.log("[Login] signIn başarılı, user:", user && user.email);
                     // Session gerçekten var mı final kontrol (email confirm kapalıysa gerek yok,
                     // ama açıksa signIn zaten email confirm olmadan hata verirdi.)
@@ -425,7 +466,7 @@
                 try {
                     _attachAuthListeners();
                     setFeedback("success", "⏳ Hesabınız oluşturuluyor, bakiye hazırlanıyor...");
-                    const user = await BorsaFirebase.signUp(email, pass, name);
+                    const user = await BorsaFirebase.signUp(email, pass, name, $("signupRemember").checked);
                     console.log("[SignUp] kayıt başarılı, user:", user && user.email, "confirm?:", user && user.email_confirmed_at);
 
                     // ÖNEMLİ: Email confirm AÇIK ise (Supabase varsayılan: AÇIK)
