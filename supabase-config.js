@@ -20,6 +20,63 @@ const SUPABASE_CONFIG = {
 };
 
 const SUPABASE_AUTH_STORAGE_KEY = "borsa-supabase-auth-session";
+const REMEMBER_ME_KEY = "borsa-remember-me";
+
+// Oturumun tarayıcıda saklandığı yer. "Beni hatırla" işaretliyse tarayıcı kapansa da kalır
+// (localStorage); işaretli değilse yalnızca açık sekme boyunca geçerlidir (sessionStorage).
+// Seçim, giriş başarılı olup oturum yazılırken kaydedilir; başarısız girişte değişmez.
+const BorsaAuthStorage = {
+    _pendingChoice: null,
+    _memory: {},
+
+    _area(name) {
+        try { return window[name] || null; } catch (e) { return null; }
+    },
+
+    // true / false; bu cihazda hiç seçim yapılmadıysa null.
+    choice() {
+        try {
+            const v = this._area("localStorage").getItem(REMEMBER_ME_KEY);
+            return v === "1" ? true : v === "0" ? false : null;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    getItem(key) {
+        try {
+            const v = this._area("sessionStorage").getItem(key);
+            if (v !== null) return v;
+        } catch (e) {}
+        if (this.choice() === true) {
+            try {
+                const v = this._area("localStorage").getItem(key);
+                if (v !== null) return v;
+            } catch (e) {}
+        }
+        return Object.prototype.hasOwnProperty.call(this._memory, key) ? this._memory[key] : null;
+    },
+
+    setItem(key, value) {
+        if (this._pendingChoice !== null) {
+            try { this._area("localStorage").setItem(REMEMBER_ME_KEY, this._pendingChoice ? "1" : "0"); } catch (e) {}
+            this._pendingChoice = null;
+        }
+        const keep = this.choice() === true;
+        let stored = false;
+        try { this._area(keep ? "localStorage" : "sessionStorage").setItem(key, value); stored = true; } catch (e) {}
+        try { this._area(keep ? "sessionStorage" : "localStorage").removeItem(key); } catch (e) {}
+        // Tarayıcı saklamaya izin vermiyorsa oturum yalnızca bu sayfa açıkken bellekte tutulur.
+        if (stored) delete this._memory[key];
+        else this._memory[key] = value;
+    },
+
+    removeItem(key) {
+        try { this._area("sessionStorage").removeItem(key); } catch (e) {}
+        try { this._area("localStorage").removeItem(key); } catch (e) {}
+        delete this._memory[key];
+    },
+};
 
 function migrateLegacyAuthStorage() {
     if (typeof window === "undefined" || !window.localStorage) return;
@@ -37,7 +94,7 @@ function migrateLegacyAuthStorage() {
             try { window.localStorage.removeItem(k); } catch (e) {}
         });
         if (keysToRemove.length > 0) {
-            console.log("[Borsa] Eski localStorage auth sessionları temizlendi (" + keysToRemove.length + " adet) — artık her sekme bağımsız sessionStorage kullanıyor.");
+            console.log("[Borsa] Eski localStorage auth sessionları temizlendi (" + keysToRemove.length + " adet).");
         }
     } catch (e) {
         console.warn("[Borsa] Legacy auth migration başarısız:", e && e.message || e);
@@ -75,7 +132,7 @@ function migrateLegacyAuthStorage() {
                 {
                     auth: {
                         persistSession: true,
-                        storage: window.sessionStorage,
+                        storage: BorsaAuthStorage,
                         storageKey: SUPABASE_AUTH_STORAGE_KEY,
                         autoRefreshToken: true,
                         detectSessionInUrl: true,
@@ -428,11 +485,19 @@ window.BorsaFirebase = {
         return this._userDoc;
     },
 
-    async signUp(email, password, displayName) {
+    // "Beni hatırla" seçimi: true / false; bu cihazda hiç seçilmediyse null.
+    rememberChoice() {
+        return BorsaAuthStorage.choice();
+    },
+
+    // remember (true/false) verilirse oturumun tarayıcı kapanınca kalıp kalmayacağını belirler.
+    async signUp(email, password, displayName, remember) {
         if (!this.auth()) throw new Error("Supabase yapılandırılmamış.");
         const data = { email, password };
         if (displayName) data.options = { data: { full_name: displayName } };
-        const { error, data: resp } = await this.auth().signUp(data);
+        if (typeof remember === "boolean") BorsaAuthStorage._pendingChoice = remember;
+        const { error, data: resp } = await this.auth().signUp(data)
+            .finally(() => { BorsaAuthStorage._pendingChoice = null; });
         if (error) {
             const msg = (error.message || "").toString();
             const msgLow = msg.toLowerCase();
@@ -463,9 +528,11 @@ window.BorsaFirebase = {
         return user;
     },
 
-    async signIn(email, password) {
+    async signIn(email, password, remember) {
         if (!this.auth()) throw new Error("Supabase yapılandırılmamış.");
-        const { error, data } = await this.auth().signInWithPassword({ email, password });
+        if (typeof remember === "boolean") BorsaAuthStorage._pendingChoice = remember;
+        const { error, data } = await this.auth().signInWithPassword({ email, password })
+            .finally(() => { BorsaAuthStorage._pendingChoice = null; });
         if (error) {
             const msg = (error.message || "").toString();
             const msgLow = msg.toLowerCase();
@@ -504,11 +571,10 @@ window.BorsaFirebase = {
 
     async signOut() {
         if (!this.auth()) return;
-        try { await this.auth().signOut(); } catch (e) {}
+        // Yalnızca bu cihazdaki oturum kapanır; üyenin başka cihazlardaki (ör. telefonundaki) oturumu sürer.
+        try { await this.auth().signOut({ scope: "local" }); } catch (e) {}
         try {
-            if (window.sessionStorage && SUPABASE_AUTH_STORAGE_KEY) {
-                window.sessionStorage.removeItem(SUPABASE_AUTH_STORAGE_KEY);
-            }
+            BorsaAuthStorage.removeItem(SUPABASE_AUTH_STORAGE_KEY);
             migrateLegacyAuthStorage();
         } catch (e) {}
         this._user = null;
