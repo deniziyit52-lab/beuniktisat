@@ -7158,3 +7158,31 @@ input[type="radio"] {
     header.header .header-center-group { gap: 0.4rem !important; flex-wrap: nowrap; }
     header.header .admin-banner-chip { padding: 0.3rem 0.55rem; font-size: 0.6rem; white-space: nowrap; }
 }
+
+/* Telefonda bakiye yazısı kutusundan taşıp yandaki düğmelerin üstüne binmesin:
+ * cüzdan düğmesi içeriği kadar yer kaplar, kalan alan bakiyeye kalır; baş harf rozeti gizlenir. */
+@media (max-width: 680px) {
+    header.header .portfolio-btn { flex: 0 0 auto; }
+    header.header .user-balance,
+    header.header .user-balance-card {
+        flex: 1 1 0;
+        overflow: hidden;
+        justify-content: center;
+        justify-content: safe center;
+    }
+    header.header #userNav .user-chip { display: none !important; }
+}
+@media (max-width: 380px) {
+    header.header .balance-label { display: none !important; }
+}
+/* Çok dar ekran: cüzdan düğmesi yalnızca simge olur. */
+@media (max-width: 345px) {
+    header.header .portfolio-btn { font-size: 0 !important; width: 36px; padding: 0 !important; }
+    header.header .portfolio-btn::before { content: "👛"; font-size: 1.05rem; }
+}
+
+/* Tek satırlık logo yazısı simgenin üstüne yaslanmasın, ortasına hizalansın. */
+.auth-logo .logo { align-items: center; }
+@media (max-width: 680px) {
+    header.header .logo { align-items: center; }
+}
