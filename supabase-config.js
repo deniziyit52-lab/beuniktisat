@@ -376,6 +376,14 @@ window.BorsaFirebase = {
         if (!data.portfolio) data.portfolio = {};
         this._userDoc = this._normalizeProfile(data);
         if (!triedInsert) this._installProfileListener(user.id);
+        // Kayıt sırasında işaretlenen e-posta bilgilendirme onayı, hesap onaylandıktan sonraki ilk girişte kaydedilir.
+        try {
+            const pending = window.localStorage.getItem("borsa-pending-email-opt-in");
+            if (pending && pending === String(user.email || "").toLowerCase()) {
+                window.localStorage.removeItem("borsa-pending-email-opt-in");
+                sb.rpc("set_email_opt_in", { p_opt_in: true }).then(() => {}, () => {});
+            }
+        } catch (e) {}
         return this._userDoc;
     },
 

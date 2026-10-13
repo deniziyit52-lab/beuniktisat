@@ -7381,3 +7381,12 @@ input[type="radio"] {
 .nickname-feedback { margin-top: 0.35rem; font-size: 0.78rem; color: var(--green-bright); }
 .nickname-feedback.is-error { color: var(--red-bright); }
 .nickname-feedback:empty { display: none; }
+
+/* Giriş sayfası: şifre sıfırlama ve onay postası kutuları */
+.auth-note p { margin: 0 0 0.6rem; }
+.auth-note .btn { height: auto; min-height: 40px; }
+.auth-note-small { margin: 0.6rem 0 0 !important; font-size: 0.76rem; color: var(--text-muted); }
+#confirmPending { margin-top: 1rem; }
+#recoveryForm > * + * { margin-top: 1rem; }
+#recoveryForm .form-group input { width: 100%; min-width: 0; box-sizing: border-box; }
+#recoveryForm .submit-btn { display: block; width: 100%; min-height: 48px; margin-top: 1.25rem; }
