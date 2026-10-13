@@ -67,7 +67,7 @@
         },
 
         // Mali tablolar: son çeyreklerin satış ve kârı, bilanço özeti ve dört temel oran.
-        _financialsMarkup(f) {
+        _financialsMarkup(f, dividendYield) {
             if (!f || !Array.isArray(f.quarters) || !f.quarters.length) return "";
             // Faaliyet kârı her şirkette bulunmaz (bankalarda yok); hiç yoksa sütun gösterilmez.
             const hasOp = f.quarters.some(q => q.op != null);
@@ -106,6 +106,7 @@
                     ${tile("PD / DD", this._num(f.pb), "Şirketin borsa değeri, özkaynağının kaç katı.")}
                     ${tile("Net kâr marjı", this._num(f.margin, "%"), "100 ₺ satıştan şirkete kalan kâr.")}
                     ${tile("Borç / Özkaynak", this._num(f.debt_equity), "Her 1 ₺ özkaynağa karşılık kaç ₺ borç var.")}
+                    ${dividendYield == null ? "" : tile("Temettü verimi", Number(dividendYield) > 0 ? this._num(dividendYield, "%") : "Yok", Number(dividendYield) > 0 ? "Son bir yılda, fiyatının bu kadarını ortaklarına nakit dağıttı." : "Son bir yılda temettü dağıtmadı.")}
                 </div>`;
         },
 
@@ -136,7 +137,7 @@
                     <div class="report-range-bar"><i style="left:${pos}%"></i></div>
                     <span>en yükseği</span>
                 </div>`}` : ""}
-                ${this._financialsMarkup(r.financials)}
+                ${this._financialsMarkup(r.financials, r.dividend_yield)}
                 <p class="report-note">Bu hisse, gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Yukarıdaki getiriler ve mali tablolar o şirketin gerçek verileridir. Oyuncuların alım-satımı fiyatı kısa süreliğine oynatabilir, ama fiyat zamanla gerçek ize geri döner.</p>`;
         },
 

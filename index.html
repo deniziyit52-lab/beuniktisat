@@ -240,6 +240,10 @@
                     <p>Şirketler mali tablolarını üç ayda bir açıklar. İzlenen gerçek şirket yeni dönemini açıkladığında karnedeki tablo kendiliğinden güncellenir ve "Haberler"e "yeni bilançosunu açıkladı" diye bir haber düşer. Tabloda dönemler eskiden yeniye sıralıdır; en sağdaki en yeni dönemdir.</p>
                 </details>
                 <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">💰</span><span class="faq-item-q">Temettü nedir, nasıl alırım?</span></summary>
+                    <p>Temettü, şirketin kârının bir kısmını ortaklarına nakit olarak dağıtmasıdır. İzlenen gerçek şirket temettü dağıttığında, o sabah hisseyi elinde tutan herkesin bakiyesine aynı oranda nakit yatar ve "Haberler"e bir haber düşer; ayrıca bir şey yapman gerekmez. Dağıtım günü hissenin fiyatı da aynı oranda düşer, çünkü o para artık şirketin kasasında değildir; yani toplam varlığın o gün değişmez. Hangi şirketin ne kadar dağıttığını Şirket Karnesi'ndeki "Temettü verimi"nden görebilirsin. Şirketlerin çoğu temettüyü ilkbahar ve yaz aylarında dağıtır.</p>
+                </details>
+                <details class="faq-item" data-cat="islem">
                     <summary><span class="faq-item-icon" aria-hidden="true">↩️</span><span class="faq-item-q">Açığa satış ya da kredili işlem var mı?</span></summary>
                     <p>Hayır. Yalnızca elindeki parayla alım yapabilir, yalnızca elindeki hisseyi satabilirsin; borçlanarak işlem yapılmaz.</p>
                 </details>
@@ -644,6 +648,7 @@
                 </div>
             </div>
 
+            <div id="portfolioDividends" class="portfolio-sub" style="display:none; margin: 0 0 0.75rem;"></div>
             <div id="portfolioAssets" class="portfolio-table-wrap table-scroll" style="display:none;"></div>
 
             <div class="portfolio-table-wrap table-scroll">
@@ -902,7 +907,30 @@
             }, 3000);
         }
 
+        // Bugüne kadar yatan temettüler (oyuncu yalnızca kendininkini okuyabilir); 5 dakikada bir yenilenir.
+        let dividendIncome = { at: 0, total: 0, count: 0 };
+        function loadDividendIncome() {
+            const el = $("portfolioDividends");
+            const show = () => {
+                if (!el) return;
+                el.style.display = dividendIncome.total > 0 ? "" : "none";
+                el.textContent = dividendIncome.total > 0
+                    ? `💰 Bugüne kadar ${dividendIncome.count} kez temettü aldın: toplam ${fmt(dividendIncome.total)} (bakiyene eklendi)`
+                    : "";
+            };
+            show();
+            if (!window.sb || !BorsaFirebase.currentUser() || Date.now() - dividendIncome.at < 5 * 60 * 1000) return;
+            dividendIncome.at = Date.now();
+            window.sb.from("dividend_payments").select("amount").then(({ data, error }) => {
+                if (error || !Array.isArray(data)) return;
+                dividendIncome.total = data.reduce((a, row) => a + Number(row.amount || 0), 0);
+                dividendIncome.count = data.length;
+                show();
+            }, () => {});
+        }
+
         function renderPortfolio() {
+            loadDividendIncome();
             const doc = BorsaFirebase.currentUserData();
             const bal = BorsaFirebase.balance();
             const pf = doc && doc.portfolio ? doc.portfolio : {};

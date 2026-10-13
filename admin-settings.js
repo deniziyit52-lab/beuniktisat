@@ -144,6 +144,15 @@
                     <small class="field-hint">Açıkken büyük emirler, fiyatı oynattıkları kadar pahalıya gelir: oyuncu emirden önceki ve sonraki fiyatın ortalamasından işlem yapar. Kapatırsan "al, fiyatı yükselt, hemen sat" döngüsü para kazandırır; kapatmamanı öneririm.</small>
                 </div>`}
 
+                ${engine.dividends_enabled == null ? "" : `
+                <div class="form-group">
+                    <label class="checkrow" for="setDividends">
+                        <input type="checkbox" id="setDividends" ${engine.dividends_enabled ? "checked" : ""}>
+                        <span>Temettü öde</span>
+                    </label>
+                    <small class="field-hint">İzlenen gerçek şirket temettü dağıttığında, hisseyi tutan oyunculara aynı oranda nakit yatar ve fiyat o kadar düşer. Kapatırsan oyuncular temettü günü karşılığını almadan zarar eder.</small>
+                </div>`}
+
                 ${engine.max_position_pct == null ? "" : `
                 <div class="form-row">
                     <div class="form-group">
@@ -293,6 +302,10 @@
                 if ($("setSlippage")) {
                     const { error: slipError } = await window.sb.rpc("admin_set_slippage", { p_enabled: $("setSlippage").checked });
                     if (slipError) throw slipError;
+                }
+                if ($("setDividends")) {
+                    const { error: divError } = await window.sb.rpc("admin_set_dividends", { p_enabled: $("setDividends").checked });
+                    if (divError) throw divError;
                 }
                 if ($("setCommission")) {
                     const { error: feeError } = await window.sb.rpc("admin_set_commission", {
