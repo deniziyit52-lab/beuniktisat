@@ -252,6 +252,10 @@
                     <p>Her gün isteyen herkes için 10 yeni iktisat ve finans sorusu açılır. Çözmek zorunlu değildir, süre de yoktur. Her soruyu işaretlediğin an doğru cevabı ve kısa açıklamasını görürsün; her doğru cevap bakiyene ödül ekler. Üst üste çözdüğün günler "seri" olarak sayılır. Sorular gece yarısı yenilenir.</p>
                 </details>
                 <details class="faq-item" data-cat="yaris">
+                    <summary><span class="faq-item-icon" aria-hidden="true">🎭</span><span class="faq-item-q">Tabloda gerçek adım görünmek zorunda mı?</span></summary>
+                    <p>Hayır. Menüdeki "Liderlik" bölümünün altından bir takma ad seçebilirsin; tabloda adın yerine o görünür. Takma adını ilk seçimden sonra en fazla 2 kez değiştirebilirsin. Uygunsuz ya da başkasını taklit eden adlar kaldırılır.</p>
+                </details>
+                <details class="faq-item" data-cat="yaris">
                     <summary><span class="faq-item-icon" aria-hidden="true">🏆</span><span class="faq-item-q">Liderlik tablosu nasıl hesaplanıyor?</span></summary>
                     <p>Sıralama getiri yüzdesine göredir: toplam varlığın (bakiye, hisseler, altın ve döviz) başlangıç parana göre yüzde kaç arttı. Tabloda yalnızca en az bir işlem yapmış oyuncular yer alır. Kendi satırın parlak görünür; ilk 10'da değilsen sıran listenin altında gösterilir.</p>
                 </details>
@@ -351,7 +355,7 @@
 
                     <p><strong>2. İşlenen Kişisel Veriler</strong></p>
                     <ul>
-                        <li><strong>Kimlik ve iletişim:</strong> kayıt sırasında verdiğiniz ad, soyad ve e-posta adresi.</li>
+                        <li><strong>Kimlik ve iletişim:</strong> kayıt sırasında verdiğiniz ad, soyad ve e-posta adresi; belirlerseniz takma adınız.</li>
                         <li><strong>Hesap güvenliği:</strong> şifreniz (yalnızca geri çözülemeyen biçimde saklanır; kimse göremez) ve oturum bilgileri.</li>
                         <li><strong>Oyun verileri:</strong> sanal bakiyeniz, portföyünüz, alım-satım geçmişiniz, sınav ve günlük soru cevaplarınız ile sonuçlarınız, kazandığınız rozetler ve liderlik sıralamanız.</li>
                         <li><strong>Teknik veriler:</strong> siteye bağlanırken oluşan bağlantı kayıtları (IP adresi, tarayıcı türü, bağlantı zamanı).</li>
@@ -387,7 +391,7 @@
 
                 <section class="kvkk-section">
                     <h3>Açık Rıza Metni</h3>
-                    <p>Simülasyon bir yarışma niteliği taşıdığından, oyuna katılan kullanıcıların <strong>adı ve soyadı</strong>; <strong>getiri yüzdesi, toplam varlığı, nakit ve varlık tutarları, sıralaması ve rozetleri</strong> ile birlikte liderlik tablosunda yayınlanır. Liderlik tablosu, siteye giren herkes tarafından görülebilir.</p>
+                    <p>Simülasyon bir yarışma niteliği taşıdığından, oyuna katılan kullanıcıların <strong>adı ve soyadı</strong>; <strong>getiri yüzdesi, toplam varlığı, nakit ve varlık tutarları, sıralaması ve rozetleri</strong> ile birlikte liderlik tablosunda yayınlanır. Liderlik tablosu, siteye giren herkes tarafından görülebilir. Dilerseniz hesabınızdan bir takma ad belirleyebilirsiniz; bu durumda liderlik tablosunda adınız ve soyadınız yerine takma adınız yayınlanır.</p>
                     <p>Hesap oluştururken ilgili kutuyu işaretleyerek, yukarıdaki Aydınlatma Metni'ni okuduğunuzu ve adınız ile oyun sonuçlarınızın liderlik tablosunda bu şekilde yayınlanmasına <strong>açık rıza</strong> verdiğinizi kabul etmiş olursunuz.</p>
                     <p><strong>E-posta ile bilgilendirme (isteğe bağlı):</strong> Hesap oluştururken ikinci kutuyu da işaretlerseniz, e-posta adresinizin topluluğun etkinlik ve oyun duyurularını size göndermek amacıyla kullanılmasına açık rıza vermiş olursunuz. Bu kutuyu işaretlemek zorunlu değildir; işaretlemeden de hesap açabilir ve oyunu eksiksiz kullanabilirsiniz.</p>
                     <p>Rızanızı dilediğiniz zaman geri alabilirsiniz. Bunun için ZBEÜ İktisat Topluluğu Yönetim Kurulu'na başvurmanız yeterlidir; rızanızı geri almanız hâlinde hesabınız ve liderlik tablosundaki kaydınız silinir.</p>
@@ -1868,6 +1872,7 @@
     <script src="signature.js"></script>
     <script src="daily.js"></script>
     <script src="stock-report.js"></script>
+    <script src="nickname.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>
@@ -1901,6 +1906,17 @@
             <ol id="leaderboardList" class="leaderboard-list">
                 <li class="leaderboard-empty">Yükleniyor…</li>
             </ol>
+            <div id="nicknameBox" class="nickname-box" style="display:none;">
+                <div class="nickname-title">🎭 Takma ad</div>
+                <div id="nicknameCurrent" class="nickname-current"></div>
+                <form id="nicknameForm" class="nickname-form">
+                    <input type="text" id="nicknameInput" maxlength="20" autocomplete="off" placeholder="3–20 karakter" aria-label="Takma ad">
+                    <button type="submit" id="nicknameSave" class="btn btn--ghost">Kaydet</button>
+                </form>
+                <div id="nicknameHint" class="nickname-hint"></div>
+                <button type="button" id="nicknameRemove" class="auth-link" style="display:none;">Takma adı kaldır</button>
+                <div id="nicknameFeedback" class="nickname-feedback" aria-live="polite"></div>
+            </div>
             <div class="sidebar-note">Sıralama getiri yüzdesine göre yapılır: toplam varlığın (nakit + hisse + altın/döviz) başlangıç bakiyesine göre değişimi. Tabloda yalnızca en az bir işlem yapmış oyuncular yer alır.</div>
         </section>
 

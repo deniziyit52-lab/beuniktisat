@@ -7352,3 +7352,32 @@ input[type="radio"] {
     overflow-y: auto;
     overscroll-behavior: contain;
 }
+
+/* Liderlik paneli: takma ad kutusu */
+.nickname-box {
+    margin: 0.9rem 0 0.4rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-card);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+.nickname-title { font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
+.nickname-form { display: flex; gap: 0.5rem; margin: 0.55rem 0 0.4rem; }
+.nickname-form input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+}
+.nickname-form input:disabled { opacity: 0.55; }
+.nickname-form .btn { flex: none; height: auto; }
+.nickname-hint { font-size: 0.74rem; color: var(--text-muted); }
+.nickname-feedback { margin-top: 0.35rem; font-size: 0.78rem; color: var(--green-bright); }
+.nickname-feedback.is-error { color: var(--red-bright); }
+.nickname-feedback:empty { display: none; }
