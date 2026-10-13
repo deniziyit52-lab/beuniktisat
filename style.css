@@ -7443,3 +7443,5 @@ input[type="radio"] {
 @media (max-width: 480px) {
     .report-stats--money { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.report-table th em { margin-left: 0.3rem; padding: 0.05rem 0.35rem; border-radius: 999px; background: rgba(59, 130, 246, 0.15); color: var(--accent-bright); font-size: 0.62rem; font-style: normal; font-weight: 700; }
+.report-table tbody tr:last-child td, .report-table tbody tr:last-child th { font-weight: 700; }
