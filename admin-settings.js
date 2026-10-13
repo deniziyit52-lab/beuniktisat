@@ -171,6 +171,22 @@
                     <small class="field-hint">1 = olduğu gibi. 2 yazarsan BIST %1 oynadığında "Orta" hisseler ortak yönden yaklaşık %2 oynar.</small>
                 </div>`}
 
+                ${engine.stock_link_enabled == null ? "" : `
+                <div class="panel-sub">🔗 Hisseler Gerçek Hisseleri İzlesin</div>
+                <div class="form-group">
+                    <label class="checkrow" for="setStockLinks">
+                        <input type="checkbox" id="setStockLinks" ${engine.stock_link_enabled ? "checked" : ""}>
+                        <span>Her hisse, bağlı olduğu gerçek hissenin hareketini izlesin</span>
+                    </label>
+                    <small class="field-hint">Açıkken gerçek borsa saatlerinde (hafta içi 10:00–18:00) fiyatı bağlı gerçek hisse oynatır, ani şoklar kapanır. Kapatırsan eski rastgele düzene döner.</small>
+                </div>
+                <div class="form-group">
+                    <label for="setQuietVol">Rastgele kısmın payı (%)</label>
+                    <input type="number" id="setQuietVol" step="5" min="0" max="100" value="${toPct(engine.quiet_vol_scale)}">
+                    <small class="field-hint">Yukarıdaki tabloda yazan günlük oynaklığın yüzde kaçı rastgele kalsın. Akşam ve hafta sonu fiyatları bu kısım oynatır. Düşük tutarsan şans azalır.</small>
+                </div>
+                <div id="stockLinksList" class="mailing-list"><p class="field-hint">Eşleşmeler yükleniyor…</p></div>`}
+
                 <div class="panel-sub">📝 Sınav Süresi ve Bonusları</div>
                 ${engine.quiz_minutes == null ? "" : `
                 <div class="form-group">
@@ -196,10 +212,32 @@
             `;
 
             $("saveSettingsBtn").addEventListener("click", () => this.save());
+            this.loadStockLinks();
             $("resetGameBtn").addEventListener("click", () => this.resetGame());
             root.querySelectorAll('[data-q="save"]').forEach(btn => {
                 btn.addEventListener("click", () => this.saveQuestion(btn.closest(".settings-question")));
             });
+        },
+
+        // Gizli eşleşme listesi (yalnızca yönetici görür) ve son veri okuma durumu.
+        async loadStockLinks() {
+            const box = $("stockLinksList");
+            if (!box) return;
+            const { data, error } = await window.sb.rpc("admin_list_stock_links");
+            if (error || !data) {
+                box.innerHTML = `<p class="field-hint">Eşleşmeler yüklenemedi: ${esc(error ? error.message : "boş cevap")}</p>`;
+                return;
+            }
+            const st = data.status || {};
+            const when = st.checked_at ? new Date(st.checked_at).toLocaleString("tr-TR") : "henüz okunmadı";
+            box.innerHTML = `<p class="field-hint">🤫 Bu liste gizlidir; oyun bitince açıklanacak. Son okuma: ${esc(when)} — ${st.ok === false ? "⚠ " : ""}${esc(st.message || "")}</p>`
+                + (Array.isArray(data.links) ? data.links : []).map(l => `
+                <div class="column-admin-row">
+                    <div class="column-admin-text">
+                        <strong>${esc(l.symbol)} → ${esc(String(l.real || "").replace(/\.IS$/, ""))}</strong>
+                        <span>${esc(l.sector)}${l.last_price ? " · gerçek fiyat " + Number(l.last_price).toLocaleString("tr-TR") + " ₺" : ""}</span>
+                    </div>
+                </div>`).join("");
         },
 
         async save() {
@@ -229,6 +267,13 @@
                         p_limit: fromPct($("setDailyLimit").value),
                     });
                     if (limitError) throw limitError;
+                }
+                if ($("setStockLinks")) {
+                    const { error: linkError } = await window.sb.rpc("admin_set_stock_links", {
+                        p_enabled: $("setStockLinks").checked,
+                        p_quiet: fromPct($("setQuietVol").value),
+                    });
+                    if (linkError) throw linkError;
                 }
                 if ($("setRealMarket")) {
                     const { error: realError } = await window.sb.rpc("admin_set_real_market", {
