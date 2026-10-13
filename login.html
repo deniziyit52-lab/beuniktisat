@@ -98,7 +98,8 @@
                 </div>
                 <div id="forgotPasswordNote" class="auth-note" style="display:none;">
                     <p>E-posta adresinizi yukarıya yazıp aşağıdaki düğmeye basın; size yeni şifre belirleyeceğiniz bir bağlantı gönderelim.</p>
-                    <button type="button" id="forgotPasswordSend" class="btn btn--ghost">✉️ Sıfırlama bağlantısı gönder</button>
+                    <button type="button" id="forgotPasswordSend" class="send-btn">Sıfırlama bağlantısı gönder</button>
+                    <div id="forgotPasswordStatus" class="send-status" role="status" aria-live="polite"></div>
                     <p class="auth-note-small">Posta birkaç dakika içinde gelmezse spam (gereksiz) klasörüne bakın. Yine de ulaşmazsa İktisat Topluluğu Yönetim Kurulu'na haber verin; size geçici bir şifre verilir.</p>
                 </div>
                 <button type="submit" class="submit-btn">🔐 Giriş Yap</button>
@@ -123,7 +124,8 @@
             <div id="confirmPending" class="auth-note" style="display:none;">
                 <p>✉️ <strong id="confirmPendingEmail"></strong> adresine bir onay postası gönderdik. Postadaki <strong>"E-posta adresimi onayla"</strong> düğmesine basınca hesabınız açılır.</p>
                 <p class="auth-note-small">Posta birkaç dakika içinde gelmezse spam (gereksiz) klasörüne bakın.</p>
-                <button type="button" id="confirmResend" class="btn btn--ghost">Onay postasını yeniden gönder</button>
+                <button type="button" id="confirmResend" class="send-btn send-btn--quiet">Onay postasını yeniden gönder</button>
+                <div id="confirmResendStatus" class="send-status" role="status" aria-live="polite"></div>
             </div>
 
             <form id="signupForm" class="news-form" style="display:none;">
@@ -310,6 +312,45 @@
             });
         })();
 
+        // Posta gönderen düğmeler: basıldığı, gönderildiği ve ne zaman yeniden denenebileceği düğmenin kendisinde görünür.
+        async function sendWithFeedback(btn, statusEl, action, successText) {
+            if (btn.disabled) return;
+            const label = btn.dataset.label || (btn.dataset.label = btn.textContent);
+            btn.disabled = true;
+            btn.classList.remove("is-done");
+            btn.classList.add("is-busy");
+            btn.textContent = "Gönderiliyor…";
+            statusEl.className = "send-status";
+            statusEl.textContent = "";
+            let wait = 60;
+            try {
+                const { error } = await action();
+                if (error) throw error;
+                btn.classList.add("is-done");
+                statusEl.classList.add("is-ok");
+                statusEl.textContent = successText;
+            } catch (err) {
+                const tooMany = Number(err && err.status) === 429 || /rate|too many|seconds/i.test(String(err && err.message));
+                statusEl.classList.add("is-error");
+                statusEl.textContent = tooMany ? "Çok sık denediniz. Biraz bekleyip yeniden deneyin." : "Gönderilemedi: " + ((err && err.message) || err);
+                wait = tooMany ? 60 : 5;
+            }
+            btn.classList.remove("is-busy");
+            const done = btn.classList.contains("is-done");
+            const timer = setInterval(() => {
+                wait -= 1;
+                if (wait <= 0) {
+                    clearInterval(timer);
+                    btn.disabled = false;
+                    btn.classList.remove("is-done");
+                    btn.textContent = done ? "Yeniden gönder" : label;
+                    return;
+                }
+                btn.textContent = done ? `Gönderildi ✓ · yeniden göndermek için ${wait} sn` : `${wait} sn sonra yeniden deneyin`;
+            }, 1000);
+            btn.textContent = done ? `Gönderildi ✓ · yeniden göndermek için ${wait} sn` : `${wait} sn sonra yeniden deneyin`;
+        }
+
         (function bindForgotPassword() {
             const btn = $("forgotPasswordBtn");
             const note = $("forgotPasswordNote");
@@ -321,26 +362,18 @@
             });
             // E-postayla şifre sıfırlama: bağlantı bu sayfaya döner ve yeni şifre formu açılır.
             const send = $("forgotPasswordSend");
-            send.addEventListener("click", async () => {
+            send.addEventListener("click", () => {
                 const email = $("loginEmail").value.trim();
+                const status = $("forgotPasswordStatus");
                 if (!email || !$("loginEmail").checkValidity()) {
-                    setFeedback("error", "Önce yukarıdaki kutuya e-posta adresinizi yazın.");
+                    status.className = "send-status is-error";
+                    status.textContent = "Önce yukarıdaki kutuya e-posta adresinizi yazın.";
                     $("loginEmail").focus();
                     return;
                 }
-                send.disabled = true;
-                try {
-                    const { error } = await window.sb.auth.resetPasswordForEmail(email, {
-                        redirectTo: window.location.origin + "/login",
-                    });
-                    if (error) throw error;
-                    setFeedback("success", "✉️ Bu adres kayıtlıysa sıfırlama bağlantısı gönderildi. Gelen kutunuza ve spam klasörüne bakın.");
-                } catch (err) {
-                    const tooMany = Number(err && err.status) === 429 || /rate|too many|seconds/i.test(String(err && err.message));
-                    setFeedback("error", tooMany ? "Çok sık denediniz. Bir dakika bekleyip yeniden deneyin." : "Bağlantı gönderilemedi: " + ((err && err.message) || err));
-                } finally {
-                    setTimeout(() => { send.disabled = false; }, 30000);
-                }
+                sendWithFeedback(send, status,
+                    () => window.sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/login" }),
+                    `${email} adresi kayıtlıysa bağlantı gönderildi. Postanın gelmesi bir iki dakika sürebilir; spam klasörüne de bakın.`);
             });
         })();
 
@@ -351,20 +384,9 @@
             $("signupForm").style.display = "none";
             $("loginForm").style.display = "none";
             setFeedback(null);
-            $("confirmResend").onclick = async () => {
-                const btn = $("confirmResend");
-                btn.disabled = true;
-                try {
-                    const { error } = await window.sb.auth.resend({ type: "signup", email });
-                    if (error) throw error;
-                    setFeedback("success", "Onay postası yeniden gönderildi.");
-                } catch (err) {
-                    const tooMany = Number(err && err.status) === 429 || /rate|too many|seconds/i.test(String(err && err.message));
-                    setFeedback("error", tooMany ? "Çok sık denediniz. Bir dakika bekleyip yeniden deneyin." : "Gönderilemedi: " + ((err && err.message) || err));
-                } finally {
-                    setTimeout(() => { btn.disabled = false; }, 60000);
-                }
-            };
+            $("confirmResend").onclick = () => sendWithFeedback($("confirmResend"), $("confirmResendStatus"),
+                () => window.sb.auth.resend({ type: "signup", email }),
+                "Onay postası yeniden gönderildi. Gelmesi bir iki dakika sürebilir.");
         }
 
         // Şifre sıfırlama bağlantısıyla gelindiyse giriş formu yerine "yeni şifre" formu gösterilir.

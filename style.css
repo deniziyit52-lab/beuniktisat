@@ -7390,3 +7390,42 @@ input[type="radio"] {
 #recoveryForm > * + * { margin-top: 1rem; }
 #recoveryForm .form-group input { width: 100%; min-width: 0; box-sizing: border-box; }
 #recoveryForm .submit-btn { display: block; width: 100%; min-height: 48px; margin-top: 1.25rem; }
+
+/* Posta gönderen düğme: durumunu kendi üstünde gösterir */
+.send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: #fff;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease, background 0.2s ease;
+}
+.send-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.send-btn:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+.send-btn:disabled { cursor: default; opacity: 0.75; }
+.send-btn--quiet { background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.3); color: var(--text-primary); }
+.send-btn.is-busy::before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    animation: sendSpin 0.7s linear infinite;
+}
+.send-btn.is-done { background: rgba(16, 185, 129, 0.16); border: 1px solid rgba(16, 185, 129, 0.45); color: var(--green-bright); opacity: 1; }
+@keyframes sendSpin { to { transform: rotate(360deg); } }
+.send-status { margin-top: 0.55rem; font-size: 0.8rem; line-height: 1.5; }
+.send-status:empty { display: none; }
+.send-status.is-ok { color: var(--green-bright); }
+.send-status.is-error { color: var(--red-bright); }
