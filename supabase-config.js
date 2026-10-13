@@ -627,13 +627,16 @@ window.BorsaFirebase = {
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
-        const fee = Math.round(subtotal * Number(Borsa?.commissionRate ?? 0.01) * 100) / 100;
+        // Sunucu kesin tutarları (komisyon, fiyat kayması, toplam) gönderiyorsa onlar kullanılır.
+        const fee = result.fee != null ? Number(result.fee) : Math.round(subtotal * Number(Borsa?.commissionRate ?? 0.01) * 100) / 100;
+        const slippage = Number(result.slippage || 0);
         return {
             balance: this._userDoc.balance,
             portfolio: this._userDoc.portfolio,
             subtotal,
             fee,
-            total: Math.round((subtotal + fee) * 100) / 100, // KULLANICI ÖDER: komisyon dahil
+            total: result.total != null ? Number(result.total) : Math.round((subtotal + fee) * 100) / 100, // KULLANICI ÖDER: komisyon ve fiyat kayması dahil
+            slippage,
             price: executionPrice,
             qty,
             circuitBreakerTriggered: result.circuit_breaker_triggered === true,
@@ -670,13 +673,16 @@ window.BorsaFirebase = {
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
-        const fee = Math.round(subtotal * Number(Borsa?.commissionRate ?? 0.01) * 100) / 100;
+        // Sunucu kesin tutarları (komisyon, fiyat kayması, toplam) gönderiyorsa onlar kullanılır.
+        const fee = result.fee != null ? Number(result.fee) : Math.round(subtotal * Number(Borsa?.commissionRate ?? 0.01) * 100) / 100;
+        const slippage = Number(result.slippage || 0);
         return {
             balance: this._userDoc.balance,
             portfolio: this._userDoc.portfolio,
             subtotal,
             fee,
-            revenue: Math.round((subtotal - fee) * 100) / 100, // KULLANICIYA KALAN: komisyon dusulmus
+            revenue: result.total != null ? Number(result.total) : Math.round((subtotal - fee) * 100) / 100, // KULLANICIYA KALAN: komisyon ve fiyat kayması düşülmüş
+            slippage,
             price: executionPrice,
             qty,
             circuitBreakerTriggered: result.circuit_breaker_triggered === true,
