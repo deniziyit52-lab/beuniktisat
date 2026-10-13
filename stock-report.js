@@ -40,6 +40,60 @@
             return `<strong class="${cls}">${n > 0 ? "+" : ""}${n}%</strong>`;
         },
 
+        // 26.990.000.000 -> "26,99 mlr ₺"
+        _money(value) {
+            const n = Number(value);
+            if (value == null || !Number.isFinite(n)) return "—";
+            const abs = Math.abs(n);
+            const fmt = (x, d) => x.toLocaleString("tr-TR", { minimumFractionDigits: d, maximumFractionDigits: d });
+            if (abs >= 1e9) return fmt(n / 1e9, 2) + " mlr ₺";
+            if (abs >= 1e6) return fmt(n / 1e6, 0) + " mn ₺";
+            return fmt(n, 0) + " ₺";
+        },
+
+        _quarter(dateText) {
+            const d = new Date(dateText);
+            if (isNaN(d)) return "—";
+            return `${d.getUTCFullYear()} / ${Math.floor(d.getUTCMonth() / 3) + 1}. çeyrek`;
+        },
+
+        _num(value, suffix) {
+            const n = Number(value);
+            if (value == null || !Number.isFinite(n)) return "—";
+            return n.toLocaleString("tr-TR", { maximumFractionDigits: 2 }) + (suffix || "");
+        },
+
+        // Mali tablolar: son çeyreklerin satış ve kârı, bilanço özeti ve dört temel oran.
+        _financialsMarkup(f) {
+            if (!f || !Array.isArray(f.quarters) || !f.quarters.length) return "";
+            const rows = f.quarters.slice().reverse().map(q => `
+                <tr>
+                    <th>${esc(this._quarter(q.d))}</th>
+                    <td>${esc(this._money(q.rev))}</td>
+                    <td class="${Number(q.net) < 0 ? "is-down" : ""}">${esc(this._money(q.net))}</td>
+                </tr>`).join("");
+            const tile = (label, value, hint) => `<div><span>${label}</span><strong>${esc(value)}</strong>${hint ? `<small>${hint}</small>` : ""}</div>`;
+            return `
+                <div class="report-title">Mali tablolar · son açıklanan: ${esc(this._quarter(f.latest))}</div>
+                <table class="report-table">
+                    <thead><tr><th>Dönem</th><th>Satışlar</th><th>Net kâr</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="report-stats report-stats--money">
+                    ${tile("Toplam varlık", this._money(f.assets))}
+                    ${tile("Toplam borç", this._money(f.liabilities))}
+                    ${tile("Özkaynak", this._money(f.equity))}
+                    ${tile("Nakit", this._money(f.cash))}
+                </div>
+                <div class="report-title">Temel oranlar</div>
+                <div class="report-stats report-stats--ratios">
+                    ${tile("Fiyat / Kazanç", this._num(f.pe), "Hisse, yıllık kârının kaç katına satılıyor. Düşükse ucuz sayılır.")}
+                    ${tile("PD / DD", this._num(f.pb), "Şirketin borsa değeri, özkaynağının kaç katı.")}
+                    ${tile("Net kâr marjı", this._num(f.margin, "%"), "100 ₺ satıştan şirkete kalan kâr.")}
+                    ${tile("Borç / Özkaynak", this._num(f.debt_equity), "Her 1 ₺ özkaynağa karşılık kaç ₺ borç var.")}
+                </div>`;
+        },
+
         _markup(r) {
             const stats = r.stats || null;
             const pos = stats && Number.isFinite(Number(stats.pos52)) ? Math.max(0, Math.min(100, Number(stats.pos52))) : null;
@@ -67,7 +121,8 @@
                     <div class="report-range-bar"><i style="left:${pos}%"></i></div>
                     <span>en yükseği</span>
                 </div>`}` : ""}
-                <p class="report-note">Bu hisse, gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Yukarıdaki getiriler o gerçek hareketten gelir. Oyuncuların alım-satımı fiyatı kısa süreliğine oynatabilir, ama fiyat zamanla gerçek ize geri döner.</p>`;
+                ${this._financialsMarkup(r.financials)}
+                <p class="report-note">Bu hisse, gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Yukarıdaki getiriler ve mali tablolar o şirketin gerçek verileridir. Oyuncuların alım-satımı fiyatı kısa süreliğine oynatabilir, ama fiyat zamanla gerçek ize geri döner.</p>`;
         },
 
         // İşlem penceresi açılırken çağrılır.
