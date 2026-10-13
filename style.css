@@ -7453,3 +7453,103 @@ input[type="radio"] {
     .report-table th, .report-table td { padding: 0.35rem 0.15rem; }
     .report-table th em { display: none; }
 }
+
+/* Gazete: Günün Sözü */
+.news-paper-quote {
+    position: relative;
+    z-index: 2;
+    margin: 1.75rem 0 0.5rem;
+    padding: 1.5rem 1.5rem 1.25rem;
+    border-top: 3px double #1e3a5f;
+    border-bottom: 3px double #1e3a5f;
+    text-align: center;
+}
+.quote-figure { margin: 0 auto; max-width: 680px; }
+.quote-text {
+    position: relative;
+    margin: 0;
+    padding: 1.6rem 0.5rem 0;
+    color: #1a1a1a;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(1.15rem, 2.9vw, 1.6rem);
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1.5;
+    text-wrap: balance;
+}
+.quote-text::before {
+    content: "\201C";
+    position: absolute;
+    top: -0.9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #8b2a2a;
+    font-size: 3.6rem;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1;
+    opacity: 0.85;
+}
+.quote-author {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.1rem;
+    text-align: left;
+}
+.quote-monogram {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid #1e3a5f;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 3px #faf8f3, inset 0 0 0 4px rgba(30, 58, 95, 0.45);
+    background: rgba(30, 58, 95, 0.06);
+    color: #1e3a5f;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+}
+.quote-who { display: flex; flex-direction: column; gap: 0.1rem; }
+.quote-who strong {
+    color: #1a1a1a;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.quote-who span {
+    color: #5a5a5a;
+    font-family: "Merriweather", Georgia, serif;
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+.quote-note {
+    margin: 0.85rem 0 0;
+    color: #8b2a2a;
+    font-family: "Merriweather", Georgia, serif;
+    font-size: 0.75rem;
+    font-style: italic;
+}
+.quote-next {
+    margin-top: 1rem;
+    padding: 0.3rem 0.2rem;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    color: #1e3a5f;
+    cursor: pointer;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+.quote-next:hover, .quote-next:focus-visible { border-bottom-color: #1e3a5f; outline: none; }
+@media (max-width: 520px) {
+    .news-paper-quote { padding: 1.25rem 0.5rem 1rem; }
+}

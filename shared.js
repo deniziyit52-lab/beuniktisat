@@ -789,6 +789,11 @@ const Borsa = {
     NEWS_PAGE_SIZE: 10,
     _newsPage: 1,
 
+    // Gazetenin ilk sayfasındaki "Günün Sözü" (quotes.js yüklüyse).
+    _quoteMarkup() {
+        return window.BorsaQuotes ? window.BorsaQuotes.markup() : "";
+    },
+
     _renderNewspaper(el, news) {
         const masthead = `
             <header class="news-paper-masthead">
@@ -799,8 +804,9 @@ const Borsa = {
             </header>`;
 
         if (news.length === 0) {
-            el.innerHTML = `${masthead}${this._columnsPaperMarkup()}<p class="news-paper-empty">Henüz haber yok. Yakında tekrar kontrol edin.</p>`;
+            el.innerHTML = `${masthead}${this._quoteMarkup()}${this._columnsPaperMarkup()}<p class="news-paper-empty">Henüz haber yok. Yakında tekrar kontrol edin.</p>`;
             this._bindColumnLinks(el);
+            if (window.BorsaQuotes) window.BorsaQuotes.bind(el);
             return;
         }
 
@@ -855,10 +861,12 @@ const Borsa = {
                 </div>
             </article>` : ""}
             ${secondaryStories ? `<ol class="news-paper-columns">${secondaryStories}</ol>` : ""}
+            ${page === 1 ? this._quoteMarkup() : ""}
             ${page === 1 ? this._columnsPaperMarkup() : ""}
             ${pager}
         `;
         this._bindColumnLinks(el);
+        if (window.BorsaQuotes) window.BorsaQuotes.bind(el);
 
         // Add click handlers for expanded view
         this._bindNewsExpandHandlers(el, news);
