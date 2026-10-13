@@ -102,7 +102,7 @@
                 </div>
                 <div class="report-title">Temel oranlar</div>
                 <div class="report-stats report-stats--ratios">
-                    ${tile("Fiyat / Kazanç", this._num(f.pe), "Hisse, yıllık kârının kaç katına satılıyor. Düşükse ucuz sayılır.")}
+                    ${tile("Fiyat / Kazanç", this._num(f.pe), f.pe == null && Number(f.margin) < 0 ? "Şirket son bir yılda zarar ettiği için hesaplanmaz." : "Hisse, yıllık kârının kaç katına satılıyor. Düşükse ucuz sayılır.")}
                     ${tile("PD / DD", this._num(f.pb), "Şirketin borsa değeri, özkaynağının kaç katı.")}
                     ${tile("Net kâr marjı", this._num(f.margin, "%"), "100 ₺ satıştan şirkete kalan kâr.")}
                     ${tile("Borç / Özkaynak", this._num(f.debt_equity), "Her 1 ₺ özkaynağa karşılık kaç ₺ borç var.")}

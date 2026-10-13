@@ -135,6 +135,15 @@
                     <small class="field-hint">Her alım ve satımda işlem tutarından kesilir. Gerçek borsada aracı kurumlar genellikle binde 2 (%0,2) dolayında alır. En fazla %${toPct(engine.legacy_commission_rate)} yazılabilir.</small>
                 </div>`}
 
+                ${engine.slippage_enabled == null ? "" : `
+                <div class="form-group">
+                    <label class="checkrow" for="setSlippage">
+                        <input type="checkbox" id="setSlippage" ${engine.slippage_enabled ? "checked" : ""}>
+                        <span>Fiyat kayması uygula</span>
+                    </label>
+                    <small class="field-hint">Açıkken büyük emirler, fiyatı oynattıkları kadar pahalıya gelir: oyuncu emirden önceki ve sonraki fiyatın ortalamasından işlem yapar. Kapatırsan "al, fiyatı yükselt, hemen sat" döngüsü para kazandırır; kapatmamanı öneririm.</small>
+                </div>`}
+
                 ${engine.max_position_pct == null ? "" : `
                 <div class="form-row">
                     <div class="form-group">
@@ -280,6 +289,10 @@
                         p_limit: fromPct($("setDailyLimit").value),
                     });
                     if (limitError) throw limitError;
+                }
+                if ($("setSlippage")) {
+                    const { error: slipError } = await window.sb.rpc("admin_set_slippage", { p_enabled: $("setSlippage").checked });
+                    if (slipError) throw slipError;
                 }
                 if ($("setCommission")) {
                     const { error: feeError } = await window.sb.rpc("admin_set_commission", {
