@@ -69,19 +69,31 @@
         // Mali tablolar: son çeyreklerin satış ve kârı, bilanço özeti ve dört temel oran.
         _financialsMarkup(f) {
             if (!f || !Array.isArray(f.quarters) || !f.quarters.length) return "";
+            // Faaliyet kârı her şirkette bulunmaz (bankalarda yok); hiç yoksa sütun gösterilmez.
+            const hasOp = f.quarters.some(q => q.op != null);
+            const last = f.quarters[f.quarters.length - 1];
+            // Asıl işinden zarar edip net kâr yazan (ya da tersi) şirket için kısa bir uyarı.
+            const mismatch = hasOp && last.op != null && last.net != null && Number(last.op) < 0 && Number(last.net) > 0
+                ? "Son dönemde şirket asıl işinden zarar etmiş ama net kâr yazmış: kâr, faaliyet dışı (çoğu zaman tek seferlik) bir gelirden geliyor."
+                : hasOp && last.op != null && last.net != null && Number(last.op) > 0 && Number(last.net) < 0
+                    ? "Son dönemde şirket asıl işinden kâr etmiş ama net zarar yazmış: zarar, faiz gideri ya da kur farkı gibi faaliyet dışı kalemlerden geliyor."
+                    : "";
             const rows = f.quarters.map((q, i) => `
                 <tr>
                     <th>${esc(this._quarter(q.d))}${i === f.quarters.length - 1 ? ' <em>en yeni</em>' : ""}</th>
                     <td>${esc(this._money(q.rev))}</td>
+                    ${hasOp ? `<td class="${Number(q.op) < 0 ? "is-down" : ""}">${esc(this._money(q.op))}</td>` : ""}
                     <td class="${Number(q.net) < 0 ? "is-down" : ""}">${esc(this._money(q.net))}</td>
                 </tr>`).join("");
             const tile = (label, value, hint) => `<div><span>${label}</span><strong>${esc(value)}</strong>${hint ? `<small>${hint}</small>` : ""}</div>`;
             return `
                 <div class="report-title">Mali tablolar · üçer aylık dönemler, eskiden yeniye</div>
                 <table class="report-table">
-                    <thead><tr><th>Dönem</th><th>Satışlar</th><th>Net kâr</th></tr></thead>
+                    <thead><tr><th>Dönem</th><th>Satışlar</th>${hasOp ? '<th title="Şirketin asıl işinden kazandığı para">Faaliyet kârı</th>' : ""}<th>Net kâr</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
+                ${hasOp ? '<p class="report-hint"><strong>Faaliyet kârı</strong> şirketin asıl işinden kazandığıdır; <strong>net kâr</strong> ise faiz, vergi ve tek seferlik kalemlerden sonra kalan.</p>' : ""}
+                ${mismatch ? `<p class="report-warn">⚠️ ${mismatch}</p>` : ""}
                 <div class="report-stats report-stats--money">
                     ${tile("Toplam varlık", this._money(f.assets))}
                     ${tile("Toplam borç", this._money(f.liabilities))}
