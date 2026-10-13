@@ -7445,3 +7445,11 @@ input[type="radio"] {
 }
 .report-table th em { margin-left: 0.3rem; padding: 0.05rem 0.35rem; border-radius: 999px; background: rgba(59, 130, 246, 0.15); color: var(--accent-bright); font-size: 0.62rem; font-style: normal; font-weight: 700; }
 .report-table tbody tr:last-child td, .report-table tbody tr:last-child th { font-weight: 700; }
+#tradeReportBody .report-hint { margin: 0 0 0.5rem; font-size: 0.72rem; color: var(--text-muted); }
+#tradeReportBody .report-hint strong { color: var(--text-secondary); }
+#tradeReportBody .report-warn { margin: 0 0 0.6rem; padding: 0.5rem 0.65rem; border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.08); font-size: 0.76rem; color: var(--gold); }
+@media (max-width: 480px) {
+    .report-table { font-size: 0.72rem; }
+    .report-table th, .report-table td { padding: 0.35rem 0.15rem; }
+    .report-table th em { display: none; }
+}
