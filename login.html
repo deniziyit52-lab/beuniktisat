@@ -6,6 +6,9 @@
     <title>Giriş / Kayıt Ol - ZBEÜ İktisat Topluluğu</title>
     <link rel="stylesheet" href="style.css">
     <script>
+        // E-postadaki şifre sıfırlama bağlantısıyla gelindiyse not edilir (Supabase adresi sonradan temizler).
+        window.__borsaRecovery = /[#&?]type=recovery\b/.test(window.location.hash + window.location.search);
+        window.__borsaLinkError = /[#&?]error(_code)?=/.test(window.location.hash + window.location.search);
         // Script yüklenme hatalarını (404 / CORS / Network) VISIBLE hale getir.
         // Bu script başta çalışır, herhangi bir <script src> hatasını yakalar.
         (function installScriptErrorCatcher(){
@@ -94,13 +97,34 @@
                     <button type="button" id="forgotPasswordBtn" class="auth-link" aria-expanded="false" aria-controls="forgotPasswordNote">Şifremi unuttum</button>
                 </div>
                 <div id="forgotPasswordNote" class="auth-note" style="display:none;">
-                    Şifrenizi unuttuysanız İktisat Topluluğu Yönetim Kurulu'na haber verin. Size geçici bir şifre verilir; o şifreyle giriş yapıp kaldığınız yerden devam edersiniz.
+                    <p>E-posta adresinizi yukarıya yazıp aşağıdaki düğmeye basın; size yeni şifre belirleyeceğiniz bir bağlantı gönderelim.</p>
+                    <button type="button" id="forgotPasswordSend" class="btn btn--ghost">✉️ Sıfırlama bağlantısı gönder</button>
+                    <p class="auth-note-small">Posta birkaç dakika içinde gelmezse spam (gereksiz) klasörüne bakın. Yine de ulaşmazsa İktisat Topluluğu Yönetim Kurulu'na haber verin; size geçici bir şifre verilir.</p>
                 </div>
                 <button type="submit" class="submit-btn">🔐 Giriş Yap</button>
                 <p style="text-align:center; margin-top:1rem; font-size:0.8rem; color:var(--text-muted);">
                     Hesabınız yok mu? <span class="tab-switch" data-goto="signup" style="color:var(--accent-bright); cursor:pointer; font-weight:600;">Kayıt olun</span>
                 </p>
             </form>
+
+            <form id="recoveryForm" class="news-form" style="display:none;">
+                <p class="auth-note">Yeni şifrenizi belirleyin. Kaydedince giriş yapmış olursunuz.</p>
+                <div class="form-group">
+                    <label for="recoveryPassword">Yeni şifre</label>
+                    <input type="password" id="recoveryPassword" placeholder="En az 6 karakter" autocomplete="new-password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="recoveryConfirm">Yeni şifre (tekrar)</label>
+                    <input type="password" id="recoveryConfirm" placeholder="Şifreyi tekrar girin" autocomplete="new-password" required minlength="6">
+                </div>
+                <button type="submit" class="submit-btn">🔑 Şifremi Kaydet</button>
+            </form>
+
+            <div id="confirmPending" class="auth-note" style="display:none;">
+                <p>✉️ <strong id="confirmPendingEmail"></strong> adresine bir onay postası gönderdik. Postadaki <strong>"E-posta adresimi onayla"</strong> düğmesine basınca hesabınız açılır.</p>
+                <p class="auth-note-small">Posta birkaç dakika içinde gelmezse spam (gereksiz) klasörüne bakın.</p>
+                <button type="button" id="confirmResend" class="btn btn--ghost">Onay postasını yeniden gönder</button>
+            </div>
 
             <form id="signupForm" class="news-form" style="display:none;">
                 <div class="form-group">
@@ -295,6 +319,79 @@
                 note.style.display = open ? "block" : "none";
                 btn.setAttribute("aria-expanded", String(open));
             });
+            // E-postayla şifre sıfırlama: bağlantı bu sayfaya döner ve yeni şifre formu açılır.
+            const send = $("forgotPasswordSend");
+            send.addEventListener("click", async () => {
+                const email = $("loginEmail").value.trim();
+                if (!email || !$("loginEmail").checkValidity()) {
+                    setFeedback("error", "Önce yukarıdaki kutuya e-posta adresinizi yazın.");
+                    $("loginEmail").focus();
+                    return;
+                }
+                send.disabled = true;
+                try {
+                    const { error } = await window.sb.auth.resetPasswordForEmail(email, {
+                        redirectTo: window.location.origin + "/login",
+                    });
+                    if (error) throw error;
+                    setFeedback("success", "✉️ Bu adres kayıtlıysa sıfırlama bağlantısı gönderildi. Gelen kutunuza ve spam klasörüne bakın.");
+                } catch (err) {
+                    const tooMany = Number(err && err.status) === 429 || /rate|too many|seconds/i.test(String(err && err.message));
+                    setFeedback("error", tooMany ? "Çok sık denediniz. Bir dakika bekleyip yeniden deneyin." : "Bağlantı gönderilemedi: " + ((err && err.message) || err));
+                } finally {
+                    setTimeout(() => { send.disabled = false; }, 30000);
+                }
+            });
+        })();
+
+        // Onay postası bekleyen yeni üye: bilgi kutusu ve "yeniden gönder".
+        function showConfirmPending(email) {
+            $("confirmPendingEmail").textContent = email;
+            $("confirmPending").style.display = "block";
+            $("signupForm").style.display = "none";
+            $("loginForm").style.display = "none";
+            setFeedback(null);
+            $("confirmResend").onclick = async () => {
+                const btn = $("confirmResend");
+                btn.disabled = true;
+                try {
+                    const { error } = await window.sb.auth.resend({ type: "signup", email });
+                    if (error) throw error;
+                    setFeedback("success", "Onay postası yeniden gönderildi.");
+                } catch (err) {
+                    const tooMany = Number(err && err.status) === 429 || /rate|too many|seconds/i.test(String(err && err.message));
+                    setFeedback("error", tooMany ? "Çok sık denediniz. Bir dakika bekleyip yeniden deneyin." : "Gönderilemedi: " + ((err && err.message) || err));
+                } finally {
+                    setTimeout(() => { btn.disabled = false; }, 60000);
+                }
+            };
+        }
+
+        // Şifre sıfırlama bağlantısıyla gelindiyse giriş formu yerine "yeni şifre" formu gösterilir.
+        (function bindRecovery() {
+            if (window.__borsaLinkError && !window.__borsaRecovery) {
+                setFeedback("error", "Bağlantının süresi dolmuş ya da daha önce kullanılmış. Yeniden istemek için “Şifremi unuttum”a basın.");
+            }
+            if (!window.__borsaRecovery) return;
+            document.querySelector(".tabs").style.display = "none";
+            $("loginForm").style.display = "none";
+            $("signupForm").style.display = "none";
+            $("recoveryForm").style.display = "block";
+            $("recoveryForm").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const pass = $("recoveryPassword").value;
+                if (pass !== $("recoveryConfirm").value) return setFeedback("error", "Şifreler uyuşmuyor.");
+                try {
+                    const { data: s } = await window.sb.auth.getSession();
+                    if (!s || !s.session) throw new Error("Bağlantının süresi dolmuş. “Şifremi unuttum” ile yeniden isteyin.");
+                    const { data, error } = await window.sb.auth.updateUser({ password: pass });
+                    if (error) throw error;
+                    window.__borsaRecovery = false;
+                    _redirectAfterLogin(data.user);
+                } catch (err) {
+                    setFeedback("error", "Şifre kaydedilemedi: " + ((err && err.message) || err));
+                }
+            });
         })();
 
         // ============================================================
@@ -387,6 +484,8 @@
 
         function _redirectAfterLogin(user) {
             if (!user) return;
+            // Şifre sıfırlama bağlantısıyla gelen kullanıcı önce yeni şifresini belirler.
+            if (window.__borsaRecovery) return;
             const isAdmin = String(user.email || "").trim().toLowerCase() === "deniziyit52@gmail.com";
             setFeedback(
                 "success",
@@ -440,7 +539,7 @@
                         "auth/invalid-email":    "Geçersiz e-posta adresi.",
                         "auth/user-disabled":    "Bu hesap devre dışı bırakılmış.",
                         "auth/too-many-requests":"Çok fazla deneme. Lütfen biraz sonra tekrar deneyin.",
-                        "auth/email-not-confirmed":"✉️ Önce e-postanızı onaylayın. Gelen kutunuzdaki onay linkine tıkladıktan sonra tekrar giriş yapın.",
+                        "auth/email-not-confirmed":"✉️ Önce e-postanızı onaylayın. Gelen kutunuzdaki (ya da spam klasörünüzdeki) onay postasındaki düğmeye bastıktan sonra tekrar giriş yapın.",
                     };
                     const code = (err && err.code) || "";
                     const msg  = (err && err.message) ? err.message : String(err);
@@ -471,18 +570,12 @@
 
                     // ÖNEMLİ: Email confirm AÇIK ise (Supabase varsayılan: AÇIK)
                     // signUp() session döndürmez, kullanıcı girişi olmaz.
-                    if (user && user._needsEmailConfirmation) {
-                        setFeedback(
-                            "success",
-                            "✅ Hesabınız oluşturuldu! ✉️ Lütfen gelen kutunuzdaki onay e-postasına tıklayın, onayladıktan sonra giriş yapabilirsiniz."
-                        );
-                        return;
-                    }
-                    if (user && user.email_confirmed_at == null) {
-                        setFeedback(
-                            "success",
-                            "✅ Hesabınız oluşturuldu! E-posta onayı bekleniyor — onay sonrası giriş yapabilirsiniz."
-                        );
+                    if (user && (user._needsEmailConfirmation || user.email_confirmed_at == null)) {
+                        // E-posta bilgilendirme onayı, hesap onaylanıp ilk giriş yapıldığında kaydedilir.
+                        try {
+                            if ($("signupEmailOptIn").checked) localStorage.setItem("borsa-pending-email-opt-in", email.toLowerCase());
+                        } catch (_) {}
+                        showConfirmPending(email);
                         return;
                     }
                     // Auto-signIn başarılı (email confirm kapalı veya otomatik onay)
