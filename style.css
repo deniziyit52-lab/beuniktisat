@@ -7283,3 +7283,64 @@ input[type="radio"] {
 }
 .real-market-chip.is-up { color: var(--green-bright); background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
 .real-market-chip.is-down { color: var(--red-bright); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+
+/* İşlem penceresi: Şirket Karnesi */
+.stock-report {
+    margin: 0 0 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-card);
+}
+.stock-report > summary {
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    list-style: none;
+}
+.stock-report > summary::-webkit-details-marker { display: none; }
+.stock-report > summary::after { content: "▾"; float: right; color: var(--text-muted); }
+.stock-report[open] > summary::after { content: "▴"; }
+.stock-report > summary small { margin-left: 0.4rem; font-size: 0.74rem; font-weight: 400; color: var(--text-muted); }
+#tradeReportBody { padding: 0 0.9rem 0.9rem; font-size: 0.84rem; line-height: 1.55; color: var(--text-secondary); }
+#tradeReportBody p { margin: 0 0 0.6rem; }
+.report-sector { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.report-chip {
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent-bright);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+.report-live { font-size: 0.72rem; font-weight: 600; color: var(--green-bright); }
+.report-title {
+    margin: 0.7rem 0 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.report-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.45rem; }
+.report-list li { display: grid; grid-template-columns: 18px 1fr; gap: 0.5rem; align-items: start; }
+.report-list strong { color: var(--text-primary); }
+.report-arrow { font-size: 0.8rem; line-height: 1.6; text-align: center; }
+.report-arrow.is-up, .report-stats .is-up { color: var(--green-bright); }
+.report-arrow.is-down, .report-stats .is-down { color: var(--red-bright); }
+.report-arrow.is-mixed { color: var(--gold); }
+.report-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+.report-stats > div {
+    padding: 0.45rem 0.3rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+}
+.report-stats span { display: block; font-size: 0.66rem; color: var(--text-muted); }
+.report-stats strong { font-family: "JetBrains Mono", "Consolas", monospace; font-size: 0.88rem; color: var(--text-primary); }
+.report-range { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.6rem; font-size: 0.66rem; color: var(--text-muted); }
+.report-range-bar { position: relative; flex: 1 1 auto; height: 6px; border-radius: 999px; background: linear-gradient(90deg, rgba(239, 68, 68, 0.45), rgba(251, 191, 36, 0.45), rgba(16, 185, 129, 0.45)); }
+.report-range-bar i { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; border: 2px solid var(--accent-bright); }
+#tradeReportBody .report-note { margin: 0.7rem 0 0; font-size: 0.72rem; color: var(--text-muted); }

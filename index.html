@@ -219,9 +219,13 @@
                     <summary><span class="faq-item-icon" aria-hidden="true">👛</span><span class="faq-item-q">Cüzdandaki iki kâr-zarar rakamı neden farklı?</span></summary>
                     <p>"Toplam Getiri", başlangıç parana göre bütün varlığının ne kadar değiştiğini gösterir; liderlikteki rakam budur. "Elindekilerin K/Z'si" ise yalnızca şu an tuttuğun varlıkların alış fiyatına göre durumudur; ödediğin komisyonları ve daha önce sattıklarını saymaz.</p>
                 </details>
+                <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">📋</span><span class="faq-item-q">Bir hisseyi nasıl analiz ederim?</span></summary>
+                    <p>Hissenin kartına tıkla ve "Şirket Karnesi"ni aç. Orada şirketin sektörünü, hangi gelişmeden nasıl etkilendiğini (dolar, faiz, petrol gibi) ve son 1 hafta, 1 ay, 3 aylık getirisini görürsün. Sonra "Haberler"e bak: örneğin petrol pahalanıyorsa, yakıta duyarlı şirketler bundan olumsuz etkilenir. Fiyatlar gerçek şirketlerin hareketini izlediği için bu akıl yürütme gerçekten işe yarar; yine de kısa vadede her zaman biraz belirsizlik vardır.</p>
+                </details>
                 <details class="faq-item" data-cat="kural">
                     <summary><span class="faq-item-icon" aria-hidden="true">📈</span><span class="faq-item-q">Fiyatlar neye göre değişiyor?</span></summary>
-                    <p>Dört şeye göre: piyasanın genel yönü, hissenin kendi dalgalanması, yayınlanan oyun haberleri ve oyuncuların alım-satımları. Genel yön, gerçek borsa açıkken (hafta içi 10:00–18:00) BIST 100 endeksinin gerçek hareketinden gelir; o saatlerde "Canlı Piyasa" başlığının yanında endeksin günlük değişimini görürsün. Şirketler yine uydurmadır. Büyük bir alım fiyatı yukarı, büyük bir satış aşağı iter; bu etkinin bir kısmı birkaç dakika içinde geri döner.</p>
+                    <p>Dört şeye göre: piyasanın genel yönü, hissenin kendi dalgalanması, yayınlanan oyun haberleri ve oyuncuların alım-satımları. Şirketler uydurmadır, ama her biri gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Gerçek borsa açıkken (hafta içi 10:00–18:00) fiyatı asıl oynatan budur; akşam ve hafta sonu fiyatlar yalnızca küçük oynar. Hangi şirketin izlendiği gizlidir, oyun bitince açıklanacak. Büyük bir alım fiyatı yukarı, büyük bir satış aşağı iter; bu etkinin bir kısmı birkaç dakika içinde geri döner.</p>
                 </details>
                 <details class="faq-item" data-cat="kural">
                     <summary><span class="faq-item-icon" aria-hidden="true">⚡</span><span class="faq-item-q">Devre kesici nedir?</span></summary>
@@ -408,6 +412,11 @@
                     <div class="trade-change" id="tradeChange">—</div>
                 </div>
             </div>
+
+            <details id="tradeReport" class="stock-report" style="display:none;">
+                <summary>📋 Şirket Karnesi <small>sektör, neye duyarlı, son dönem</small></summary>
+                <div id="tradeReportBody"></div>
+            </details>
 
             <div class="trade-grid">
                 <div class="trade-stat">
@@ -953,6 +962,7 @@
             $("tradeAvatar").style.background = `linear-gradient(135deg, ${s.color}, ${s.color}aa)`;
             $("tradeStockName").textContent = s.name;
             $("tradeSymbol").textContent = s.symbol;
+            if (window.BorsaReport) window.BorsaReport.show(s.symbol);
             updateTradeModal();
             (async () => {
                 try {
@@ -1848,6 +1858,7 @@
     <script src="badges.js"></script>
     <script src="signature.js"></script>
     <script src="daily.js"></script>
+    <script src="stock-report.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>
