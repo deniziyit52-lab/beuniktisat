@@ -100,7 +100,8 @@
                     <p>E-posta adresinizi yukarıya yazıp aşağıdaki düğmeye basın; size yeni şifre belirleyeceğiniz bir bağlantı gönderelim.</p>
                     <button type="button" id="forgotPasswordSend" class="send-btn">Sıfırlama bağlantısı gönder</button>
                     <div id="forgotPasswordStatus" class="send-status" role="status" aria-live="polite"></div>
-                    <p class="auth-note-small">Posta birkaç dakika içinde gelmezse spam (gereksiz) klasörüne bakın. Yine de ulaşmazsa İktisat Topluluğu Yönetim Kurulu'na haber verin; size geçici bir şifre verilir.</p>
+                    <p class="auth-spam-warning" role="note"><span aria-hidden="true">⚠️</span><span><strong>Posta büyük olasılıkla spam (gereksiz) klasörüne düşer.</strong> Gelen kutunuzda göremezseniz önce oraya bakın; bulunca "Spam değil" diye işaretleyin.</span></p>
+                    <p class="auth-note-small">Posta hiç ulaşmazsa İktisat Topluluğu Yönetim Kurulu'na haber verin; size geçici bir şifre verilir.</p>
                 </div>
                 <button type="submit" class="submit-btn">🔐 Giriş Yap</button>
                 <p style="text-align:center; margin-top:1rem; font-size:0.8rem; color:var(--text-muted);">
@@ -123,7 +124,7 @@
 
             <div id="confirmPending" class="auth-note" style="display:none;">
                 <p>✉️ <strong id="confirmPendingEmail"></strong> adresine bir onay postası gönderdik. Postadaki <strong>"E-posta adresimi onayla"</strong> düğmesine basınca hesabınız açılır.</p>
-                <p class="auth-note-small">Posta birkaç dakika içinde gelmezse spam (gereksiz) klasörüne bakın.</p>
+                <p class="auth-spam-warning" role="note"><span aria-hidden="true">⚠️</span><span><strong>Posta büyük olasılıkla spam (gereksiz) klasörüne düşer.</strong> Gelen kutunuzda göremezseniz önce oraya bakın; bulunca "Spam değil" diye işaretleyin.</span></p>
                 <button type="button" id="confirmResend" class="send-btn send-btn--quiet">Onay postasını yeniden gönder</button>
                 <div id="confirmResendStatus" class="send-status" role="status" aria-live="polite"></div>
             </div>
@@ -386,7 +387,7 @@
             setFeedback(null);
             $("confirmResend").onclick = () => sendWithFeedback($("confirmResend"), $("confirmResendStatus"),
                 () => window.sb.auth.resend({ type: "signup", email }),
-                "Onay postası yeniden gönderildi. Gelmesi bir iki dakika sürebilir.");
+                "Onay postası yeniden gönderildi. Gelmesi bir iki dakika sürebilir; spam klasörüne de bakın.");
         }
 
         // Şifre sıfırlama bağlantısıyla gelindiyse giriş formu yerine "yeni şifre" formu gösterilir.

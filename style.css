@@ -7553,3 +7553,19 @@ input[type="radio"] {
 @media (max-width: 520px) {
     .news-paper-quote { padding: 1.25rem 0.5rem 1rem; }
 }
+
+/* Giriş sayfası: postanın spam klasörüne düşebileceği uyarısı */
+.auth-spam-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin: 0.75rem 0 0.75rem !important;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+.auth-spam-warning strong { display: block; margin-bottom: 0.15rem; }
