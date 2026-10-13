@@ -220,7 +220,26 @@ const Borsa = {
                 this.dailyLimitPct = limit;
                 try { this.renderStocksGrid(); } catch (_) {}
             }
+            this._renderRealMarket(data && data.real_market);
         }, () => { this._gameRulesLoaded = false; });
+        // Gerçek borsanın yönü 5 dakikada bir değişir; açık sekmede aynı aralıkla yenilenir.
+        setInterval(() => {
+            if (document.hidden) return;
+            sb.rpc("get_game_rules").then(({ data }) => this._renderRealMarket(data && data.real_market), () => {});
+        }, 5 * 60 * 1000);
+    },
+
+    // Piyasanın ortak yönü gerçek borsadan geliyorsa BIST 100'ün bugünkü değişimi gösterilir.
+    _renderRealMarket(info) {
+        const el = document.getElementById("realMarketChip");
+        if (!el) return;
+        const pct = Number(info && info.day_change_pct);
+        if (!info || info.live !== true || !Number.isFinite(pct)) { el.style.display = "none"; return; }
+        const sign = pct > 0 ? "+" : "";
+        el.textContent = `BIST 100: ${sign}${pct.toFixed(2).replace(".", ",")}%`;
+        el.classList.toggle("is-up", pct > 0);
+        el.classList.toggle("is-down", pct < 0);
+        el.style.display = "";
     },
 
     // Hisse bugünkü tavanındaysa 1, tabanındaysa -1, değilse 0.

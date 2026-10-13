@@ -7272,3 +7272,14 @@ input[type="radio"] {
     user-select: all;
 }
 .temp-password-result .admin-btn-pair { margin-top: 0.7rem; }
+
+/* Canlı Piyasa başlığı: gerçek borsanın (BIST 100) bugünkü yönü */
+.real-market-chip {
+    margin-left: auto;
+    margin-right: 0.5rem;
+    color: var(--text-secondary);
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.25);
+}
+.real-market-chip.is-up { color: var(--green-bright); background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
+.real-market-chip.is-down { color: var(--red-bright); background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
