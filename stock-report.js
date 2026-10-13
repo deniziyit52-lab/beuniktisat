@@ -51,10 +51,13 @@
             return fmt(n, 0) + " ₺";
         },
 
+        // Çeyreğin kapsadığı aylar: "2026-06-30" -> "Nis–Haz 2026"
         _quarter(dateText) {
             const d = new Date(dateText);
             if (isNaN(d)) return "—";
-            return `${d.getUTCFullYear()} / ${Math.floor(d.getUTCMonth() / 3) + 1}. çeyrek`;
+            const months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+            const end = d.getUTCMonth();
+            return `${months[(end + 10) % 12]}–${months[end]} ${d.getUTCFullYear()}`;
         },
 
         _num(value, suffix) {
@@ -66,15 +69,15 @@
         // Mali tablolar: son çeyreklerin satış ve kârı, bilanço özeti ve dört temel oran.
         _financialsMarkup(f) {
             if (!f || !Array.isArray(f.quarters) || !f.quarters.length) return "";
-            const rows = f.quarters.slice().reverse().map(q => `
+            const rows = f.quarters.map((q, i) => `
                 <tr>
-                    <th>${esc(this._quarter(q.d))}</th>
+                    <th>${esc(this._quarter(q.d))}${i === f.quarters.length - 1 ? ' <em>en yeni</em>' : ""}</th>
                     <td>${esc(this._money(q.rev))}</td>
                     <td class="${Number(q.net) < 0 ? "is-down" : ""}">${esc(this._money(q.net))}</td>
                 </tr>`).join("");
             const tile = (label, value, hint) => `<div><span>${label}</span><strong>${esc(value)}</strong>${hint ? `<small>${hint}</small>` : ""}</div>`;
             return `
-                <div class="report-title">Mali tablolar · son açıklanan: ${esc(this._quarter(f.latest))}</div>
+                <div class="report-title">Mali tablolar · üçer aylık dönemler, eskiden yeniye</div>
                 <table class="report-table">
                     <thead><tr><th>Dönem</th><th>Satışlar</th><th>Net kâr</th></tr></thead>
                     <tbody>${rows}</tbody>
