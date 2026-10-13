@@ -7429,3 +7429,17 @@ input[type="radio"] {
 .send-status:empty { display: none; }
 .send-status.is-ok { color: var(--green-bright); }
 .send-status.is-error { color: var(--red-bright); }
+
+/* Şirket Karnesi: mali tablolar */
+.report-table { width: 100%; border-collapse: collapse; margin-bottom: 0.6rem; font-size: 0.8rem; }
+.report-table th, .report-table td { padding: 0.35rem 0.3rem; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+.report-table th:first-child { text-align: left; font-weight: 600; color: var(--text-secondary); }
+.report-table thead th { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); }
+.report-table td { font-family: "JetBrains Mono", "Consolas", monospace; color: var(--text-primary); }
+.report-table td.is-down { color: var(--red-bright); }
+.report-stats--money strong { font-size: 0.76rem; }
+.report-stats--ratios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.report-stats small { display: block; margin-top: 0.2rem; font-size: 0.66rem; line-height: 1.35; color: var(--text-muted); }
+@media (max-width: 480px) {
+    .report-stats--money { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
