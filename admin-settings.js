@@ -128,6 +128,13 @@
                     </div>
                 </div>
 
+                ${engine.commission_rate == null ? "" : `
+                <div class="form-group">
+                    <label for="setCommission">Hisse alım-satım komisyonu (%)</label>
+                    <input type="number" id="setCommission" step="0.05" min="0" max="${toPct(engine.legacy_commission_rate)}" value="${toPct(engine.commission_rate)}">
+                    <small class="field-hint">Her alım ve satımda işlem tutarından kesilir. Gerçek borsada aracı kurumlar genellikle binde 2 (%0,2) dolayında alır. En fazla %${toPct(engine.legacy_commission_rate)} yazılabilir.</small>
+                </div>`}
+
                 ${engine.max_position_pct == null ? "" : `
                 <div class="form-row">
                     <div class="form-group">
@@ -267,6 +274,12 @@
                         p_limit: fromPct($("setDailyLimit").value),
                     });
                     if (limitError) throw limitError;
+                }
+                if ($("setCommission")) {
+                    const { error: feeError } = await window.sb.rpc("admin_set_commission", {
+                        p_rate: fromPct($("setCommission").value),
+                    });
+                    if (feeError) throw feeError;
                 }
                 if ($("setStockLinks")) {
                     const { error: linkError } = await window.sb.rpc("admin_set_stock_links", {

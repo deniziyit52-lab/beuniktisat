@@ -207,6 +207,8 @@ const Borsa = {
 
     // Günlük tavan/taban oranı (kesir). Sunucudan okunur; kuralı sunucu uygular, burası yalnızca etiket içindir.
     dailyLimitPct: 0,
+    // Alım-satım komisyonu; gerçek değer sunucudan okunur (index.html loadGameRules).
+    commissionRate: 0.01,
     _gameRulesLoaded: false,
 
     loadGameRules() {
@@ -1145,15 +1147,15 @@ ${sourceMarkup}
                 // Piyasa geneli duruşta bilgi büyük uyarı kutusunda verilir; bu şerit gizlenir.
                 hoursNote.style.display = marketHalted ? "none" : "";
                 hoursNote.textContent = Borsa.state.marketOpen
-                    ? "🕘 Piyasa açık. Her gün 09:00–24:00 arası işlem yapılabilir."
-                    : "🔒 Piyasa şu an kapalı. Her gün 09:00'da açılır, 24:00'te kapanır.";
+                    ? "🕘 Piyasa açık. Hafta içi 10:00–18:00 arası işlem yapılabilir."
+                    : "🔒 Piyasa şu an kapalı. Hafta içi 10:00'da açılır, 18:00'de kapanır.";
                 hoursNote.classList.toggle("is-closed", !Borsa.state.marketOpen);
             }
             document.querySelectorAll("[data-market-trade]").forEach(button => {
                 const disabled = !Borsa.state.marketOpen || button.dataset.tradeBusy === "true";
                 button.disabled = disabled;
                 button.setAttribute("aria-disabled", String(disabled));
-                button.title = Borsa.state.marketOpen ? "" : "Piyasa kapalı (09:00–24:00 arası açık)";
+                button.title = Borsa.state.marketOpen ? "" : "Piyasa kapalı (hafta içi 10:00–18:00 arası açık)";
             });
             window.dispatchEvent(new CustomEvent("borsa:market-status-updated", {
                 detail: { isMarketOpen: Borsa.state.marketOpen },

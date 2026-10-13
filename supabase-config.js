@@ -592,7 +592,7 @@ window.BorsaFirebase = {
 
     async buyStock(symbol, qty) {
         if (!this._user) throw new Error("Önce giriş yapın.");
-        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım her gün 09:00–24:00 arasında yapılabilir.");
+        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım hafta içi 10:00–18:00 arasında yapılabilir.");
         qty = Math.floor(Number(qty));
         if (!(qty > 0)) throw new Error("Geçerli bir adet girin.");
         const price = this._stockPrice(symbol);
@@ -619,7 +619,7 @@ window.BorsaFirebase = {
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
-        const fee = Math.round(subtotal * 0.01 * 100) / 100;
+        const fee = Math.round(subtotal * Number(Borsa?.commissionRate ?? 0.01) * 100) / 100;
         return {
             balance: this._userDoc.balance,
             portfolio: this._userDoc.portfolio,
@@ -635,7 +635,7 @@ window.BorsaFirebase = {
 
     async sellStock(symbol, qty) {
         if (!this._user) throw new Error("Önce giriş yapın.");
-        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım her gün 09:00–24:00 arasında yapılabilir.");
+        if (Borsa?.state?.marketOpen !== true) throw new Error("Piyasa kapalı. Alım-satım hafta içi 10:00–18:00 arasında yapılabilir.");
         qty = Math.floor(Number(qty));
         if (!(qty > 0)) throw new Error("Geçerli bir adet girin.");
         const price = this._stockPrice(symbol);
@@ -662,7 +662,7 @@ window.BorsaFirebase = {
         });
         this._emit();
         const subtotal = Math.round(executionPrice * qty * 100) / 100;
-        const fee = Math.round(subtotal * 0.01 * 100) / 100;
+        const fee = Math.round(subtotal * Number(Borsa?.commissionRate ?? 0.01) * 100) / 100;
         return {
             balance: this._userDoc.balance,
             portfolio: this._userDoc.portfolio,
