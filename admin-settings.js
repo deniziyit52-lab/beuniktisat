@@ -192,6 +192,12 @@
                     <input type="number" id="setQuietVol" step="5" min="0" max="100" value="${toPct(engine.quiet_vol_scale)}">
                     <small class="field-hint">Yukarıdaki tabloda yazan günlük oynaklığın yüzde kaçı rastgele kalsın. Akşam ve hafta sonu fiyatları bu kısım oynatır. Düşük tutarsan şans azalır.</small>
                 </div>
+                ${engine.link_pull_rate == null ? "" : `
+                <div class="form-group">
+                    <label for="setLinkPull">Gerçek fiyata geri çekme hızı (dakikada %)</label>
+                    <input type="number" id="setLinkPull" step="1" min="0" max="50" value="${toPct(engine.link_pull_rate)}">
+                    <small class="field-hint">Oyun fiyatı, büyük bir alım-satım ya da rastgele oynama yüzünden gerçek hissenin izinden uzaklaşırsa, aradaki fark her dakika bu oranda kapanır. %3 ile fark yaklaşık 25 dakikada yarıya iner. 0 yazarsan geri çekme olmaz, fark birikir.</small>
+                </div>`}
                 <div id="stockLinksList" class="mailing-list"><p class="field-hint">Eşleşmeler yükleniyor…</p></div>`}
 
                 <div class="panel-sub">📝 Sınav Süresi ve Bonusları</div>
@@ -285,6 +291,7 @@
                     const { error: linkError } = await window.sb.rpc("admin_set_stock_links", {
                         p_enabled: $("setStockLinks").checked,
                         p_quiet: fromPct($("setQuietVol").value),
+                        ...($("setLinkPull") ? { p_pull: fromPct($("setLinkPull").value) } : {}),
                     });
                     if (linkError) throw linkError;
                 }

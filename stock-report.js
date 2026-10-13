@@ -67,7 +67,7 @@
                     <div class="report-range-bar"><i style="left:${pos}%"></i></div>
                     <span>en yükseği</span>
                 </div>`}` : ""}
-                <p class="report-note">Bu hisse, gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Yukarıdaki getiriler o gerçek hareketten gelir; oyundaki fiyat, oyuncuların alım-satımıyla bundan biraz ayrışabilir.</p>`;
+                <p class="report-note">Bu hisse, gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Yukarıdaki getiriler o gerçek hareketten gelir. Oyuncuların alım-satımı fiyatı kısa süreliğine oynatabilir, ama fiyat zamanla gerçek ize geri döner.</p>`;
         },
 
         // İşlem penceresi açılırken çağrılır.
