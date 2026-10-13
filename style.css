@@ -7344,3 +7344,11 @@ input[type="radio"] {
 .report-range-bar { position: relative; flex: 1 1 auto; height: 6px; border-radius: 999px; background: linear-gradient(90deg, rgba(239, 68, 68, 0.45), rgba(251, 191, 36, 0.45), rgba(16, 185, 129, 0.45)); }
 .report-range-bar i { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #fff; border: 2px solid var(--accent-bright); }
 #tradeReportBody .report-note { margin: 0.7rem 0 0; font-size: 0.72rem; color: var(--text-muted); }
+
+/* Islem penceresi ekrana sigmayinca (Sirket Karnesi acikken) ustu kesilmesin: pencere kendi icinde kayar. */
+.modal-card.trade-modal {
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
