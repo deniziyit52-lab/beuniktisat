@@ -723,6 +723,15 @@
                         <div id="mailingList" class="mailing-list"><p class="field-hint">Yükleniyor…</p></div>
                     </div>
 
+                    <div class="panel-section admin-card admin-card--nicknames">
+                        <div class="section-header">
+                            <h2>🎭 Takma Adlar</h2>
+                            <button id="nicknameAdminRefresh" type="button" class="panel-refresh" title="Yeniden yükle">↻</button>
+                        </div>
+                        <p class="admin-card-note">Liderlik tablosunda takma adla görünen oyuncular ve gerçek adları. Uygunsuz ya da yanıltıcı bir takma adı "Kaldır" ile silebilirsin; oyuncu gerçek adıyla görünür.</p>
+                        <div id="nicknameAdminList" class="mailing-list"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
                     <div class="panel-section admin-card admin-card--user-password">
                         <div class="section-header">
                             <h2>🔑 Geçici Şifre Ver</h2>
@@ -832,7 +841,7 @@
 
                     <p><strong>2. İşlenen Kişisel Veriler</strong></p>
                     <ul>
-                        <li><strong>Kimlik ve iletişim:</strong> kayıt sırasında verdiğiniz ad, soyad ve e-posta adresi.</li>
+                        <li><strong>Kimlik ve iletişim:</strong> kayıt sırasında verdiğiniz ad, soyad ve e-posta adresi; belirlerseniz takma adınız.</li>
                         <li><strong>Hesap güvenliği:</strong> şifreniz (yalnızca geri çözülemeyen biçimde saklanır; kimse göremez) ve oturum bilgileri.</li>
                         <li><strong>Oyun verileri:</strong> sanal bakiyeniz, portföyünüz, alım-satım geçmişiniz, sınav ve günlük soru cevaplarınız ile sonuçlarınız, kazandığınız rozetler ve liderlik sıralamanız.</li>
                         <li><strong>Teknik veriler:</strong> siteye bağlanırken oluşan bağlantı kayıtları (IP adresi, tarayıcı türü, bağlantı zamanı).</li>
@@ -868,7 +877,7 @@
 
                 <section class="kvkk-section">
                     <h3>Açık Rıza Metni</h3>
-                    <p>Simülasyon bir yarışma niteliği taşıdığından, oyuna katılan kullanıcıların <strong>adı ve soyadı</strong>; <strong>getiri yüzdesi, toplam varlığı, nakit ve varlık tutarları, sıralaması ve rozetleri</strong> ile birlikte liderlik tablosunda yayınlanır. Liderlik tablosu, siteye giren herkes tarafından görülebilir.</p>
+                    <p>Simülasyon bir yarışma niteliği taşıdığından, oyuna katılan kullanıcıların <strong>adı ve soyadı</strong>; <strong>getiri yüzdesi, toplam varlığı, nakit ve varlık tutarları, sıralaması ve rozetleri</strong> ile birlikte liderlik tablosunda yayınlanır. Liderlik tablosu, siteye giren herkes tarafından görülebilir. Dilerseniz hesabınızdan bir takma ad belirleyebilirsiniz; bu durumda liderlik tablosunda adınız ve soyadınız yerine takma adınız yayınlanır.</p>
                     <p>Hesap oluştururken ilgili kutuyu işaretleyerek, yukarıdaki Aydınlatma Metni'ni okuduğunuzu ve adınız ile oyun sonuçlarınızın liderlik tablosunda bu şekilde yayınlanmasına <strong>açık rıza</strong> verdiğinizi kabul etmiş olursunuz.</p>
                     <p><strong>E-posta ile bilgilendirme (isteğe bağlı):</strong> Hesap oluştururken ikinci kutuyu da işaretlerseniz, e-posta adresinizin topluluğun etkinlik ve oyun duyurularını size göndermek amacıyla kullanılmasına açık rıza vermiş olursunuz. Bu kutuyu işaretlemek zorunlu değildir; işaretlemeden de hesap açabilir ve oyunu eksiksiz kullanabilirsiniz.</p>
                     <p>Rızanızı dilediğiniz zaman geri alabilirsiniz. Bunun için ZBEÜ İktisat Topluluğu Yönetim Kurulu'na başvurmanız yeterlidir; rızanızı geri almanız hâlinde hesabınız ve liderlik tablosundaki kaydınız silinir.</p>
@@ -1932,6 +1941,7 @@
     <script src="admin-columns.js"></script>
     <script src="admin-mailing.js"></script>
     <script src="admin-password.js"></script>
+    <script src="admin-nicknames.js"></script>
     <script src="admin-settings.js"></script>
 </body>
 </html>
