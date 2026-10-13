@@ -156,6 +156,21 @@
                     </div>`).join("")}
                 </div>`}
 
+                ${engine.real_market_enabled == null ? "" : `
+                <div class="panel-sub">🌍 Gerçek Borsa Yönü</div>
+                <div class="form-group">
+                    <label class="checkrow" for="setRealMarket">
+                        <input type="checkbox" id="setRealMarket" ${engine.real_market_enabled ? "checked" : ""}>
+                        <span>Piyasanın genel yönü BIST 100'den gelsin</span>
+                    </label>
+                    <small class="field-hint">Açıkken, gerçek borsa çalıştığı saatlerde (hafta içi 10:00–18:00) hisselerin ortak yönü BIST 100'ün gerçek hareketini izler. Diğer saatlerde ve kapalıyken yön rastgeledir.</small>
+                </div>
+                <div class="form-group">
+                    <label for="setRealMarketScale">Gerçek hareketin çarpanı</label>
+                    <input type="number" id="setRealMarketScale" step="0.5" min="0" max="5" value="${Number(engine.real_market_scale)}">
+                    <small class="field-hint">1 = olduğu gibi. 2 yazarsan BIST %1 oynadığında "Orta" hisseler ortak yönden yaklaşık %2 oynar.</small>
+                </div>`}
+
                 <div class="panel-sub">📝 Sınav Süresi ve Bonusları</div>
                 ${engine.quiz_minutes == null ? "" : `
                 <div class="form-group">
@@ -214,6 +229,13 @@
                         p_limit: fromPct($("setDailyLimit").value),
                     });
                     if (limitError) throw limitError;
+                }
+                if ($("setRealMarket")) {
+                    const { error: realError } = await window.sb.rpc("admin_set_real_market", {
+                        p_enabled: $("setRealMarket").checked,
+                        p_scale: num($("setRealMarketScale")),
+                    });
+                    if (realError) throw realError;
                 }
                 if ($("setDailyReward")) {
                     const { error: dailyError } = await window.sb.rpc("admin_set_daily_quiz_reward", {
