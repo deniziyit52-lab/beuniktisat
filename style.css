@@ -7618,3 +7618,4 @@ input[type="radio"] {
 .feedback-admin-row.is-read { opacity: 0.6; }
 .feedback-admin-actions { display: flex; flex-direction: column; gap: 0.35rem; flex: none; }
 #feedbackAdminList { max-height: 520px; }
+.unsub-card .unsub-home { display: inline-block; margin-top: 1rem; }
