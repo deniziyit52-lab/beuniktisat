@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex">
+    <title>Haftalık Özet Aboneliği | ZBEÜ İktisat Topluluğu Borsası</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<!-- Haftalık özet e-postasındaki "almak istemiyorum" bağlantısı buraya gelir. İptal yalnızca düğmeye basınca yapılır;
+     bazı e-posta servisleri bağlantıları tarama için kendiliğinden açtığından sayfanın açılması bir şey değiştirmez. -->
+<body class="body-auth">
+    <main class="auth-wrap auth-wrap--full maintenance-wrap">
+        <div class="maintenance-card unsub-card">
+            <div class="maintenance-icon" aria-hidden="true">📬</div>
+            <h1 class="maintenance-title">Haftalık özet e-postası</h1>
+            <p id="unsubText" class="maintenance-desc">Her cuma gönderdiğimiz haftalık özet e-postasını artık almak istemiyor musun?</p>
+            <button id="unsubBtn" type="button" class="btn btn--primary maintenance-retry">Evet, artık gönderme</button>
+            <a id="unsubHome" href="/" class="auth-link unsub-home">Siteye dön</a>
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            try { if (localStorage.getItem("borsa_theme_pref_v1") === "light") document.body.classList.add("light-mode"); } catch (e) {}
+            const token = new URLSearchParams(location.search).get("t") || "";
+            const text = document.getElementById("unsubText");
+            const btn = document.getElementById("unsubBtn");
+            if (!/^[0-9a-f-]{36}$/i.test(token)) {
+                text.textContent = "Bu bağlantı eksik ya da hatalı görünüyor. E-postadaki bağlantıyı yeniden açmayı dene.";
+                btn.style.display = "none";
+                return;
+            }
+            btn.addEventListener("click", async () => {
+                btn.disabled = true;
+                btn.textContent = "İşleniyor…";
+                let ok = false;
+                try {
+                    const res = await fetch("https://zhjdbpokoyitvwlkncdd.supabase.co/functions/v1/weekly-digest?unsub=" + encodeURIComponent(token), { method: "POST" });
+                    ok = res.ok;
+                } catch (e) {}
+                if (ok) {
+                    text.textContent = "Tamam, artık haftalık özet göndermeyeceğiz. Oyuna istediğin zaman devam edebilirsin.";
+                    btn.style.display = "none";
+                } else {
+                    text.textContent = "Bir sorun çıktı, iptal edilemedi. Biraz sonra yeniden dene ya da sitedeki 💡 düğmesiyle bize yaz.";
+                    btn.disabled = false;
+                    btn.textContent = "Yeniden dene";
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

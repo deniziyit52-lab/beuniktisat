@@ -709,6 +709,19 @@
                         </form>
                     </div>
 
+                    <div class="panel-section admin-card admin-card--digest">
+                        <div class="section-header">
+                            <h2>📬 Haftalık Özet E-postası</h2>
+                            <button id="digestRefresh" type="button" class="panel-refresh" title="Yeniden yükle">↻</button>
+                        </div>
+                        <p class="admin-card-note">Her cuma 18:05'ten itibaren, e-posta bilgilendirmesine onay veren ve e-postasını doğrulayan oyunculara kendi sonuçlarıyla birlikte otomatik gider (10 dakikada bir 40 kişi). Kimseye iki kez gitmez. "Kendime deneme gönder" yalnızca sana bir örnek yollar, haftanın gönderimini etkilemez.</p>
+                        <div class="admin-header-actions" style="margin-bottom:0.75rem;">
+                            <button id="digestTestBtn" type="button" class="submit-btn">✉️ Kendime deneme gönder</button>
+                            <span id="digestSummary" class="admin-tag"></span>
+                        </div>
+                        <div id="digestStatus" class="mailing-list"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
                     <div class="panel-section admin-card admin-card--mailing">
                         <div class="section-header">
                             <h2>✉️ E-posta Duyuru Listesi</h2>
@@ -1952,6 +1965,7 @@
     <script src="admin-password.js"></script>
     <script src="admin-nicknames.js"></script>
     <script src="admin-feedback.js"></script>
+    <script src="admin-digest.js"></script>
     <script src="admin-settings.js"></script>
 </body>
 </html>
