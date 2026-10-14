@@ -17,7 +17,7 @@
         <div class="maintenance-card unsub-card">
             <div class="maintenance-icon" aria-hidden="true">📬</div>
             <h1 class="maintenance-title">Haftalık özet e-postası</h1>
-            <p id="unsubText" class="maintenance-desc">Her cuma gönderdiğimiz haftalık özet e-postasını artık almak istemiyor musun?</p>
+            <p id="unsubText" class="maintenance-desc">Her cuma gönderdiğimiz haftalık özeti ve topluluk duyurularını artık e-postayla almak istemiyor musun?</p>
             <button id="unsubBtn" type="button" class="btn btn--primary maintenance-retry">Evet, artık gönderme</button>
             <a id="unsubHome" href="/" class="auth-link unsub-home">Siteye dön</a>
         </div>
@@ -43,7 +43,7 @@
                     ok = res.ok;
                 } catch (e) {}
                 if (ok) {
-                    text.textContent = "Tamam, artık haftalık özet göndermeyeceğiz. Oyuna istediğin zaman devam edebilirsin.";
+                    text.textContent = "Tamam, artık e-posta göndermeyeceğiz. Fikrini değiştirirsen sitede menüdeki "📬 E-posta bildirimleri" düğmesinden yeniden açabilirsin.";
                     btn.style.display = "none";
                 } else {
                     text.textContent = "Bir sorun çıktı, iptal edilemedi. Biraz sonra yeniden dene ya da sitedeki 💡 düğmesiyle bize yaz.";

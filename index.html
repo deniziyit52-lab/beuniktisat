@@ -232,7 +232,7 @@
                 </details>
                 <details class="faq-item" data-cat="baslangic">
                     <summary><span class="faq-item-icon" aria-hidden="true">📬</span><span class="faq-item-q">Haftalık özet e-postası nedir?</span></summary>
-                    <p>Her cuma piyasa kapandıktan sonra gönderdiğimiz kısa bir e-postadır: toplam varlığın, bu haftaki değişimin, sıralaman ve geçen haftaya göre kaç basamak değiştiği, haftanın en çok yükselen ve düşen hissesi, liderlikte ilk 3. Yalnızca kayıt olurken e-posta ile bilgilendirmeye onay verenlere gider. Almak istemezsen e-postanın en altındaki "Haftalık özeti artık almak istemiyorum" bağlantısına bas. Kayıtta onay vermediysen şimdilik sonradan açmak mümkün değil; istersen 💡 düğmesiyle bize yaz.</p>
+                    <p>Her cuma piyasa kapandıktan sonra gönderdiğimiz kısa bir e-postadır: toplam varlığın, bu haftaki değişimin, sıralaman ve geçen haftaya göre kaç basamak değiştiği, haftanın en çok yükselen ve düşen hissesi, liderlikte ilk 3. Yalnızca e-posta ile bilgilendirmeye onay verenlere gider. Almak istemezsen e-postanın en altındaki "Haftalık özeti artık almak istemiyorum" bağlantısına bas. Açmak ya da kapatmak için menüdeki Liderlik sekmesinde, takma ad kutusunun altındaki "📬 E-posta bildirimleri" düğmesini kullanabilirsin.</p>
                 </details>
                 <details class="faq-item" data-cat="baslangic">
                     <summary><span class="faq-item-icon" aria-hidden="true">🔑</span><span class="faq-item-q">Şifremi unuttum, ne yapmalıyım?</span></summary>
@@ -464,7 +464,7 @@
                     <h3>Açık Rıza Metni</h3>
                     <p>Simülasyon bir yarışma niteliği taşıdığından, oyuna katılan kullanıcıların <strong>adı ve soyadı</strong>; <strong>getiri yüzdesi, toplam varlığı, nakit ve varlık tutarları, sıralaması ve rozetleri</strong> ile birlikte liderlik tablosunda yayınlanır. Liderlik tablosu, siteye giren herkes tarafından görülebilir. Dilerseniz hesabınızdan bir takma ad belirleyebilirsiniz; bu durumda liderlik tablosunda adınız ve soyadınız yerine takma adınız yayınlanır.</p>
                     <p>Hesap oluştururken ilgili kutuyu işaretleyerek, yukarıdaki Aydınlatma Metni'ni okuduğunuzu ve adınız ile oyun sonuçlarınızın liderlik tablosunda bu şekilde yayınlanmasına <strong>açık rıza</strong> verdiğinizi kabul etmiş olursunuz.</p>
-                    <p><strong>E-posta ile bilgilendirme (isteğe bağlı):</strong> Hesap oluştururken ikinci kutuyu da işaretlerseniz, e-posta adresinizin topluluğun etkinlik ve oyun duyurularını size göndermek amacıyla kullanılmasına açık rıza vermiş olursunuz. Bu kutuyu işaretlemek zorunlu değildir; işaretlemeden de hesap açabilir ve oyunu eksiksiz kullanabilirsiniz.</p>
+                    <p><strong>E-posta ile bilgilendirme (isteğe bağlı):</strong> Hesap oluştururken ikinci kutuyu da işaretlerseniz, e-posta adresinizin topluluğun etkinlik ve oyun duyurularını ve oyundaki sonuçlarınızı içeren haftalık özeti size göndermek amacıyla kullanılmasına açık rıza vermiş olursunuz. Bu kutuyu işaretlemek zorunlu değildir; işaretlemeden de hesap açabilir ve oyunu eksiksiz kullanabilirsiniz. Bu rızayı sonradan sitedeki menüden ("📬 E-posta bildirimleri") ya da e-postaların altındaki bağlantıdan dilediğiniz zaman verebilir veya geri alabilirsiniz; bu durumda hesabınız silinmez.</p>
                     <p>Rızanızı dilediğiniz zaman geri alabilirsiniz. Bunun için ZBEÜ İktisat Topluluğu Yönetim Kurulu'na başvurmanız yeterlidir; rızanızı geri almanız hâlinde hesabınız ve liderlik tablosundaki kaydınız silinir.</p>
                 </section>
             </div>
@@ -2059,6 +2059,7 @@
     <script src="quotes.js"></script>
     <script src="nickname.js"></script>
     <script src="feedback.js"></script>
+    <script src="digest-pref.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>
@@ -2102,6 +2103,16 @@
                 <div id="nicknameHint" class="nickname-hint"></div>
                 <button type="button" id="nicknameRemove" class="auth-link" style="display:none;">Takma adı kaldır</button>
                 <div id="nicknameFeedback" class="nickname-feedback" aria-live="polite"></div>
+            </div>
+            <div id="digestPrefBox" class="nickname-box digest-pref" style="display:none;">
+                <label class="digest-pref-row">
+                    <span>
+                        <span class="nickname-title">📬 E-posta bildirimleri</span>
+                        <span class="nickname-hint">Her cuma haftalık özetini ve arada bir topluluk duyurularını e-postana gönderelim.</span>
+                    </span>
+                    <input type="checkbox" id="digestPrefToggle" class="digest-switch" role="switch">
+                </label>
+                <div id="digestPrefFeedback" class="nickname-feedback" aria-live="polite"></div>
             </div>
             <div class="sidebar-note">Sıralama getiri yüzdesine göre yapılır: toplam varlığın (nakit + hisse + altın/döviz) başlangıç bakiyesine göre değişimi. Tabloda yalnızca en az bir işlem yapmış oyuncular yer alır.</div>
         </section>
