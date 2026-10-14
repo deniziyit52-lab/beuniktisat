@@ -7619,3 +7619,36 @@ input[type="radio"] {
 .feedback-admin-actions { display: flex; flex-direction: column; gap: 0.35rem; flex: none; }
 #feedbackAdminList { max-height: 520px; }
 .unsub-card .unsub-home { display: inline-block; margin-top: 1rem; }
+
+/* Liderlik paneli: haftalık özet e-postası aç/kapa */
+.digest-pref-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; cursor: pointer; }
+.digest-pref-row > span { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.digest-switch {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    flex: none;
+    width: 42px;
+    height: 24px;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--border);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.digest-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease;
+}
+.digest-switch:checked { background: var(--green-bright); }
+.digest-switch:checked::after { transform: translateX(18px); }
+.digest-switch:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
+.digest-switch:disabled { opacity: 0.5; }
