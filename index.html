@@ -153,6 +153,33 @@
             <path d="M12 16.2h.01"/>
         </svg>
     </button>
+    <!-- Öneri kutusu: SSS düğmesinin üstündeki küçük düğmeyle ya da SSS'nin altındaki "Bize yaz" ile açılır -->
+    <button id="feedbackBtn" type="button" class="faq-fab feedback-fab" aria-label="İstek, öneri ve görüş" title="İstek, öneri ve görüş" aria-haspopup="dialog" aria-controls="feedbackModal" data-open-feedback>
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 18h6"/><path d="M10 21h4"/>
+            <path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/>
+        </svg>
+    </button>
+    <div id="feedbackModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
+        <div class="modal-card feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
+            <button type="button" class="modal-close" id="feedbackCloseBtn" aria-label="Kapat">×</button>
+            <h2 id="feedbackTitle" class="faq-title">💡 İstek, öneri ve görüş</h2>
+            <p class="feedback-sub">Siteyi birlikte geliştirelim. Bir özellik iste, bir hata bildir ya da ne düşündüğünü yaz. Mesajını yalnızca site yöneticileri okur.</p>
+            <form id="feedbackForm" class="feedback-form">
+                <div class="feedback-kinds" role="radiogroup" aria-label="Mesaj türü">
+                    <label><input type="radio" name="feedbackKind" value="oneri" checked><span>💡 İstek / öneri</span></label>
+                    <label><input type="radio" name="feedbackKind" value="hata"><span>🐞 Hata</span></label>
+                    <label><input type="radio" name="feedbackKind" value="gorus"><span>💬 Görüş</span></label>
+                </div>
+                <textarea id="feedbackMessage" rows="5" maxlength="1000" placeholder="Ne eklemek, düzeltmek ya da söylemek istersin?" aria-label="Mesajın" required></textarea>
+                <div class="feedback-row">
+                    <span id="feedbackCount" class="feedback-count">0 / 1000</span>
+                    <button type="submit" id="feedbackSend" class="btn btn--primary">Gönder</button>
+                </div>
+                <div id="feedbackResult" class="nickname-feedback" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
     <div id="faqModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
         <div class="modal-card faq-modal" role="dialog" aria-modal="true" aria-labelledby="faqTitle">
             <button type="button" class="modal-close" id="faqCloseBtn" aria-label="Kapat">×</button>
@@ -305,7 +332,7 @@
                 </details>
             </div>
             <p id="faqEmpty" class="faq-empty" style="display:none;">Bu aramaya uyan soru bulunamadı. Başka bir kelime dene ya da "Tümü"ne bas.</p>
-            <div class="faq-footer">Cevabını bulamadın mı? İktisat Topluluğu Yönetim Kurulu'na ulaşabilirsin.</div>
+            <div class="faq-footer">Cevabını bulamadın mı ya da bir önerin mi var? <button type="button" class="auth-link" data-open-feedback>Bize yaz</button></div>
         </div>
     </div>
     <script>
@@ -2023,6 +2050,7 @@
     <script src="stock-report.js"></script>
     <script src="quotes.js"></script>
     <script src="nickname.js"></script>
+    <script src="feedback.js"></script>
 
     <!-- Sol Kayar Yan Menü (Drawer / Sidebar) - Liderlik + Hesap Dökümü -->
     <button id="sidebarBackdrop" type="button" class="sidebar-backdrop" aria-label="Menüyü Kapat" tabindex="-1"></button>

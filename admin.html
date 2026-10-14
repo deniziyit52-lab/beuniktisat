@@ -723,6 +723,15 @@
                         <div id="mailingList" class="mailing-list"><p class="field-hint">Yükleniyor…</p></div>
                     </div>
 
+                    <div class="panel-section admin-card admin-card--feedback">
+                        <div class="section-header">
+                            <h2>💡 Öneri Kutusu <span id="feedbackAdminSummary" class="admin-tag"></span></h2>
+                            <button id="feedbackAdminRefresh" type="button" class="panel-refresh" title="Yeniden yükle">↻</button>
+                        </div>
+                        <p class="admin-card-note">Oyuncuların sağ alttaki 💡 düğmesiyle gönderdiği istek, hata ve görüşler (en yeni üstte). Okuduğunu "Okundu" ile işaretle; gereksiz olanı silebilirsin. Bir oyuncu günde en fazla 10 mesaj gönderebilir.</p>
+                        <div id="feedbackAdminList" class="mailing-list"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
                     <div class="panel-section admin-card admin-card--nicknames">
                         <div class="section-header">
                             <h2>🎭 Takma Adlar</h2>
@@ -1942,6 +1951,7 @@
     <script src="admin-mailing.js"></script>
     <script src="admin-password.js"></script>
     <script src="admin-nicknames.js"></script>
+    <script src="admin-feedback.js"></script>
     <script src="admin-settings.js"></script>
 </body>
 </html>
