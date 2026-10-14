@@ -1829,6 +1829,9 @@ if (document.readyState === "loading") {
             const wr = window.WhisperRealtime;
             if (wr && wr._chan) { sb.removeChannel(wr._chan); wr._chan = null; }
         } catch (_) {}
+        // Kanallar kapansa da bağlantının kendisi açık kalıyordu; Supabase'in eşzamanlı bağlantı sınırından
+        // yer kaplamasın diye o da kapatılır. Dönüşte kanallar açılırken bağlantı kendiliğinden yeniden kurulur.
+        try { if (sb.realtime && typeof sb.realtime.disconnect === "function") sb.realtime.disconnect(); } catch (_) {}
         console.log("[Canlı] Sekme arka planda; canlı bağlantı duraklatıldı.");
     }
 
