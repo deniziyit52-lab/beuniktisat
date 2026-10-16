@@ -32,7 +32,8 @@
 
     if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/sw.js").catch(() => {});
+            // Her açılışta yeni sürüm kontrol edilir (telefonlar bunu kendi başına bazen günlerce geciktirir).
+            navigator.serviceWorker.register("/sw.js").then((reg) => reg.update()).catch(() => {});
         });
     }
 
