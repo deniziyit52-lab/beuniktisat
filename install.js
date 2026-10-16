@@ -40,6 +40,8 @@
         share: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
         add: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
         more: '<span class="install-dots">•••</span>',
+        page: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+        tabs: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="7" y="7" width="12" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V7a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
         addText: '<span class="install-step-word">Ekle</span>',
     };
 
@@ -66,10 +68,13 @@
             };
         }
         if (iosVersion >= 26) {
+            // iOS 26 Safari: alt çubukta geri, adres çubuğu (solunda ≡ sayfa menüsü) ve sekmeler düğmesi var.
+            // Paylaş, ≡ menüsünün içinde. "Kompakt" düzende ise sağ altta ••• çıkar; ipucu onu da anlatır.
             return {
-                arrow: "bottom-right",
+                arrow: "bottom-pill",
+                bar: "ios26",
                 steps: [
-                    { ico: ICON.more, spot: "bottom-right", html: "Sağ alttaki <b>•••</b> düğmesine dokun." },
+                    { ico: ICON.page, spot: "bottom-pill", html: "Alttaki adres çubuğunun solundaki <b>≡</b> düğmesine dokun.", hint: "Sağ altta <b>•••</b> düğmesi görüyorsan ona dokun." },
                     { ico: ICON.share, spot: "menu", html: "Açılan menüde <b>Paylaş</b>'a dokun." },
                     { ico: ICON.add, spot: "sheet", html: "<b>Ana Ekrana Ekle</b>'ye dokun.", hint: "Görmüyorsan listeyi kaydır ya da <b>Daha Fazla</b>'ya dokun." },
                     { ico: ICON.addText, spot: "top-right", html: "Sağ üstteki <b>Ekle</b>'ye dokun. Bitti!" },
@@ -145,15 +150,18 @@
                 <button type="button" class="install-banner-close" data-guide-close aria-label="Kapat">×</button>
                 <strong class="install-guide-title">${p.steps.length} dokunuşta telefonuna ekle</strong>
                 <div class="install-mock" aria-hidden="true">
-                    <div class="install-mock-screen">
+                    <div class="install-mock-screen${p.bar === "ios26" ? " bar-ios26" : ""}">
                         <div class="install-mock-bar install-mock-bar--top"><span class="install-mock-url">beuniktisat.vercel.app</span><span class="install-mock-btn" data-spot="top-right">${p.arrow === "top-right" ? ICON.share : '<span class="install-step-word">Ekle</span>'}</span></div>
                         <img src="/icons/icon-192.png" alt="" class="install-mock-app">
                         <div class="install-mock-sheet" data-spot="sheet">${ICON.add}<span>Ana Ekrana Ekle</span></div>
                         <div class="install-mock-menu" data-spot="menu">${ICON.share}<span>Paylaş</span></div>
-                        <div class="install-mock-bar install-mock-bar--bottom">
+                        <div class="install-mock-bar install-mock-bar--bottom">${p.bar === "ios26" ? `
+                            <span class="install-mock-btn install-mock-round">‹</span>
+                            <span class="install-mock-pill"><span class="install-mock-btn" data-spot="bottom-pill">${ICON.page}</span><span class="install-mock-url">beuniktisat…</span></span>
+                            <span class="install-mock-btn install-mock-round">${ICON.tabs}</span>` : `
                             <span class="install-mock-btn" data-spot="bottom-left">‹</span>
                             <span class="install-mock-btn" data-spot="bottom-center">${ICON.share}</span>
-                            <span class="install-mock-btn" data-spot="bottom-right">${ICON.more}</span>
+                            <span class="install-mock-btn" data-spot="bottom-right">${ICON.more}</span>`}
                         </div>
                         <span class="install-mock-finger">👆</span>
                     </div>

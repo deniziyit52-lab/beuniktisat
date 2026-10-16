@@ -7871,3 +7871,9 @@ input[type="radio"] {
 .install-inline b { font-size: 0.88rem; }
 .install-inline small { font-size: 0.75rem; color: var(--text-secondary); }
 .install-inline em { font-style: normal; font-size: 1.4rem; color: var(--accent-bright); }
+/* iOS 26 Safari alt çubuğu: geri · (≡ adres) · sekmeler; ok ≡ düğmesini gösterir */
+.install-guide-arrow--bottom-pill { left: calc(29% - 16px); bottom: calc(4px + env(safe-area-inset-bottom)); animation: install-bounce 1s ease-in-out infinite; }
+.install-mock-pill { flex: 1; display: flex; align-items: center; gap: 2px; min-width: 0; padding: 1px 4px 1px 2px; border-radius: 999px; background: #fff; }
+.install-mock-pill .install-mock-url { padding: 0; background: none; }
+.install-mock-round { border-radius: 50%; background: #fff; }
+.install-mock-screen.bar-ios26 .install-mock-menu { left: 8px; right: auto; }
