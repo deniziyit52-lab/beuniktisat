@@ -191,10 +191,11 @@
                 } else {
                     s.status = "started";
                 }
-                // Ödül bakiyeye anında yansır.
+                // Ödül bakiyeye anında yansır; başlangıç sermayesine de eklendiği için getiri değişmez (0086).
                 const doc = BorsaFirebase.currentUserData ? BorsaFirebase.currentUserData() : null;
                 if (doc && data.balance != null) {
                     doc.balance = Number(data.balance);
+                    if (Number(data.reward_added) > 0) doc.startingBalance = Number(doc.startingBalance || 0) + Number(data.reward_added);
                     if (typeof BorsaFirebase._emit === "function") BorsaFirebase._emit();
                 }
                 if (this._modal === modal) {
