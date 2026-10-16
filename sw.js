@@ -3,13 +3,30 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
+// Bildirim gösterilince sunucuya "aldım" denir (push_ack): bazı cihazlarda (ör. Google hizmetsiz Huawei)
+// servis bildirimi kabul eder ama cihaza ulaştıramaz; teslimi ancak böyle ölçebiliriz.
+// Anahtar sitedeki herkese açık anon anahtardır.
+const SUPABASE_URL = "https://zhjdbpokoyitvwlkncdd.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoamRicG9rb3lpdHZ3bGtuY2RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExODYyMzEsImV4cCI6MjEwNjc2MjIzMX0.Za4vf8mDR2xOKxXSKAipO0_-21Yk_vHiVUm5nlH1ZnY";
+async function ackDelivery() {
+    try {
+        const sub = await self.registration.pushManager.getSubscription();
+        if (!sub) return;
+        await fetch(SUPABASE_URL + "/rest/v1/rpc/push_ack", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON },
+            body: JSON.stringify({ p_endpoint: sub.endpoint }),
+        });
+    } catch (e) {}
+}
+
 // Sunucudan gelen bildirim: { title, body, url }
 self.addEventListener("push", (event) => {
     let data = {};
     try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data ? event.data.text() : "" }; }
     // Web bildirimlerinde özel ses desteklenmez; telefonun bildirim sesi çalar.
     // Android'de kendine özgü kısa bir titreşim deseni ve durum çubuğu için tek renkli simge kullanılır.
-    event.waitUntil(self.registration.showNotification(data.title || "ZBEÜ Borsa", {
+    event.waitUntil(Promise.all([ackDelivery(), self.registration.showNotification(data.title || "ZBEÜ Borsa", {
         body: data.body || "",
         icon: "/icons/icon-192.png",
         badge: "/icons/badge-96.png",
@@ -17,7 +34,7 @@ self.addEventListener("push", (event) => {
         timestamp: Date.now(),
         lang: "tr",
         data: { url: data.url || "/" },
-    }));
+    })]));
 });
 
 // Bildirime dokununca site açılır (açıksa o pencereye geçilir).
