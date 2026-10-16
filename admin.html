@@ -406,6 +406,33 @@
             <section class="admin-controls-grid">
 
                 <div class="admin-col">
+                    <div class="panel-section admin-card admin-card--overview">
+                        <div class="section-header">
+                            <h2>📊 Oyun Özeti</h2>
+                            <button id="overviewRefresh" type="button" class="panel-refresh" title="Yeniden yükle">↻</button>
+                        </div>
+                        <div id="overviewBody"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
+                    <div class="panel-section admin-card admin-card--health">
+                        <div class="section-header">
+                            <h2>🩺 Sistem Sağlığı <span id="healthSummary" class="admin-tag"></span></h2>
+                            <button id="healthRefresh" type="button" class="panel-refresh" title="Yeniden kontrol et">↻</button>
+                        </div>
+                        <p class="admin-card-note">Hisse verisinin okunup okunmadığını, fiyat motorunun çalışıp çalışmadığını ve oyun fiyatlarının gerçek fiyatlarla aynı olup olmadığını gösterir. Piyasa kapalıyken gri görünmesi normaldir.</p>
+                        <div id="healthBody"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
+                    <div class="panel-section admin-card admin-card--players">
+                        <div class="section-header">
+                            <h2>👥 Oyuncular <span id="playersSummary" class="admin-tag"></span></h2>
+                            <button id="playersRefresh" type="button" class="panel-refresh" title="Yeniden yükle">↻</button>
+                        </div>
+                        <p class="admin-card-note">Getiri sırasına göre; hiç işlem yapmayanlar en altta. Bir oyuncuya tıklayınca portföyü, nakdi ve son işlemleri açılır.</p>
+                        <input type="search" id="playerSearch" class="ins-search" placeholder="Ad, takma ad ya da e-posta ara…" autocomplete="off">
+                        <div id="playersList" class="ins-players"><p class="field-hint">Yükleniyor…</p></div>
+                    </div>
+
                     <div class="panel-section admin-card admin-card--news">
                         <div class="section-header">
                             <h2>📰 Son Dakika Haberi Yayınla</h2>
@@ -1600,6 +1627,7 @@
     <script src="admin-password.js"></script>
     <script src="admin-nicknames.js"></script>
     <script src="admin-feedback.js"></script>
+    <script src="admin-insights.js"></script>
     <script src="admin-digest.js"></script>
     <script src="admin-settings.js"></script>
 </body>

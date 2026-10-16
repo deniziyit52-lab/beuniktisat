@@ -7652,3 +7652,52 @@ input[type="radio"] {
 .digest-switch:checked::after { transform: translateX(18px); }
 .digest-switch:focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; }
 .digest-switch:disabled { opacity: 0.5; }
+
+/* Admin: Oyun Özeti, Sistem Sağlığı, Oyuncular (admin-insights.js) */
+.ins-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.6rem; }
+.ins-tiles--small { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); margin-bottom: 0.75rem; }
+.ins-tile {
+    display: flex; flex-direction: column; gap: 0.2rem; min-width: 0;
+    padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary);
+}
+.ins-tile span { font-size: 0.75rem; color: var(--text-secondary); }
+.ins-tile strong { font-size: 1.05rem; overflow-wrap: anywhere; }
+.ins-tile small { font-size: 0.72rem; color: var(--text-muted); overflow-wrap: anywhere; }
+.ins-up { color: var(--green-bright); }
+.ins-down { color: var(--red-bright); }
+
+.ins-check { padding: 0.6rem 0.75rem; margin-top: 0.5rem; border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; }
+.ins-check--ok { border-left-color: var(--green); }
+.ins-check--warn { border-left-color: var(--gold); }
+.ins-check--bad { border-left-color: var(--red); }
+.ins-check--idle { border-left-color: var(--text-muted); }
+.ins-check-head { display: flex; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; font-size: 0.88rem; }
+.ins-check-state { font-size: 0.75rem; color: var(--text-secondary); }
+.ins-check-detail { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem; }
+.ins-more { margin-top: 0.4rem; font-size: 0.8rem; }
+.ins-more summary { cursor: pointer; color: var(--accent-bright); }
+.ins-job { padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
+
+.ins-table-wrap { overflow-x: auto; margin-bottom: 0.6rem; }
+.ins-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.ins-table th, .ins-table td { padding: 0.35rem 0.45rem; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ins-table th:first-child, .ins-table td:first-child { text-align: left; }
+.ins-table th { color: var(--text-secondary); font-weight: 600; }
+
+.ins-search {
+    width: 100%; box-sizing: border-box; margin-bottom: 0.6rem; padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font: inherit;
+}
+.ins-players { max-height: 520px; overflow-y: auto; }
+.ins-player { border-bottom: 1px solid var(--border); }
+.ins-player-row {
+    display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.55rem 0.2rem;
+    background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.ins-player-row:hover { background: var(--bg-card-hover); }
+.ins-rank { flex: 0 0 2.6rem; font-size: 0.8rem; color: var(--text-secondary); }
+.ins-player-name, .ins-player-num { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.ins-player-name { flex: 1 1 auto; }
+.ins-player-name small, .ins-player-num small { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ins-player-num { flex: 0 0 auto; text-align: right; align-items: flex-end; }
+.ins-player-detail { padding: 0.4rem 0.2rem 0.8rem; }
