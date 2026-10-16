@@ -69,9 +69,66 @@
                 if (Notification.permission === "denied") {
                     this._feedback("Bildirim izni kapalı. Açmak için tarayıcı ya da telefon ayarlarından bu siteye bildirim izni ver.", true);
                 }
+                await this.autoSetup();
             } catch (e) {
                 toggle.checked = false;
             }
+        },
+
+        // Telefona kurulmuş uygulamada bildirimler varsayılan olarak açıktır:
+        // - izin zaten verilmişse ve bu cihaz kayıtlı değilse sormadan açılır;
+        // - izin henüz sorulmamışsa ilk açılışta tek düğmelik pencere çıkar (telefonlar izni yalnızca
+        //   bir dokunuşla istemeye izin verir; bu adım atlanamaz).
+        // Menüden bilerek kapatan oyuncuya bir daha sorulmaz.
+        async autoSetup() {
+            if (!standalone() || this.on || !supported() || this._optedOut()) return;
+            if (Notification.permission === "granted") {
+                try { await this.enable(); } catch (e) {}
+                return;
+            }
+            if (Notification.permission === "default") this.showPrompt();
+        },
+
+        _optedOut() {
+            try { return localStorage.getItem("borsa-push-optout") === "1"; } catch (e) { return false; }
+        },
+
+        showPrompt() {
+            if ($("pushPrompt")) return;
+            try {
+                const later = Number(localStorage.getItem("borsa-push-later") || 0);
+                if (later && Date.now() - later < 3 * 24 * 3600 * 1000) return;
+            } catch (e) {}
+            const el = document.createElement("div");
+            el.id = "pushPrompt";
+            el.className = "push-prompt";
+            el.setAttribute("role", "dialog");
+            el.setAttribute("aria-label", "Bildirimleri aç");
+            el.innerHTML = `
+                <div class="push-prompt-card">
+                    <img src="/icons/icon-192.png" alt="" class="push-prompt-icon">
+                    <strong>Bildirimleri aç</strong>
+                    <p>Emrin gerçekleşince, elindeki hisse sert oynayınca ve temettü yatınca haber verelim.</p>
+                    <button type="button" class="push-prompt-yes" id="pushPromptYes">🔔 Aç</button>
+                    <button type="button" class="push-prompt-no" id="pushPromptNo">Şimdi değil</button>
+                    <small id="pushPromptMsg"></small>
+                </div>`;
+            document.body.appendChild(el);
+            $("pushPromptYes").addEventListener("click", async () => {
+                $("pushPromptYes").disabled = true;
+                try {
+                    await this.enable();
+                    el.remove();
+                    this._feedback("Açıldı. Birkaç saniye içinde bir deneme bildirimi gelecek.");
+                } catch (err) {
+                    $("pushPromptMsg").textContent = err.message || "Açılamadı.";
+                    $("pushPromptYes").disabled = false;
+                }
+            });
+            $("pushPromptNo").addEventListener("click", () => {
+                try { localStorage.setItem("borsa-push-later", String(Date.now())); } catch (e) {}
+                el.remove();
+            });
         },
 
         // Menüdeki düğme ve emir verince çıkan kısayol bunu çağırır.
@@ -116,9 +173,12 @@
             try {
                 if (on) {
                     await this.enable();
+                    try { localStorage.removeItem("borsa-push-optout"); } catch (e) {}
                     this._feedback("Açıldı. Birkaç saniye içinde bir deneme bildirimi gelecek.");
                 } else {
                     await this.disable();
+                    // Bilerek kapattı: uygulama bir daha kendiliğinden açmaz, sormaz.
+                    try { localStorage.setItem("borsa-push-optout", "1"); } catch (e) {}
                     this._feedback("Kapatıldı. Bu cihaza artık bildirim gelmez.");
                 }
             } catch (err) {

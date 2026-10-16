@@ -7764,3 +7764,14 @@ input[type="radio"] {
 .install-banner-btn { flex: 0 0 auto; padding: 0.5rem 0.9rem; border: 0; border-radius: 9px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .install-banner-close { flex: 0 0 auto; align-self: flex-start; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--text-muted); font-size: 1.2rem; line-height: 1; cursor: pointer; }
 .order-push-offer { margin-top: 0.5rem; padding: 0.45rem 0.8rem; border: 1px solid var(--accent); border-radius: 9px; background: none; color: var(--accent-bright); font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+
+/* Telefona kurulu uygulamada ilk açılışta bildirim izni (push.js) */
+.push-prompt { position: fixed; inset: 0; z-index: 1400; display: flex; align-items: flex-end; justify-content: center; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); background: rgba(2, 6, 23, 0.6); }
+.push-prompt-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 0.55rem; padding: 1.4rem 1.2rem 1.1rem; border: 1px solid var(--border); border-radius: 18px; background: var(--bg-card); color: var(--text-primary); text-align: center; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); }
+.push-prompt-icon { width: 60px; height: 60px; border-radius: 14px; }
+.push-prompt-card strong { font-size: 1.1rem; }
+.push-prompt-card p { margin: 0; font-size: 0.88rem; line-height: 1.45; color: var(--text-secondary); }
+.push-prompt-yes { width: 100%; margin-top: 0.4rem; padding: 0.8rem; border: 0; border-radius: 12px; background: var(--accent); color: #fff; font: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; }
+.push-prompt-no { padding: 0.4rem; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.push-prompt-card small { color: var(--red-bright); font-size: 0.8rem; }
+.push-prompt-card small:empty { display: none; }
