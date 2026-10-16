@@ -7763,3 +7763,4 @@ input[type="radio"] {
 .install-banner-text strong { font-size: 0.9rem; color: var(--text-primary); }
 .install-banner-btn { flex: 0 0 auto; padding: 0.5rem 0.9rem; border: 0; border-radius: 9px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .install-banner-close { flex: 0 0 auto; align-self: flex-start; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--text-muted); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.order-push-offer { margin-top: 0.5rem; padding: 0.45rem 0.8rem; border: 1px solid var(--accent); border-radius: 9px; background: none; color: var(--accent-bright); font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }

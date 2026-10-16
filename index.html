@@ -441,7 +441,7 @@
                         <li><strong>Kimlik ve iletişim:</strong> kayıt sırasında verdiğiniz ad, soyad ve e-posta adresi; belirlerseniz takma adınız.</li>
                         <li><strong>Hesap güvenliği:</strong> şifreniz (yalnızca geri çözülemeyen biçimde saklanır; kimse göremez) ve oturum bilgileri.</li>
                         <li><strong>Oyun verileri:</strong> sanal bakiyeniz, portföyünüz, alım-satım geçmişiniz, sınav ve günlük soru cevaplarınız ile sonuçlarınız, kazandığınız rozetler ve liderlik sıralamanız.</li>
-                        <li><strong>Teknik veriler:</strong> siteye bağlanırken oluşan bağlantı kayıtları (IP adresi, tarayıcı türü, bağlantı zamanı).</li>
+                        <li><strong>Teknik veriler:</strong> siteye bağlanırken oluşan bağlantı kayıtları (IP adresi, tarayıcı türü, bağlantı zamanı); telefon bildirimlerini açarsanız cihazınızın bildirim adresi (bildirimleri kapatınca silinir).</li>
                     </ul>
                     <p>Uygulamada gerçek para kullanılmaz; ödeme, kimlik numarası ya da özel nitelikli kişisel veri toplanmaz.</p>
 
@@ -2091,6 +2091,7 @@
     <script src="stock-report.js"></script>
     <script src="orders.js"></script>
     <script src="install.js"></script>
+    <script src="push.js"></script>
     <script src="quotes.js"></script>
     <script src="nickname.js"></script>
     <script src="feedback.js"></script>
@@ -2151,6 +2152,16 @@
                     <input type="checkbox" id="digestPrefToggle" class="digest-switch" role="switch">
                 </label>
                 <div id="digestPrefFeedback" class="nickname-feedback" aria-live="polite"></div>
+            </div>
+            <div id="pushPrefBox" class="nickname-box digest-pref" style="display:none;">
+                <label class="digest-pref-row">
+                    <span>
+                        <span class="nickname-title">🔔 Telefon bildirimleri</span>
+                        <span id="pushPrefHint" class="nickname-hint">Bekleyen emrin gerçekleşince telefonuna bildirim gelsin.</span>
+                    </span>
+                    <input type="checkbox" id="pushPrefToggle" class="digest-switch" role="switch">
+                </label>
+                <div id="pushPrefFeedback" class="nickname-feedback" aria-live="polite"></div>
             </div>
             <div id="installBox" class="nickname-box install-box" hidden>
                 <div class="nickname-title">📲 Telefona yükle</div>
