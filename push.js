@@ -9,6 +9,9 @@
     const supported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
     const ua = navigator.userAgent || "";
     const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    // Google hizmeti olmayan Huawei cihazlar: tarayıcı bildirimi Google'ın servisine kaydeder, servis kabul eder
+    // ama cihaza ulaştıracak Google Play Hizmetleri olmadığı için bildirim gelmez (16 Ekim 2026'da denendi).
+    const isHuawei = /HuaweiBrowser|HMSCore|HarmonyOS|OpenHarmony|; HUAWEI |HUAWEI[A-Z0-9-]/i.test(ua);
     const standalone = () =>
         (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
     const signedIn = () => Boolean(window.BorsaFirebase && BorsaFirebase.currentUser && BorsaFirebase.currentUser());
@@ -56,7 +59,9 @@
                 return;
             }
             toggle.disabled = false;
-            $("pushPrefHint").textContent = "Bekleyen emrin gerçekleşince telefonuna bildirim gelsin.";
+            $("pushPrefHint").textContent = isHuawei
+                ? "Bu Huawei cihazda Google hizmetleri olmadığı için bildirimler büyük ihtimalle gelmez. Duyurular sana e-postayla da ulaşır."
+                : "Bekleyen emrin gerçekleşince telefonuna bildirim gelsin.";
             try {
                 const sub = await this.currentSub();
                 let on = false;
@@ -81,7 +86,7 @@
         //   bir dokunuşla istemeye izin verir; bu adım atlanamaz).
         // Menüden bilerek kapatan oyuncuya bir daha sorulmaz.
         async autoSetup() {
-            if (!standalone() || this.on || !supported() || this._optedOut()) return;
+            if (!standalone() || this.on || !supported() || this._optedOut() || isHuawei) return;
             if (Notification.permission === "granted") {
                 try { await this.enable(); } catch (e) {}
                 return;
@@ -164,7 +169,7 @@
 
         // Emir verilince kısayol gösterilsin mi: destekleniyor, giriş yapılmış, henüz açık değil, izin reddedilmemiş.
         canOffer() {
-            return signedIn() && supported() && !this.on && Notification.permission !== "denied" && !(isIOS && !standalone());
+            return signedIn() && supported() && !this.on && Notification.permission !== "denied" && !(isIOS && !standalone()) && !isHuawei;
         },
 
         async toggle(on) {
