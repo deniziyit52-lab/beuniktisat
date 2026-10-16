@@ -114,7 +114,7 @@
             const stats = r.stats || null;
             const pos = stats && Number.isFinite(Number(stats.pos52)) ? Math.max(0, Math.min(100, Number(stats.pos52))) : null;
             return `
-                <p class="report-sector"><span class="report-chip">${esc(r.sector)}</span>${r.live ? '<span class="report-live">● Gerçek veriyle canlı</span>' : ""}</p>
+                <p class="report-sector"><span class="report-chip">${esc(r.sector)}</span>${r.live ? '<span class="report-live">● Canlı</span>' : ""}</p>
                 <p class="report-summary">${esc(r.summary)}</p>
                 <div class="report-title">Neye duyarlı?</div>
                 <ul class="report-list">
@@ -138,7 +138,7 @@
                     <span>en yükseği</span>
                 </div>`}` : ""}
                 ${this._financialsMarkup(r.financials, r.dividend_yield)}
-                <p class="report-note">Bu hisse, gerçek borsada aynı sektördeki bir şirketin fiyat hareketini izler. Yukarıdaki getiriler ve mali tablolar o şirketin gerçek verileridir. Oyuncuların alım-satımı fiyatı kısa süreliğine oynatabilir, ama fiyat zamanla gerçek ize geri döner.</p>`;
+`;
         },
 
         // İşlem penceresi açılırken çağrılır.
