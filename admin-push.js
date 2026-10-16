@@ -32,6 +32,9 @@
                 ok(`Bildirim ${Number(data || 0)} oyuncuya gönderiliyor; birkaç saniye içinde telefonlarda olur.`);
                 $("pushAdminTitle").value = "";
                 $("pushAdminBody").value = "";
+                // Teslim bilgisi cihazlardan birkaç saniye içinde gelir; sayı ardından yenilenir.
+                setTimeout(() => this.loadStats(), 8000);
+                setTimeout(() => this.loadStats(), 30000);
             } catch (err) {
                 fail(err.message || "Bildirim gönderilemedi.");
             } finally {
@@ -42,6 +45,7 @@
         wire() {
             if (!$("pushAdminForm")) return;
             $("pushAdminForm").addEventListener("submit", (e) => this.send(e));
+            if ($("pushAdminRefresh")) $("pushAdminRefresh").addEventListener("click", () => this.loadStats());
             BorsaFirebase.onChange((user) => {
                 const uid = user ? user.id : null;
                 if (!uid || uid === this._loadedFor) return;
