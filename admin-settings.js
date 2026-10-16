@@ -238,7 +238,7 @@
                 ${questions || '<p class="field-hint">Soru yok.</p>'}
 
                 <div class="panel-sub">🧨 Oyunu Sıfırla</div>
-                <p class="field-hint">Herkesin bakiyesi 100.000 ₺ olur; portföyler, altın/döviz, işlem geçmişi, sınav sonuçları, haberler, tüyolar ve grafik geçmişi silinir. Hisseler ve güncel fiyatları korunur. Geri alınamaz.</p>
+                <p class="field-hint">Herkesin bakiyesi 100.000 ₺ olur; portföyler, altın/döviz, işlem geçmişi, sınav sonuçları, haberler ve tüyolar silinir. Hisseler, güncel fiyatları ve grafikleri korunur. Geri alınamaz.</p>
                 <button type="button" id="resetGameBtn" class="reset-btn" style="width:100%; margin:0;">🧨 Oyunu Sıfırla</button>
             `;
 
