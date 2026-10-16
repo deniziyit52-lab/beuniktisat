@@ -331,7 +331,7 @@ const Borsa = {
         }
         const tgt = document.getElementById("targetPerson");
         if (tgt) {
-            tgt.innerHTML = '<option value="">Kişi seçin...</option>';
+            tgt.innerHTML = '<option value="">Genel (hisse yok)</option>';
             Object.values(this.state.stocks).forEach(s => {
                 const opt = document.createElement("option");
                 opt.value = s.symbol;
@@ -622,7 +622,7 @@ const Borsa = {
                     ${n.summary ? `<p class="news-summary">${this.escapeHtml(n.summary)}</p>` : ""}
                     <div class="news-meta">
                         <span class="news-target">${stock ? this.escapeHtml(stock.name) : "Piyasa"}</span>
-                        <span class="news-impact ${positive ? "positive" : "negative"}">${positive ? "+" : ""}${impact.toFixed(1)}%</span>
+                        ${impact !== 0 ? `<span class="news-impact ${positive ? "positive" : "negative"}">${positive ? "+" : ""}${impact.toFixed(1)}%</span>` : ""}
                     </div>
                 `;
                 el.appendChild(item);
@@ -823,7 +823,7 @@ const Borsa = {
                 : `<span class="news-paper-stock-tag">📈 Piyasa</span>`;
             const impactClass = impact >= 0 ? "positive" : "negative";
             const impactEmoji = impact >= 0 ? "📈" : "📉";
-            const impactInfo = `<span class="news-paper-impact ${impactClass}">${impactEmoji} ${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>`;
+            const impactInfo = impact !== 0 ? `<span class="news-paper-impact ${impactClass}">${impactEmoji} ${impact >= 0 ? "+" : ""}${impact.toFixed(1)}%</span>` : "";
             return `${targetInfo}${impactInfo}`;
         };
 
@@ -918,7 +918,7 @@ const Borsa = {
         // Summary'ın tamamını göster (kırpmadan)
         const fullSummary = newsItem.summary || "";
         // Gerçek haberlerde fiyat etkisi yoktur; etki kutuları yalnızca oyun haberlerinde gösterilir.
-        const hasImpact = impact !== 0 || Boolean(newsItem.target);
+        const hasImpact = impact !== 0;
         const sourceUrl = /^https?:\/\//i.test(newsItem.url || "") ? newsItem.url : "";
         const sourceMarkup = (newsItem.source || sourceUrl) ? `
                         <div class="news-detail-source">

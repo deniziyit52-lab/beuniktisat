@@ -420,17 +420,12 @@
                                 <textarea id="newsSummary" rows="3" maxlength="500"
                                     placeholder="Haberin kısa özeti veya manşet spotu..."></textarea>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="targetPerson">Hedef Hisse</label>
-                                    <select id="targetPerson" required></select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="impactPct">Etki %</label>
-                                    <input type="number" id="impactPct" placeholder="Örn: -15" step="0.5" required>
-                                </div>
+                            <div class="form-group">
+                                <label for="targetPerson">İlgili Hisse (isteğe bağlı)</label>
+                                <select id="targetPerson"></select>
+                                <small class="field-hint">Haber yalnızca duyuru olarak yayınlanır, fiyatı oynatmaz.</small>
                             </div>
-                            <button type="submit" class="submit-btn">🚀 Haber Yayınla & Piyasayı Hareket Ettir</button>
+                            <button type="submit" class="submit-btn">🚀 Haberi Yayınla</button>
                         </form>
                     </div>
 
@@ -486,102 +481,6 @@
                         <div id="columnList"><p class="field-hint">Yükleniyor…</p></div>
                     </div>
 
-                    <div class="panel-section admin-card admin-card--silent">
-                        <div class="section-header">
-                            <h2>🎛 Sessiz Fiyat Manipülasyonu</h2>
-                            <span class="admin-tag">Haber akışında görünmez</span>
-                        </div>
-
-                        <form id="silentPriceForm" class="news-form">
-                            <div class="form-group">
-                                <label for="silentSymbol">Hedef Hisse</label>
-                                <select id="silentSymbol" required></select>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="silentExactPrice">Tam Fiyat (₺)</label>
-                                    <input type="number" id="silentExactPrice" placeholder="Örn: 120,00" min="0.05" step="0.01">
-                                    <small class="field-hint">Dilerseniz bu alanı boş bırakıp +% / -% kullanın</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="silentPct">Yüzde Değişim (%)</label>
-                                    <input type="number" id="silentPct" placeholder="Örn: -10 veya +7" step="0.5">
-                                    <small class="field-hint">Pozitif = yukarı, Negatif = aşağı (haber yayınlanmaz)</small>
-                                </div>
-                            </div>
-
-                            <div class="form-row" style="gap:0.6rem;">
-                                <button type="button" id="silentBumpUp" class="submit-btn" style="flex:1; background: linear-gradient(135deg,#059669,#10b981); border-color: #059669;">▲ +5% Hızlı</button>
-                                <button type="button" id="silentBumpDown" class="reset-btn" style="flex:1; margin:0; color:#fff; background: linear-gradient(135deg,#b91c1c,#ef4444); border-color: #b91c1c;">▼ -5% Hızlı</button>
-                            </div>
-
-                            <button type="submit" class="submit-btn" style="width:100%;">🎯 Fiyatı Sessizce Uygula</button>
-                        </form>
-                    </div>
-
-                    <div class="panel-section admin-card admin-card--whisper">
-                        <div class="section-header">
-                            <h2>📡 Fısıltı ve Tüyo Merkezi</h2>
-                            <span class="admin-tag">Gizli tüyo</span>
-                        </div>
-
-                        <form id="whisperForm" class="news-form">
-                            <div class="panel-sub">🔐 Fısıltı Ayarları</div>
-
-                            <div class="form-group">
-                                <label for="whisperSymbol">Hedef Hisse</label>
-                                <select id="whisperSymbol" required></select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="whisperTargetUser">Hedef Kullanıcı</label>
-                                <select id="whisperTargetUser">
-                                    <option value="">Herkes / Rastgele</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="whisperMessage">Fısıltı Mesajı (Kullanıcıya Gizlice Gidecek)</label>
-                                <textarea id="whisperMessage" rows="3" maxlength="280" required
-                                    placeholder="Gizli duyum: Bu hisse senedinde büyük bir kurumsal anlaşma bekleniyor..."></textarea>
-                                <small class="field-hint">En fazla 280 karakter. Kullanıcı bunu diğerlerinden ÖNCE görür.</small>
-                            </div>
-
-                            <div>
-                                <label class="checkrow" for="whisperFake" title="Gerçek dışı haber sızdır (ters işlem)">
-                                    <input type="checkbox" id="whisperFake">
-                                    <span>Asılsız / Yalan Tüyo mu?</span>
-                                </label>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="whisperImpactPct">3dk Sonra Yayınlanacak Haberin Etkisi (%)</label>
-                                    <input type="number" id="whisperImpactPct" value="6" step="0.5" min="-25" max="25">
-                                    <small class="field-hint">+ yukarı it, - aşağı çek. 0 = fiyat etkisi yok</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="whisperPublicTitle">3dk Sonra Yayınlanacak Haber Başlığı</label>
-                                    <input type="text" id="whisperPublicTitle" maxlength="140"
-                                        placeholder="Kurumsal anlaşma açıklandı... (+ etkili)">
-                                    <small class="field-hint">Boş bırakırsanız otomatik "⚠ Gelişme: [Sembol]" başlığı atanır.</small>
-                                </div>
-                            </div>
-
-                            <div id="whisperProgress" class="whisper-progress" style="display:none;">
-                                <div class="wp-bar"><div id="whisperBar" class="wp-bar-inner"></div></div>
-                                <div id="whisperCountdown" class="wp-countdown">⏱ 3 dakika bekleniyor…</div>
-                            </div>
-
-                            <div id="whisperOutput" class="whisper-output" style="display:none;"></div>
-
-                            <button type="submit" class="submit-btn" style="width:100%;
-                                background: linear-gradient(135deg,#7c3aed,#ec4899); border-color: #7c3aed;">
-                                🕶 Seçilen Kullanıcıya / Herkese Gönder &amp; 3 Dakika Sonra Yayınla
-                            </button>
-                        </form>
-                    </div>
                 </div>
 
                 <div class="admin-col">
@@ -1076,13 +975,13 @@
             const titleEl = document.getElementById("newsTitle");
             const summaryEl = document.getElementById("newsSummary");
             const targetEl = document.getElementById("targetPerson");
-            const impactEl = document.getElementById("impactPct");
             const title = titleEl.value.trim();
             const summary = summaryEl.value.trim();
             const target = targetEl.value;
-            const impact = Number(impactEl.value);
-            if (!title || !target || !Number.isFinite(impact)) {
-                showErr("Haber başlığı, hedef hisse ve geçerli bir etki girin.");
+            // Haberler fiyatı oynatmaz: fiyat birkaç dakikada eski yerine döndüğü için etki bedava kazanç açıyordu.
+            const impact = 0;
+            if (!title) {
+                showErr("Haber başlığı girin.");
                 return;
             }
 
@@ -1092,19 +991,9 @@
                 Borsa.renderTickerTape();
                 Borsa.renderNewsFeed();
                 Borsa.renderMarketCap();
-                if (Borsa.state.selectedStock === target || !Borsa.state.selectedStock) {
-                    Borsa.state.selectedStock = target;
-                    const sel = document.getElementById("stockSelector");
-                    if (sel) sel.value = target;
-                }
-                Borsa.renderChart();
-
-                const stockName = (Borsa.state.stocks[target] || {}).name || target;
-                const dir = impact >= 0 ? "📈 yükseltildi" : "📉 düşürüldü";
-                showToast(`${stockName} %${Math.abs(impact)} ${dir} — "${title}"`);
+                showToast(`Haber yayınlandı — "${title}"`);
                 titleEl.value = "";
                 summaryEl.value = "";
-                impactEl.value = "";
                 targetEl.value = "";
                 titleEl.focus();
             } catch (err) {
@@ -1148,31 +1037,8 @@
             if (balVal) balVal.textContent = BorsaFirebase.formatTL(BorsaFirebase.balance());
         }
 
-        let whisperUsers = [];
-        async function populateWhisperUserDropdown() {
-            const select = document.getElementById("whisperTargetUser");
-            if (!select) return;
-            const selectedId = select.value;
-            const users = await BorsaFirebase.fetchWhisperUsers();
-            whisperUsers = users;
-            select.innerHTML = "";
-            const everyoneOption = document.createElement("option");
-            everyoneOption.value = "";
-            everyoneOption.textContent = "Herkes / Rastgele";
-            select.appendChild(everyoneOption);
-            users.forEach(user => {
-                const option = document.createElement("option");
-                option.value = String(user.id);
-                option.textContent = `${user.display_name || "Üye"} (${user.email || "E-posta yok"})`;
-                select.appendChild(option);
-            });
-            if (selectedId && users.some(user => String(user.id) === selectedId)) {
-                select.value = selectedId;
-            }
-        }
-
         function refreshSymbolDropdowns() {
-            const targets = ["targetPerson", "stockSelector", "silentSymbol", "editSymbolSelect", "whisperSymbol"];
+            const targets = ["targetPerson", "stockSelector", "editSymbolSelect"];
             const stocks = Borsa.state.stocks || {};
             const ordered = Object.keys(stocks).sort();
             targets.forEach(id => {
@@ -1209,11 +1075,6 @@
                 }
             }
 
-            const silentCur = document.getElementById("silentSymbol");
-            const silentExact = document.getElementById("silentExactPrice");
-            if (silentCur && silentExact && stocks[silentCur.value]) {
-                silentExact.placeholder = `Şu an: ${Borsa.formatCurrency(stocks[silentCur.value].price).replace("₺", "")}`;
-            }
             if (window.AdminColumns) window.AdminColumns.fillStocks();
         }
 
@@ -1491,228 +1352,6 @@
                 }
             });
 
-            document.getElementById("silentSymbol").addEventListener("change", refreshSymbolDropdowns);
-
-            async function applySilent(sym, { exact, pct }) {
-                if (!sym || !Borsa.state.stocks[sym]) { showErr("Hisse seçin."); return null; }
-                const before = Borsa.state.stocks[sym].price;
-                let mode = "";
-                try {
-                    let after;
-                    if (exact !== null && exact !== undefined && exact !== "") {
-                        after = await Borsa.setPrice(sym, Number(exact));
-                        mode = `tam fiyat ${BorsaFirebase.formatTL(after)}`;
-                    } else if (pct !== null && pct !== undefined && pct !== "") {
-                        after = await Borsa.bumpPricePercent(sym, Number(pct));
-                        mode = `%${Number(pct) >= 0 ? "+" : ""}${Number(pct)}`;
-                    } else {
-                        showErr("Tam fiyat veya yüzde girin.");
-                        return null;
-                    }
-                    const diff = Number(after) - Number(before);
-                    const diffPct = before > 0 ? (diff / before * 100) : 0;
-                    showToast(`${sym} güncellendi — ${mode} — fark ${diff >= 0 ? "▲" : "▼"} ${BorsaFirebase.formatTL(Math.abs(diff))} (${diffPct >= 0 ? "+" : ""}${diffPct.toFixed(2)}%)`);
-                    refreshSymbolDropdowns();
-                    return after;
-                } catch (err) {
-                    showErr(err.message || "Fiyat güncellenemedi.");
-                    return null;
-                }
-            }
-
-            document.getElementById("silentPriceForm").addEventListener("submit", async (e) => {
-                e.preventDefault();
-                const sym = document.getElementById("silentSymbol").value;
-                const exactVal = document.getElementById("silentExactPrice").value;
-                const pctVal = document.getElementById("silentPct").value;
-                if (exactVal === "" && pctVal === "") { showErr("Lütfen tam fiyat veya yüzde girin."); return; }
-                await applySilent(sym, { exact: exactVal, pct: pctVal });
-            });
-
-            document.getElementById("silentBumpUp").addEventListener("click", async () => {
-                const sym = document.getElementById("silentSymbol").value;
-                await applySilent(sym, { pct: 5 });
-            });
-            document.getElementById("silentBumpDown").addEventListener("click", async () => {
-                const sym = document.getElementById("silentSymbol").value;
-                await applySilent(sym, { pct: -5 });
-            });
-
-            // =====================================================================
-            //  Fısıltı ve Tüyo Merkezi — submit handler
-            // =====================================================================
-            const whisperForm = document.getElementById("whisperForm");
-            const whisperProgress = document.getElementById("whisperProgress");
-            const whisperBar = document.getElementById("whisperBar");
-            const whisperCountdown = document.getElementById("whisperCountdown");
-            const whisperOutput = document.getElementById("whisperOutput");
-            let whisperAnim = null;
-
-            function stopWhisperAnim() {
-                if (whisperAnim) {
-                    cancelAnimationFrame(whisperAnim._raf || 0);
-                    clearInterval(whisperAnim._iv || 0);
-                    whisperAnim = null;
-                }
-            }
-            function startWhisperCountdown(totalMs = 180000) {
-                stopWhisperAnim();
-                if (!whisperProgress || !whisperBar || !whisperCountdown) return;
-                whisperProgress.style.display = "block";
-                whisperBar.style.background = "linear-gradient(90deg,#7c3aed,#ec4899)";
-                const started = Date.now();
-                whisperAnim = {};
-                const update = () => {
-                    const elapsed = Date.now() - started;
-                    const ratio = Math.min(1, Math.max(0, elapsed / totalMs));
-                    if (whisperBar) whisperBar.style.width = (ratio * 100).toFixed(2) + "%";
-                    const remain = Math.max(0, totalMs - elapsed);
-                    const mm = Math.floor(remain / 60000);
-                    const ss = Math.floor((remain % 60000) / 1000);
-                    if (whisperCountdown) {
-                        whisperCountdown.textContent =
-                            "⏱ " + String(mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0") +
-                            " sonra kamuoyuna duyurulacak...";
-                    }
-                    if (ratio >= 1) {
-                        stopWhisperAnim();
-                        if (whisperBar) whisperBar.style.background = "linear-gradient(90deg,#059669,#10b981)";
-                        if (whisperCountdown) whisperCountdown.textContent = "✅ Haber yayınlandı! Fiyat güncellendi.";
-                    }
-                };
-                whisperAnim._iv = setInterval(update, 1000);
-                whisperAnim._raf = requestAnimationFrame(function tick() {
-                    update();
-                    if (whisperAnim) whisperAnim._raf = requestAnimationFrame(tick);
-                });
-                update();
-            }
-
-            if (whisperForm) {
-                whisperForm.addEventListener("submit", async (e) => {
-                    e.preventDefault();
-                    const sym = document.getElementById("whisperSymbol").value;
-                    const msg = document.getElementById("whisperMessage").value.trim();
-                    const targetUserId = document.getElementById("whisperTargetUser").value || null;
-                    const isFake = !!document.getElementById("whisperFake").checked;
-                    const impactPct = Number(document.getElementById("whisperImpactPct").value || 0);
-                    const publicTitleRaw = document.getElementById("whisperPublicTitle").value.trim();
-
-                    if (!sym || !msg) { showErr("Hisse ve mesaj alanları zorunlu."); return; }
-                    if (!Borsa.state.stocks[sym]) { showErr("Hisse bulunamadı."); return; }
-
-                    // CDN / sayfa ilk açılış yarım yüklenme olursa, 45 saniyeye kadar bekle.
-                    // 250ms * 180 = 45sn (kötü ağ / servis gecikmesi için tolerans)
-                    const waitStart = Date.now();
-                    while (
-                        (!window.BorsaFirebase || !BorsaFirebase.hasSdk() || !BorsaFirebase.isConfigured()) &&
-                        Date.now() - waitStart < 45000
-                    ) {
-                        await new Promise(r => setTimeout(r, 250));
-                    }
-
-                    if (!window.BorsaFirebase) {
-                        showErr("BorsaFirebase modülü yüklenemedi — sayfayı yenilemeyi deneyin.");
-                        return;
-                    }
-                    if (!BorsaFirebase.isConfigured()) {
-                        showErr(
-                            "⚠ Supabase AYARLARI EKSİK — supabase-config.js içindeki URL ve anon key doğru olmalı.\n" +
-                            "Kontrol edin: Dashboard > Project Settings > API\n" +
-                            "anon key ~400 karakter, URL https://xxxx.supabase.co formatında olmalı."
-                        );
-                        return;
-                    }
-                    if (!BorsaFirebase.hasSdk() || !BorsaFirebase.db()) {
-                        showErr(
-                            "⚠ Supabase bağlantısı 45 sn sonra kurulamadı.\n" +
-                            "1) İnternet bağlantınızı kontrol edin\n" +
-                            "2) Projeniz askıya alınmamış mı bakın (Supabase Dashboard)\n" +
-                            "3) Tarayıcı konsolunda (F12) kırmızı hata mesajlarını görün."
-                        );
-                        return;
-                    }
-                    if (!BorsaFirebase.currentUser()) {
-                        showErr("Fısıltı göndermek için önce Supabase hesabınıza giriş yapmalısınız.");
-                        return;
-                    }
-
-                    const submitBtn = whisperForm.querySelector("button[type=submit]");
-                    if (submitBtn) submitBtn.disabled = true;
-
-                    try {
-                        await populateWhisperUserDropdown();
-                        const targetUser = targetUserId
-                            ? whisperUsers.find(user => String(user.id) === String(targetUserId))
-                            : null;
-                        const users = targetUserId ? (targetUser ? [targetUser] : []) : whisperUsers;
-                        if (!users || !users.length) {
-                            throw new Error(targetUserId
-                                ? "Seçilen kullanıcı bulunamadı; kullanıcı listesini yenileyip tekrar deneyin."
-                                : "Sistemde kayıtlı kullanıcı bulunamadı.");
-                        }
-                        const targetId = targetUser ? String(targetUser.id) : null;
-
-                        const payloads = users.map(u => ({
-                            user_id: String(u.id),
-                            target_user_id: targetId,
-                            message: msg,
-                            stock_symbol: sym,
-                            is_fake: isFake,
-                        }));
-                        const inserted = await BorsaFirebase.insertMarketTips(payloads);
-
-                        if (whisperOutput) {
-                            whisperOutput.style.display = "block";
-                            const stockName = (Borsa.state.stocks[sym] || {}).name || sym;
-                            let html = `<div class="whisper-output-title">🔐 ${targetId ? "Hedeflenen kullanıcı" : "Tüm kullanıcılar"} (${users.length} kişi):</div>`;
-                            html += `<ul class="whisper-recipients">`;
-                            users.forEach((u, i) => {
-                                const label = `${u.display_name || "Üye"} (${u.email || "E-posta yok"})`;
-                                const ok = inserted && inserted.find(r => r.user_id === u.id);
-                                html += `<li><span class="whisper-idx">#${i + 1}</span>
-                                    <span class="whisper-email">${escapeHtml(label)}</span>
-                                    <span class="whisper-flag" style="background:${ok ? "#059669" : "#b91c1c"};color:#fff;">
-                                      ${ok ? "SIZDIRILDI" : "HATA"}
-                                    </span></li>`;
-                            });
-                            html += `</ul>`;
-                            html += `<div class="whisper-meta">
-                                🎯 Hedef hisse: <b>${stockName} (${sym})</b> &nbsp;•&nbsp;
-                                ${isFake ? "⚠️ <b style=\"color:#f59e0b\">ASILSIZ / YALAN TÜYO</b>" : "✅ <b style=\"color:#34d399\">GERÇEK TÜYO</b>"}<br>
-                                📰 3dk sonra yayınlanacak etki: <b>${impactPct >= 0 ? "+" : ""}${impactPct}%</b>
-                              </div>`;
-                            whisperOutput.innerHTML = html;
-                        }
-
-                        startWhisperCountdown(180000);
-
-                        const finalTitle = publicTitleRaw ||
-                            `⚠ Gelişme: ${sym} — ${isFake ? "Söylenti" : "Resmi"} haber akışında`;
-
-                        BorsaFirebase.scheduleDelayedNews({
-                            stock_symbol: sym,
-                            title: finalTitle,
-                            impact_pct: impactPct,
-                            onFire: () => {
-                                Borsa.renderStocksGrid();
-                                Borsa.renderTickerTape();
-                                Borsa.renderNewsFeed();
-                                Borsa.renderMarketCap();
-                                Borsa.renderChart();
-                                showToast(`📰 "${stockName}" için gecikmeli haber yayınlandı (%${impactPct >= 0 ? "+" : ""}${impactPct}).`);
-                            },
-                        });
-
-                        showToast(`🕶 Fısıltı ${targetId ? "seçilen kullanıcıya" : users.length + " kullanıcıya"} gönderildi! 3 dakika sonra kamuoyunda.`);
-                    } catch (err) {
-                        stopWhisperAnim();
-                        showErr(err.message || "Fısıltı sızdırılamadı.");
-                    } finally {
-                        if (submitBtn) submitBtn.disabled = false;
-                    }
-                });
-            }
         }
 
         async function startApp() {
@@ -1919,10 +1558,6 @@
             wireAdminPanels();
             refreshSymbolDropdowns();
             setInterval(refreshSymbolDropdowns, 5000);
-            populateWhisperUserDropdown().catch(err => {
-                console.warn("[Admin] Fısıltı kullanıcı listesi yüklenemedi:", err);
-                showErr(err.message || "Fısıltı kullanıcıları yüklenemedi.");
-            });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
