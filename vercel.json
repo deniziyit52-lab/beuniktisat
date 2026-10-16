@@ -8,13 +8,61 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/",          "destination": "/index.html" },
-    { "source": "/giris",     "destination": "/login" },
-    { "source": "/login",     "destination": "/login.html" },
-    { "source": "/kayit",     "destination": "/login" },
-    { "source": "/signup",    "destination": "/login" },
-    { "source": "/admin",     "destination": "/admin.html" },
-    { "source": "/panel",     "destination": "/admin" },
-    { "source": "/bakim",     "destination": "/maintenance" }
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/giris",
+      "destination": "/login"
+    },
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/kayit",
+      "destination": "/login"
+    },
+    {
+      "source": "/signup",
+      "destination": "/login"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/panel",
+      "destination": "/admin"
+    },
+    {
+      "source": "/bakim",
+      "destination": "/maintenance"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    }
   ]
 }
