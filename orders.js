@@ -175,6 +175,24 @@
                 if (error) throw error;
                 const label = LABEL[`${this.mode}:${side}`];
                 say("success", `✅ ${label} emrin kaydedildi: ${qty} adet, tetik ${tl(price)}. Piyasa açıkken her dakika kontrol edilir.`);
+                // Bildirimler kapalıysa: emir gerçekleşince telefona haber gelsin mi?
+                if (fb && window.BorsaPush && BorsaPush.canOffer()) {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "order-push-offer";
+                    btn.textContent = "🔔 Gerçekleşince telefonuma bildirim gelsin";
+                    btn.addEventListener("click", async () => {
+                        btn.disabled = true;
+                        try {
+                            await BorsaPush.enable();
+                            btn.replaceWith(document.createTextNode(" Bildirimler açıldı; birkaç saniye içinde deneme bildirimi gelecek."));
+                        } catch (e) {
+                            btn.replaceWith(document.createTextNode(" " + (e.message || "Bildirim açılamadı.")));
+                        }
+                    });
+                    fb.appendChild(document.createElement("br"));
+                    fb.appendChild(btn);
+                }
                 $("orderPrice").value = "";
                 this.updateHint();
                 await this.loadForSymbol();
