@@ -1,4 +1,4 @@
-/* Admin paneli: e-posta ile bilgilendirmeye onay veren üyelerin listesi (admin_list_email_opt_ins RPC'si). */
+/* Admin paneli: e-posta listesindeki üyeler (e-postayı kapatanlar hariç) (admin_list_email_opt_ins RPC'si). */
 (function () {
     const $ = (id) => document.getElementById(id);
     const esc = (s) => {
@@ -24,17 +24,17 @@
             }
             const members = Array.isArray(data.members) ? data.members : [];
             this._emails = members.map(m => String(m.email || "").trim()).filter(Boolean);
-            if (summary) summary.textContent = `${members.length} / ${Number(data.total_members || 0)} üye onay verdi`;
+            if (summary) summary.textContent = `${members.length} / ${Number(data.total_members || 0)} üye listede`;
             $("mailingCopyBtn").disabled = this._emails.length === 0;
             if (members.length === 0) {
-                list.innerHTML = '<p class="field-hint">Henüz e-posta ile bilgilendirmeye onay veren üye yok.</p>';
+                list.innerHTML = '<p class="field-hint">Listede üye yok.</p>';
                 return;
             }
             list.innerHTML = members.map(m => `
                 <div class="column-admin-row">
                     <div class="column-admin-text">
                         <strong>${esc(m.email)}</strong>
-                        <span>${esc(m.name || "—")}${m.opted_at ? ` · ${new Date(m.opted_at).toLocaleDateString("tr-TR")} tarihinde onay verdi` : ""}</span>
+                        <span>${esc(m.name || "—")}${m.opted_at ? ` · ${new Date(m.opted_at).toLocaleDateString("tr-TR")} tarihinden beri listede` : ""}</span>
                     </div>
                 </div>`).join("");
         },
