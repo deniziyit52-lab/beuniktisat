@@ -7,10 +7,14 @@ self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim(
 self.addEventListener("push", (event) => {
     let data = {};
     try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data ? event.data.text() : "" }; }
+    // Web bildirimlerinde özel ses desteklenmez; telefonun bildirim sesi çalar.
+    // Android'de kendine özgü kısa bir titreşim deseni ve durum çubuğu için tek renkli simge kullanılır.
     event.waitUntil(self.registration.showNotification(data.title || "ZBEÜ Borsa", {
         body: data.body || "",
         icon: "/icons/icon-192.png",
-        badge: "/icons/icon-192.png",
+        badge: "/icons/badge-96.png",
+        vibrate: [60, 40, 60, 40, 140],
+        timestamp: Date.now(),
         lang: "tr",
         data: { url: data.url || "/" },
     }));
