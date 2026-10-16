@@ -1132,6 +1132,15 @@ body.light-mode .panel-sub { border-left-color: #2563eb; }
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+/* Şirket logosu (shared.js stockLogo): avatarın içinde ortalı beyaz çizgi simge. */
+.stock-logo {
+    width: 54%;
+    height: 54%;
+    display: block;
+    color: #fff;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+}
+
 .stock-name {
     font-size: 1rem;
     font-weight: 700;
@@ -6111,6 +6120,16 @@ body.light-mode .market-halt-clock { background: #991b1b; }
 .chart-ranges button.is-active {
     background: linear-gradient(135deg, #3b82f6, #6366f1);
     color: #fff;
+}
+.chart-ranges { flex-wrap: wrap; align-items: center; }
+.chart-ranges-sep {
+    width: 1px;
+    height: 1.2rem;
+    margin: 0 0.35rem;
+    background: var(--border);
+}
+@media (max-width: 420px) {
+    .chart-ranges button { min-width: 0; padding: 0.4rem 0.7rem; }
 }
 
 /* Köşe yazıları: gazetedeki köşe */

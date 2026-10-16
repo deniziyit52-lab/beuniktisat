@@ -102,6 +102,29 @@ const Borsa = {
     // Admin: yeni hisse ekle. color opsiyonel, atanmazsa rastgele.
     RISK_TYPES: { guvenli: "Güvenli", orta: "Orta", riskli: "Riskli" },
 
+    // Şirket logoları: adındaki kelimeye göre simge seçilir (24x24 çizgi); eşleşmezse baş harf.
+    STOCK_LOGOS: [
+        [/liman/, '<path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><circle cx="12" cy="5" r="3"/>'],
+        [/maden|kömür/, '<path d="M2 19h20"/><path d="M4 19v-2a8 8 0 0 1 16 0v2"/><path d="M9 9.6V7.5a3 3 0 0 1 6 0v2.1"/><circle cx="12" cy="15" r="2"/>'],
+        [/orman|ağaç/, '<path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"/><path d="M12 22v-3"/>'],
+        [/lojistik|kargo|taşıma/, '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/>'],
+        [/yazılım|bilişim/, '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>'],
+        [/oyun/, '<rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4"/><path d="M15 13h.01M18 11h.01"/>'],
+        [/enerji|elektrik/, '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>'],
+        [/biyo|ilaç|sağlık/, '<path d="M9 3h6"/><path d="M10 3v6.5L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9.5V3"/><path d="M7 15h10"/>'],
+        [/banka|finans/, '<path d="M3 22h18"/><path d="M6 18v-7M10 18v-7M14 18v-7M18 18v-7"/><path d="M12 2 20 7H4z"/>'],
+        [/drone|havacılık/, '<rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9.5 9.5 7.3 7.3M14.5 9.5l2.2-2.2M9.5 14.5l-2.2 2.2M14.5 14.5l2.2 2.2"/><circle cx="5.5" cy="5.5" r="2.5"/><circle cx="18.5" cy="5.5" r="2.5"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'],
+        [/turizm|otel/, '<path d="M7 13a5 5 0 0 1 10 0"/><path d="M12 4v2M5.6 7.6l1.4 1.4M18.4 7.6 17 9M2 13h2M20 13h2"/><path d="M2 17.5c1.7-1.2 3.3-1.2 5 0s3.3 1.2 5 0 3.3-1.2 5 0 3.3 1.2 5 0"/><path d="M5 21c1.4-1 2.8-1 4.2 0s2.8 1 4.2 0 2.8-1 4.2 0"/>'],
+        [/gıda|tarım/, '<path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>'],
+    ],
+
+    stockLogo(stock) {
+        const name = String(stock?.name || stock?.symbol || "?");
+        const hit = this.STOCK_LOGOS.find(([re]) => re.test(name.toLocaleLowerCase("tr-TR")));
+        if (!hit) return this.escapeHtml(name.charAt(0).toLocaleUpperCase("tr-TR"));
+        return `<svg class="stock-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${hit[1]}</svg>`;
+    },
+
     isHalted(stock) {
         return !!(stock && stock.haltUntil && stock.haltUntil > Date.now());
     },
@@ -278,7 +301,7 @@ const Borsa = {
             card.dataset.symbol = sym;
             card.innerHTML = `
                 <div class="stock-avatar" style="background: linear-gradient(135deg, ${s.color}, ${s.color}aa);">
-                    ${s.name.charAt(0).toUpperCase()}
+                    ${this.stockLogo(s)}
                 </div>
                 <div class="stock-body">
                     <div class="stock-name">${s.name}</div>
@@ -382,6 +405,65 @@ const Borsa = {
     chartRange: "1G",
     _hourlyHistory: {},
 
+    // Grafik türü: "cizgi" ya da "mum". Seçim tarayıcıda hatırlanır.
+    chartType: (() => { try { return localStorage.getItem("borsa_chart_type") === "mum" ? "mum" : "cizgi"; } catch (_) { return "cizgi"; } })(),
+    // Mum genişliği aralığa göre: 1S 2 dk, 1G 15 dk, 1H 2 saat, 1A 1 gün.
+    CANDLE_MS: { "1S": 2 * 60 * 1000, "1G": 15 * 60 * 1000, "1H": 2 * 60 * 60 * 1000, "1A": 24 * 60 * 60 * 1000 },
+
+    // Noktaları mumlara toplar: [{ time, o, h, l, c }]. Gruplar Türkiye saatine göre (UTC+3) hizalanır.
+    _toCandles(points) {
+        const size = this.CANDLE_MS[this.chartRange] || this.CANDLE_MS["1G"];
+        const shift = 3 * 60 * 60 * 1000;
+        const candles = [];
+        let current = null, prevClose = null;
+        points.forEach(p => {
+            const t = Number(p.time), price = Number(p.price);
+            if (!Number.isFinite(t) || !Number.isFinite(price)) return;
+            const bucket = Math.floor((t + shift) / size);
+            if (!current || current.bucket !== bucket) {
+                // Mum bir önceki mumun kapanışından açılır; böylece aradaki boşluk da görünür.
+                const open = prevClose ?? price;
+                current = { bucket, time: bucket * size - shift, o: open, h: Math.max(open, price), l: Math.min(open, price), c: price };
+                candles.push(current);
+            } else {
+                current.h = Math.max(current.h, price);
+                current.l = Math.min(current.l, price);
+                current.c = price;
+            }
+            prevClose = price;
+        });
+        return candles;
+    },
+
+    _candleDataset(candles) {
+        return {
+            data: candles.map(k => [Math.min(k.o, k.c), Math.max(k.o, k.c)]),
+            backgroundColor: candles.map(k => k.c >= k.o ? "#10b981" : "#ef4444"),
+        };
+    },
+
+    // Mumların fitilleri (en yüksek-en düşük çizgisi), gövdelerin arkasına çizilir.
+    _candleWickPlugin: {
+        id: "candleWicks",
+        beforeDatasetsDraw(chart) {
+            const candles = chart.$candles;
+            if (!candles) return;
+            const meta = chart.getDatasetMeta(0), y = chart.scales.y, g = chart.ctx;
+            g.save();
+            g.lineWidth = 1.5;
+            meta.data.forEach((bar, i) => {
+                const k = candles[i];
+                if (!k) return;
+                g.strokeStyle = k.c >= k.o ? "#10b981" : "#ef4444";
+                g.beginPath();
+                g.moveTo(Math.round(bar.x) + 0.5, y.getPixelForValue(k.h));
+                g.lineTo(Math.round(bar.x) + 0.5, y.getPixelForValue(k.l));
+                g.stroke();
+            });
+            g.restore();
+        },
+    },
+
     _chartRangeDef() {
         return this.CHART_RANGES.find(r => r.key === this.chartRange) || this.CHART_RANGES[1];
     },
@@ -438,9 +520,19 @@ const Borsa = {
             bar.setAttribute("role", "group");
             bar.setAttribute("aria-label", "Grafik zaman aralığı");
             bar.innerHTML = this.CHART_RANGES.map(r =>
-                `<button type="button" data-chart-range="${r.key}" title="${r.title}">${r.label}</button>`).join("");
+                `<button type="button" data-chart-range="${r.key}" title="${r.title}">${r.label}</button>`).join("")
+                + `<span class="chart-ranges-sep" aria-hidden="true"></span>`
+                + `<button type="button" data-chart-type="cizgi" title="Çizgi grafik">Çizgi</button>`
+                + `<button type="button" data-chart-type="mum" title="Mum grafik: her mum bir zaman dilimindeki açılış, kapanış, en yüksek ve en düşük fiyatı gösterir">Mum</button>`;
             container.insertAdjacentElement("afterend", bar);
             bar.addEventListener("click", (e) => {
+                const typeButton = e.target.closest("[data-chart-type]");
+                if (typeButton) {
+                    this.chartType = typeButton.dataset.chartType;
+                    try { localStorage.setItem("borsa_chart_type", this.chartType); } catch (_) {}
+                    this.renderChart();
+                    return;
+                }
                 const button = e.target.closest("[data-chart-range]");
                 if (!button) return;
                 this.chartRange = button.dataset.chartRange;
@@ -449,6 +541,11 @@ const Borsa = {
         }
         bar.querySelectorAll("[data-chart-range]").forEach(button => {
             const active = button.dataset.chartRange === this.chartRange;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        bar.querySelectorAll("[data-chart-type]").forEach(button => {
+            const active = button.dataset.chartType === this.chartType;
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", String(active));
         });
@@ -477,6 +574,11 @@ const Borsa = {
                 tooltipBorder: "#2a3550", grid: "rgba(42, 53, 80, 0.5)", ticks: "#6b7280",
             };
         if (this.priceChart) this.priceChart.destroy();
+        if (this.chartType === "mum") {
+            this._renderCandleChart(ctx, stock, points, chartColors);
+            this._chartSymbol = sym;
+            return;
+        }
         this.priceChart = new Chart(ctx, {
             type: "line",
             data: {
@@ -540,9 +642,101 @@ const Borsa = {
         this.priceChart.$historyTimestamps = points.map(point => Number(point.time));
     },
 
+    // Mumun gövdesi açılış-kapanış arası (yükselişte yeşil, düşüşte kırmızı), fitili en yüksek-en düşük.
+    _renderCandleChart(ctx, stock, points, chartColors) {
+        const candles = this._toCandles(points);
+        const body = this._candleDataset(candles);
+        // Gün içi aralıklarda yalnız saat ("13:15"), uzun aralıklarda yalnız tarih ("16.10") yazılır.
+        const daily = this.chartRange === "1A";
+        const shortLabel = (label) => this._chartRangeDef().hourly ? label.slice(0, 5) : label.slice(6, 11);
+        this.priceChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: candles.map(k => this.formatTime(k.time)),
+                datasets: [{
+                    label: `${stock.name} (${stock.symbol})`,
+                    data: body.data,
+                    backgroundColor: body.backgroundColor,
+                    borderWidth: 0,
+                    borderSkipped: false,
+                    minBarLength: 2,
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.9,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: chartColors.tooltipBg,
+                        titleColor: chartColors.tooltipTitle,
+                        bodyColor: chartColors.tooltipBody,
+                        borderColor: chartColors.tooltipBorder,
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            title: (items) => String(items[0]?.label || "").slice(0, daily ? 5 : 11),
+                            label: (item) => {
+                                const k = item.chart.$candles[item.dataIndex];
+                                if (!k) return "";
+                                return [
+                                    `Açılış: ${this.formatCurrency(k.o)}`,
+                                    `En yüksek: ${this.formatCurrency(k.h)}`,
+                                    `En düşük: ${this.formatCurrency(k.l)}`,
+                                    `Kapanış: ${this.formatCurrency(k.c)}`,
+                                ];
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { color: chartColors.grid, drawBorder: false },
+                        ticks: {
+                            color: chartColors.ticks, maxRotation: 0, autoSkip: true,
+                            maxTicksLimit: 6, font: { size: 10 },
+                            callback: function (value) {
+                                return shortLabel(String(this.getLabelForValue(value) || ""));
+                            },
+                        },
+                    },
+                    y: {
+                        beginAtZero: false,
+                        grace: "8%",
+                        grid: { color: chartColors.grid, drawBorder: false },
+                        ticks: {
+                            color: chartColors.ticks,
+                            callback: (val) => this.formatCurrency(val),
+                            font: { size: 10 },
+                        },
+                    },
+                },
+            },
+            plugins: [this._candleWickPlugin],
+        });
+        this.priceChart.$candles = candles;
+    },
+
     updateLiveChart(stock) {
         if (!this.priceChart || this._chartSymbol !== stock.symbol) {
             if (this.state.selectedStock === stock.symbol) this.renderChart();
+            return;
+        }
+        if (this.priceChart.$candles) {
+            // Mumlarda yeni fiyat son mumu günceller ya da yeni mum açar.
+            const chart = this.priceChart;
+            const candles = this._toCandles(this._chartPoints(stock));
+            const body = this._candleDataset(candles);
+            chart.data.labels = candles.map(k => this.formatTime(k.time));
+            chart.data.datasets[0].data = body.data;
+            chart.data.datasets[0].backgroundColor = body.backgroundColor;
+            chart.$candles = candles;
+            chart.update("none");
             return;
         }
 
