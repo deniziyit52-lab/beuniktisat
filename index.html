@@ -282,6 +282,10 @@
                     <summary><span class="faq-item-icon" aria-hidden="true">↩️</span><span class="faq-item-q">Açığa satış ya da kredili işlem var mı?</span></summary>
                     <p>Hayır. Yalnızca elindeki parayla alım yapabilir, yalnızca elindeki hisseyi satabilirsin; borçlanarak işlem yapılmaz.</p>
                 </details>
+                <details class="faq-item" data-cat="islem">
+                    <summary><span class="faq-item-icon" aria-hidden="true">📌</span><span class="faq-item-q">Limit ve zarar durdur emri nedir?</span></summary>
+                    <p>Ekran başında beklemeden, fiyat istediğin yere gelince işlem yapılmasını sağlar. Hissenin penceresinde "Limit" ya da "Zarar Durdur"u seç, adedi ve tetik fiyatını yaz. <strong>Limit Al</strong>, fiyat yazdığın değere ya da altına inince alır; <strong>Limit Sat</strong>, fiyat yazdığın değere ya da üstüne çıkınca satar; <strong>Zarar Durdur</strong>, fiyat yazdığın değere ya da altına inince elindeki hisseyi satar ve zararını sınırlar. Emirler piyasa açıkken her dakika kontrol edilir ve şart sağlanınca o anki fiyattan, komisyon ve fiyat kayması dahil gerçekleşir; yani fiyat birden sıçrarsa tetik fiyatından biraz farklı bir fiyattan işlem yapılabilir. Para emir verirken ayrılmaz: gerçekleşme anında bakiyen yetmezse emir gerçekleşmez. Emirlerini kenar menüdeki "📋 Emirler" sekmesinden görüp iptal edebilirsin; iptal edilene kadar beklerler.</p>
+                </details>
                 <details class="faq-item" data-cat="kural">
                     <summary><span class="faq-item-icon" aria-hidden="true">📈</span><span class="faq-item-q">Fiyatlar neye göre değişiyor?</span></summary>
                     <p>Asıl belirleyici şirketin kendi durumu ve piyasanın genel havasıdır: sektöründeki gelişmeler, dolar, faiz, şirketin kârı ve borsanın genel yönü. Büyük bir alım-satım fiyatı kısa süreliğine oynatabilir; bu etki 15 dakika kadar içinde tamamen silinir.</p>
@@ -524,6 +528,16 @@
 
             <div id="tradeLoggedInBlock" style="display:none;">
                 <div class="form-group" style="margin-top: 0.5rem;">
+                    <div class="order-mode" role="tablist" aria-label="Emir türü">
+                        <button type="button" class="order-mode-btn order-mode-btn--active" data-order-mode="MARKET" role="tab" aria-selected="true">⚡ Hemen</button>
+                        <button type="button" class="order-mode-btn" data-order-mode="LIMIT" role="tab" aria-selected="false">📌 Limit</button>
+                        <button type="button" class="order-mode-btn" data-order-mode="STOP" role="tab" aria-selected="false">🛑 Zarar Durdur</button>
+                    </div>
+                    <div id="orderPriceRow" class="order-price-row" hidden>
+                        <label for="orderPrice">Tetik fiyatı (₺)</label>
+                        <input type="number" id="orderPrice" min="0" step="0.01" inputmode="decimal">
+                        <small class="field-hint" id="orderHint"></small>
+                    </div>
                     <div class="trade-inputs">
                         <div class="trade-input">
                             <label for="tradeQty">Adet</label>
@@ -570,6 +584,11 @@
                     <button type="button" id="buyBtn" class="action-btn buy-btn" data-market-trade disabled>💹 Al</button>
                     <button type="button" id="sellBtn" class="action-btn sell-btn" data-market-trade disabled>📉 Sat</button>
                 </div>
+                <div id="orderActions" class="trade-actions" hidden>
+                    <button type="button" id="orderBuyBtn" class="action-btn buy-btn">📌 Limit Al Emri Ver</button>
+                    <button type="button" id="orderSellBtn" class="action-btn sell-btn">📌 Limit Sat Emri Ver</button>
+                </div>
+                <div id="tradeOrders" class="trade-orders" hidden></div>
             </div>
         </div>
     </div>
@@ -1084,6 +1103,7 @@
             $("tradeStockName").textContent = s.name;
             $("tradeSymbol").textContent = s.symbol;
             if (window.BorsaReport) window.BorsaReport.show(s.symbol);
+            if (window.BorsaOrders) window.BorsaOrders.show(s.symbol);
             updateTradeModal();
             (async () => {
                 try {
@@ -1621,6 +1641,7 @@
             if (tab === "leaderboard")  loadLeaderboard(true);
             if (tab === "transactions") loadTransactions(true);
             if (tab === "badges" && window.BorsaBadges) BorsaBadges.load();
+            if (tab === "orders" && window.BorsaOrders) BorsaOrders.loadAll();
         }
 
         function renderLeaderboard(list) {
@@ -2058,6 +2079,7 @@
     <script src="signature.js"></script>
     <script src="daily.js"></script>
     <script src="stock-report.js"></script>
+    <script src="orders.js"></script>
     <script src="quotes.js"></script>
     <script src="nickname.js"></script>
     <script src="feedback.js"></script>
@@ -2069,7 +2091,7 @@
         <div class="sidebar-header">
             <div>
                 <h2 class="sidebar-title">📊 Yarışma Merkezi</h2>
-                <div class="sidebar-sub">Liderlik, İşlem Geçmişi &amp; Rozetler</div>
+                <div class="sidebar-sub">Liderlik, İşlemler, Emirler &amp; Rozetler</div>
             </div>
             <button id="sidebarCloseBtn" type="button" class="sidebar-close" aria-label="Menüyü Kapat">×</button>
         </div>
@@ -2080,6 +2102,9 @@
             </button>
             <button type="button" class="sidebar-tab" data-tab="transactions">
                 🧾 Son İşlemler
+            </button>
+            <button type="button" class="sidebar-tab" data-tab="orders">
+                📋 Emirler
             </button>
             <button type="button" class="sidebar-tab" data-tab="badges">
                 🏅 Rozetlerim
@@ -2129,6 +2154,18 @@
                 <li class="transactions-empty">Önce giriş yapın.</li>
             </ul>
             <div class="sidebar-note">En son 50 işlem gösterilir. Her alım ve satımda komisyon kesilir; oranı işlem penceresinde yazar.</div>
+        </section>
+
+        <!-- Emirler -->
+        <section id="panelOrders" class="sidebar-panel">
+            <div class="panel-toprow">
+                <div class="panel-title">📋 Emirlerim</div>
+                <button id="refreshOrdersBtn" type="button" class="panel-refresh" title="Tazele">↻</button>
+            </div>
+            <ul id="ordersList" class="transactions-list order-list">
+                <li class="transactions-empty">Önce giriş yapın.</li>
+            </ul>
+            <div class="sidebar-note">Bekleyen emirler piyasa açıkken her dakika kontrol edilir ve şart sağlanınca o anki fiyattan gerçekleşir. Aynı anda en fazla 20 bekleyen emrin olabilir.</div>
         </section>
 
         <!-- Rozetlerim -->
