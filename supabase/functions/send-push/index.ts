@@ -3,7 +3,6 @@
 // push_queue_done ile isaretler. Cihaz "artik yok" derse (404/410) o cihaz adresi silinir.
 // Gizli ayarlar: CRON_SECRET (ortak), VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SITE_URL (ortak; VAPID iletisim adresi).
 import { createClient } from "npm:@supabase/supabase-js@2";
-import webpush from "npm:web-push@3.6.7";
 
 type Sub = { endpoint: string; p256dh: string; auth: string };
 type Item = { id: number; title: string; body: string | null; url: string | null; subs: Sub[] };
@@ -18,14 +17,40 @@ function constantTimeEquals(a: string, b: string) {
   return diff === 0;
 }
 
+// Gizli ayara yapistirirken araya giren bosluk, tirnak ya da satir sonlari temizlenir.
+const clean = (s: string | undefined) => (s ?? "").replace(/["'\s]/g, "");
+
 Deno.serve(async (request) => {
+  try {
+    return await handle(request);
+  } catch (e) {
+    // Beklenmeyen hata: neden, veritabanindaki net._http_response kaydinda gorunsun.
+    return json({ error: "beklenmeyen hata: " + String((e as Error)?.message ?? e).slice(0, 300) }, 500);
+  }
+});
+
+async function handle(request: Request) {
   const cronSecret = Deno.env.get("CRON_SECRET");
   if (!cronSecret || !constantTimeEquals(request.headers.get("x-cron-secret") ?? "", cronSecret)) {
     return json({ error: "yetkisiz" }, 401);
   }
-  const pub = Deno.env.get("VAPID_PUBLIC_KEY"), priv = Deno.env.get("VAPID_PRIVATE_KEY");
+  const pub = clean(Deno.env.get("VAPID_PUBLIC_KEY")), priv = clean(Deno.env.get("VAPID_PRIVATE_KEY"));
   if (!pub || !priv) return json({ error: "VAPID_PUBLIC_KEY ve VAPID_PRIVATE_KEY ayarlanmalı." }, 500);
-  webpush.setVapidDetails(Deno.env.get("SITE_URL") || "mailto:borsa@example.com", pub, priv);
+  if (pub.length !== 87) return json({ error: `VAPID_PUBLIC_KEY ${pub.length} karakter; 87 olmalı. Değeri dosyadan yeniden kopyala.` }, 500);
+  if (priv.length !== 43) return json({ error: `VAPID_PRIVATE_KEY ${priv.length} karakter; 43 olmalı. Değeri dosyadan yeniden kopyala.` }, 500);
+  const site = clean(Deno.env.get("SITE_URL"));
+  // Kutuphane burada yuklenir: yuklenemezse nedeni cevaba yazilir (en ustte yuklenseydi fonksiyon aciklamasiz cokerdi).
+  let webpush;
+  try {
+    webpush = (await import("npm:web-push@3.6.7")).default;
+  } catch (e) {
+    return json({ error: "web-push kütüphanesi yüklenemedi: " + String((e as Error)?.message ?? e).slice(0, 200) }, 500);
+  }
+  try {
+    webpush.setVapidDetails(/^https:\/\//.test(site) ? site : "mailto:borsa@example.com", pub, priv);
+  } catch (e) {
+    return json({ error: "VAPID anahtarları geçersiz: " + String((e as Error)?.message ?? e).slice(0, 200) }, 500);
+  }
 
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
   const { data, error } = await db.rpc("push_queue_take", { p_limit: 200 });
@@ -54,4 +79,4 @@ Deno.serve(async (request) => {
   }
   if (items.length) await db.rpc("push_queue_done", { p_sent: sent, p_dead_endpoints: [...dead] });
   return json({ items: items.length, ok, failed, removed: dead.size, error: errors[0] ?? null });
-});
+}
