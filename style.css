@@ -7735,3 +7735,13 @@ input[type="radio"] {
 }
 .order-toast--fail { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
 .order-toast--show { opacity: 1; transform: translate(-50%, 0); }
+.order-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.15rem; }
+.order-chip { display: inline-flex; flex-direction: column; align-items: center; gap: 0.05rem; padding: 0.35rem 0.6rem; border-radius: 9px; font-size: 0.75rem; line-height: 1.2; }
+.order-chip small { font-size: 0.68rem; color: var(--text-muted); font-weight: 500; }
+.order-chip--buy { border-color: rgba(16, 185, 129, 0.45); }
+.order-chip--sell { border-color: rgba(239, 68, 68, 0.45); }
+.order-info { font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); }
+.order-info:empty { display: none; }
+.order-warn { color: var(--gold); }
+.order-up { color: var(--green-bright); }
+.order-down { color: var(--red-bright); }
