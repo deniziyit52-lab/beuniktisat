@@ -10,8 +10,12 @@
     };
     const tl = (n) => (window.BorsaFirebase && BorsaFirebase.formatTL) ? BorsaFirebase.formatTL(Number(n || 0))
         : Number(n || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₺";
-    const stockName = (sym) => (window.Borsa && Borsa.state && Borsa.state.stocks[sym] && Borsa.state.stocks[sym].name) || sym;
+    // shared.js Borsa'yı düz "const" olarak tanımlar; window.Borsa yoktur.
+    const B = () => (typeof Borsa !== "undefined" ? Borsa : null);
+    const stockName = (sym) => (B() && B().state && B().state.stocks[sym] && B().state.stocks[sym].name) || sym;
     const when = (iso) => iso ? new Date(iso).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
+    const num2 = (n) => Number(n || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const signedIn = () => Boolean(window.BorsaFirebase && BorsaFirebase.currentUser && BorsaFirebase.currentUser());
 
     const LABEL = {
@@ -52,24 +56,100 @@
             if (!market) {
                 $("orderBuyBtn").hidden = mode === "STOP";
                 $("orderSellBtn").textContent = mode === "STOP" ? "🛑 Zarar Durdur Emri Ver" : "📌 Limit Sat Emri Ver";
+                // Kendiliğinden makul bir başlangıç: zarar durdurda fiyatın %5 altı ve elindeki adedin tamamı.
                 const price = $("orderPrice");
-                if (price && !price.value && this.symbol) {
-                    const s = window.Borsa && Borsa.state.stocks[this.symbol];
-                    if (s) price.placeholder = "Şu an " + Number(s.price).toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const now = this.nowPrice();
+                if (price && now > 0) {
+                    price.placeholder = "Şu an " + num2(now);
+                    if (mode === "STOP") {
+                        price.value = round2(now * 0.95);
+                        const h = this.holding();
+                        if (h.qty > 0 && $("tradeQty")) $("tradeQty").value = Math.floor(h.qty);
+                    } else if (!price.value) {
+                        price.value = round2(now);
+                    }
                 }
+                this.renderChips();
             }
             this.updateHint();
         },
 
+        nowPrice() {
+            const s = B() && B().state && B().state.stocks[this.symbol];
+            return s ? Number(s.price || 0) : 0;
+        },
+
+        holding() {
+            const doc = window.BorsaFirebase && BorsaFirebase.currentUserData ? BorsaFirebase.currentUserData() : null;
+            const e = doc && doc.portfolio && doc.portfolio[this.symbol];
+            return { qty: Number(e && e.qty || 0), cost: Number(e && (e.costBasis || e.avg || e.cost) || 0) };
+        },
+
+        // Tetik fiyatını yazdırmak yerine seçtiren düğmeler: güncel fiyata ve (varsa) maliyete göre.
+        renderChips() {
+            const box = $("orderChips");
+            if (!box) return;
+            const now = this.nowPrice();
+            const h = this.holding();
+            const chips = [];
+            if (this.mode === "STOP") {
+                [-3, -5, -10, -15].forEach(p => chips.push({ label: `%${Math.abs(p)} düşerse`, price: now * (1 + p / 100) }));
+                if (h.qty > 0 && h.cost > 0) {
+                    if (h.cost < now) chips.push({ label: "Maliyetime inerse", price: h.cost, title: "Kârını korur: fiyat aldığın fiyata inerse satar" });
+                    chips.push({ label: "Maliyetin %5 altı", price: h.cost * 0.95 });
+                }
+            } else {
+                [-5, -2].forEach(p => chips.push({ label: `%${Math.abs(p)} ucuz`, price: now * (1 + p / 100), side: "BUY" }));
+                chips.push({ label: "Şu an", price: now });
+                [2, 5, 10].forEach(p => chips.push({ label: `%${p} pahalı`, price: now * (1 + p / 100), side: "SELL" }));
+                if (h.qty > 0 && h.cost > 0) chips.push({ label: "Maliyetin %10 üstü", price: h.cost * 1.10, side: "SELL", title: "Kâr al: %10 kârda satar" });
+            }
+            box.innerHTML = chips.filter(c => c.price > 0).map(c =>
+                `<button type="button" class="chip-btn order-chip${c.side === "BUY" ? " order-chip--buy" : c.side === "SELL" ? " order-chip--sell" : ""}" data-order-price="${round2(c.price)}"${c.title ? ` title="${esc(c.title)}"` : ""}>${esc(c.label)}<small>${num2(c.price)}</small></button>`
+            ).join("");
+            box.querySelectorAll("[data-order-price]").forEach(b => {
+                b.addEventListener("click", () => {
+                    $("orderPrice").value = b.dataset.orderPrice;
+                    this.updateHint();
+                });
+            });
+        },
+
         updateHint() {
             const hint = $("orderHint");
+            const info = $("orderInfo");
             if (!hint) return;
             const p = Number(($("orderPrice") || {}).value || 0);
+            const now = this.nowPrice();
+            const qty = Math.floor(Number(($("tradeQty") || {}).value || 0));
+            const h = this.holding();
             const ps = p > 0 ? tl(p) : "yazdığın fiyat";
+
+            // Canlı açıklama: tetik güncel fiyattan ne kadar uzak, gerçekleşirse ne olur.
+            const lines = [];
+            if (p > 0 && now > 0) {
+                const diff = (p / now - 1) * 100;
+                const away = Math.abs(diff) < 0.05 ? "şu anki fiyatla aynı" : `şu anki fiyattan %${Math.abs(diff).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} ${diff < 0 ? "aşağıda" : "yukarıda"}`;
+                lines.push(`Şu an <b>${tl(now)}</b>; tetik ${away}.`);
+                if (this.mode === "LIMIT") {
+                    if (p >= now) lines.push(`<span class="order-warn">Limit Al bu fiyatta hemen (bir dakika içinde) gerçekleşir.</span>`);
+                    if (p <= now) lines.push(`<span class="order-warn">Limit Sat bu fiyatta hemen (bir dakika içinde) gerçekleşir.</span>`);
+                    if (qty > 0) lines.push(`Alırsan yaklaşık <b>${tl(qty * p)}</b> ödersin.`);
+                } else if (p >= now) {
+                    lines.push(`<span class="order-warn">Fiyat zaten bunun altında; emir hemen (bir dakika içinde) satar.</span>`);
+                }
+                const sellQty = Math.min(qty, Math.floor(h.qty));
+                if ((this.mode === "STOP" || p > now) && sellQty > 0 && h.cost > 0) {
+                    const pl = (p - h.cost) * sellQty;
+                    lines.push(`Satarsan ${sellQty} adet için maliyetine göre yaklaşık <b class="${pl >= 0 ? "order-up" : "order-down"}">${pl >= 0 ? "+" : "−"}${tl(Math.abs(pl))}</b> ${pl >= 0 ? "kâr" : "zarar"} (komisyon hariç).`);
+                }
+            }
+            if (info) info.innerHTML = lines.join("<br>");
+
             hint.textContent = this.mode === "STOP"
-                ? `Fiyat ${ps} ya da altına inince elindeki hisse o anki fiyattan satılır; zararı sınırlamak için kullanılır.`
-                : `Limit Al: fiyat ${ps} ya da altına inince alır. Limit Sat: fiyat ${ps} ya da üstüne çıkınca satar. ` +
-                  "Gerçekleşince o anki fiyattan, komisyon ve kayma dahil işlem yapılır. Para şimdi ayrılmaz; o an bakiyen yetmezse emir gerçekleşmez.";
+                ? `Fiyat ${ps} ya da altına inince elindeki hisse o anki fiyattan satılır; büyük bir düşüşte zararını sınırlar.`
+                : `Ucuza almak için şu anki fiyatın altını seçip "Limit Al"a, kârla satmak için üstünü seçip "Limit Sat"a bas. ` +
+                  "Gerçekleşince o anki fiyattan, komisyon dahil işlem yapılır. Para şimdi ayrılmaz; o an bakiyen yetmezse emir gerçekleşmez.";
         },
 
         async place(side) {
@@ -232,6 +312,15 @@
                 b.addEventListener("click", () => this.setMode(b.dataset.orderMode));
             });
             if ($("orderPrice")) $("orderPrice").addEventListener("input", () => this.updateHint());
+            if ($("tradeQty")) $("tradeQty").addEventListener("input", () => { if (this.mode !== "MARKET") this.updateHint(); });
+            if ($("tradeQuick")) $("tradeQuick").addEventListener("click", () => { if (this.mode !== "MARKET") setTimeout(() => this.updateHint(), 0); });
+            // Pencere açıkken fiyat değiştikçe düğmeler ve açıklama tazelenir.
+            setInterval(() => {
+                const modal = $("tradeModal");
+                if (this.mode === "MARKET" || !modal || modal.style.display !== "flex" || document.hidden) return;
+                this.renderChips();
+                this.updateHint();
+            }, 15 * 1000);
             if ($("orderBuyBtn")) $("orderBuyBtn").addEventListener("click", () => this.place("BUY"));
             if ($("orderSellBtn")) $("orderSellBtn").addEventListener("click", () => this.place("SELL"));
             if ($("refreshOrdersBtn")) $("refreshOrdersBtn").addEventListener("click", () => this.loadAll());

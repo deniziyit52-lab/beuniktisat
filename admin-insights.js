@@ -186,7 +186,7 @@
                     <div class="ins-table-wrap"><table class="ins-table">
                         <thead><tr><th>Zaman</th><th>İşlem</th><th>Ne</th><th>Miktar</th><th>Fiyat</th><th>Tutar</th></tr></thead>
                         <tbody>${d.trades.map(t => {
-                            const name = t.kind === "asset" ? assetName(t.symbol) : ((window.Borsa && Borsa.state.stocks[t.symbol]?.name) || t.symbol);
+                            const name = t.kind === "asset" ? assetName(t.symbol) : ((typeof Borsa !== "undefined" && Borsa.state.stocks[t.symbol]?.name) || t.symbol);
                             const buy = String(t.side).toUpperCase() === "BUY";
                             return `<tr><td>${when(t.at)}</td><td><span class="${buy ? "ins-up" : "ins-down"}">${buy ? "Alış" : "Satış"}</span></td><td>${esc(name)}</td><td>${num(t.qty, 4)}</td><td>${tl(t.price)}</td><td>${tl(t.total)}</td></tr>`;
                         }).join("")}</tbody>
