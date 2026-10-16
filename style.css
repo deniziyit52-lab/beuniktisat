@@ -7789,8 +7789,6 @@ input[type="radio"] {
 .install-step-ico { flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); color: var(--accent-bright); }
 .install-step-ico--text { font-weight: 700; font-size: 0.85rem; }
 .install-guide-ok { width: 100%; padding: 0.7rem; margin-top: 0.2rem; }
-.install-guide-arrow { position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 2.2rem; color: #60a5fa; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); animation: install-bounce 1s ease-in-out infinite; }
-@keyframes install-bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 10px); } }
 @media (prefers-reduced-motion: reduce) { .install-guide-arrow { animation: none; } }
 
 /* Uygulama görünümü (appmode.js): telefona kurulup ana ekrandan açılınca */
@@ -7834,3 +7832,42 @@ input[type="radio"] {
 }
 .app-menu-actions button span { font-size: 1.15rem; }
 .app-menu-actions b { font-weight: 600; }
+.install-guide-arrow { position: fixed; z-index: 1460; font-size: 2.2rem; color: #60a5fa; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); pointer-events: none; }
+.install-guide-arrow--bottom-center { left: 50%; bottom: calc(6px + env(safe-area-inset-bottom)); animation: install-bounce-x 1s ease-in-out infinite; }
+.install-guide-arrow--bottom-right { right: 18px; bottom: calc(6px + env(safe-area-inset-bottom)); animation: install-bounce 1s ease-in-out infinite; }
+.install-guide-arrow--top-right { right: 18px; top: calc(4px + env(safe-area-inset-top)); animation: install-bounce-up 1s ease-in-out infinite; }
+@keyframes install-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+@keyframes install-bounce-x { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 10px); } }
+@keyframes install-bounce-up { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.install-guide { justify-content: center; padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+.install-guide-card { max-height: calc(100vh - 90px); overflow-y: auto; }
+.install-steps li { transition: border-color 0.25s ease, background 0.25s ease; }
+.install-steps li.is-active { border-color: var(--accent); background: rgba(59, 130, 246, 0.12); }
+.install-dots { font-weight: 800; letter-spacing: 1px; font-size: 0.85rem; }
+.install-step-word { font-weight: 700; font-size: 0.8rem; color: var(--accent-bright); }
+/* Hareketli küçük telefon ekranı */
+.install-mock { width: 150px; height: 190px; padding: 6px; border: 2px solid var(--border); border-radius: 22px; background: #000; }
+.install-mock-screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 16px; background: #f1f5f9; color: #1e293b; }
+.install-mock-bar { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 4px 6px; background: #e2e8f0; font-size: 0.6rem; }
+.install-mock-bar--top { top: 0; }
+.install-mock-bar--bottom { bottom: 0; }
+.install-mock-url { flex: 1; padding: 2px 5px; border-radius: 6px; background: #fff; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.install-mock-btn { display: grid; place-items: center; min-width: 22px; height: 20px; border-radius: 6px; color: #2563eb; transition: background 0.2s ease, box-shadow 0.2s ease; }
+.install-mock-btn svg { width: 14px; height: 14px; }
+.install-mock-app { position: absolute; left: 50%; top: 48px; width: 42px; height: 42px; margin-left: -21px; border-radius: 10px; }
+.install-mock-sheet, .install-mock-menu { position: absolute; left: 8px; right: 8px; display: flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 9px; background: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); font-size: 0.62rem; font-weight: 600; color: #1e293b; opacity: 0; transform: translateY(12px); transition: opacity 0.25s ease, transform 0.25s ease; }
+.install-mock-sheet svg, .install-mock-menu svg { width: 13px; height: 13px; color: #2563eb; }
+.install-mock-sheet { bottom: 34px; }
+.install-mock-menu { bottom: 34px; left: auto; width: 80px; }
+.install-mock-screen.show-sheet .install-mock-sheet, .install-mock-screen.show-menu .install-mock-menu { opacity: 1; transform: none; }
+.install-mock .is-spot { background: rgba(37, 99, 235, 0.18); box-shadow: 0 0 0 2px #2563eb; }
+.install-mock-finger { position: absolute; left: 50%; top: 50%; font-size: 1.2rem; transition: left 0.5s ease, top 0.5s ease; animation: install-tap 1.9s ease-in-out infinite; pointer-events: none; }
+@keyframes install-tap { 0%, 40% { transform: scale(1); } 55% { transform: scale(0.8); } 70%, 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .install-guide-arrow, .install-mock-finger { animation: none; } }
+/* Piyasa listesinin üstündeki kalıcı şerit */
+.install-inline { display: flex; align-items: center; gap: 0.7rem; width: 100%; margin: 0 0 0.8rem; padding: 0.6rem 0.8rem; border: 1px solid rgba(59, 130, 246, 0.45); border-radius: 12px; background: rgba(59, 130, 246, 0.1); color: var(--text-primary); font: inherit; text-align: left; cursor: pointer; }
+.install-inline img { width: 36px; height: 36px; border-radius: 9px; flex: 0 0 auto; }
+.install-inline span { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; min-width: 0; }
+.install-inline b { font-size: 0.88rem; }
+.install-inline small { font-size: 0.75rem; color: var(--text-secondary); }
+.install-inline em { font-style: normal; font-size: 1.4rem; color: var(--accent-bright); }
