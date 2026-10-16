@@ -196,6 +196,35 @@
             }
         },
 
+        async sendHealthTest() {
+            const btn = $("healthTestBtn");
+            const ok = (msg) => (typeof window.showToast === "function" ? window.showToast(msg) : alert(msg));
+            const fail = (msg) => (typeof window.showErr === "function" ? window.showErr(msg) : alert(msg));
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+            btn.disabled = true;
+            const label = btn.textContent;
+            btn.textContent = "Gönderiliyor…";
+            try {
+                const requestId = await rpc("admin_send_health_test");
+                for (let i = 0; i < 12; i++) {
+                    await sleep(2500);
+                    const data = await rpc("admin_digest_test_result", { p_request_id: requestId });
+                    if (!data || !data.done) continue;
+                    let body = {};
+                    try { body = JSON.parse(data.body || "{}"); } catch (e) {}
+                    if (data.status === 200 && body.sent) return ok("Deneme uyarısı gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.");
+                    if (data.status === 404) return fail("health-alert fonksiyonu bulunamadı. Supabase'de Edge Function olarak eklenmiş olmalı.");
+                    return fail("Gönderilemedi: " + (body.error || body.msg || data.error || `durum ${data.status}`));
+                }
+                fail("Cevap gelmedi. Birkaç dakika sonra gelen kutunu kontrol et.");
+            } catch (err) {
+                fail(err.message || "Deneme başlatılamadı.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = label;
+            }
+        },
+
         loadAll() {
             this.loadOverview();
             this.loadHealth();
@@ -206,6 +235,7 @@
             if (!$("overviewBody")) return;
             $("overviewRefresh").addEventListener("click", () => this.loadOverview());
             $("healthRefresh").addEventListener("click", () => this.loadHealth());
+            $("healthTestBtn").addEventListener("click", () => this.sendHealthTest());
             $("playersRefresh").addEventListener("click", () => this.loadPlayers());
             $("playerSearch").addEventListener("input", () => {
                 clearTimeout(this._searchTimer);

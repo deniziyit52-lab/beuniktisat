@@ -1,6 +1,7 @@
 // Sistem sagligi sorun e-postasi. Cron hafta ici 10:00-18:59 her 5 dakikada cagirir (borsa-health-alert).
 // health_alert_tick neyin gonderilecegini soyler: 'down' (kirmizi satir 10 dk suruyor), 'up' (duzeldi) ya da 'none'.
 // Alicilar admins tablosundaki yoneticilerin e-postalari. Gonderilemezse health_alert_failed durumu geri alir.
+// Deneme: { "test": true } -> durum degismeden ornek bir "sorun var" e-postasi (yonetici panelindeki dugme).
 // Gizli ayarlar haftalik ozetle ortak: CRON_SECRET, SMTP_HOST, SMTP_PORT (465), SMTP_USER, SMTP_PASS, SMTP_FROM, SITE_URL.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
@@ -56,9 +57,19 @@ Deno.serve(async (request) => {
   }
 
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-  const { data, error } = await db.rpc("health_alert_tick");
+  const body = await request.json().catch(() => ({}));
+  // Deneme (yonetici panelindeki dugme): uyari durumuna dokunmadan ornek bir "sorun var" e-postasi gonderir.
+  const test = body?.test === true;
+  const { data, error } = test ? await db.rpc("health_alert_recipients") : await db.rpc("health_alert_tick");
   if (error) return json({ error: error.message }, 500);
-  const tick = data as Tick;
+  const tick: Tick = test
+    ? {
+        action: "down",
+        since: null,
+        to: data as string[],
+        bad: [{ label: "Hisse verisi okuma (DENEME)", detail: "Bu bir deneme e-postasıdır; sistemde gerçek bir sorun yok. Gerçek bir sorun olduğunda e-posta böyle görünecek." }],
+      }
+    : (data as Tick);
   if (tick.action === "none") return json({ action: "none", bad: tick.bad.length });
   if (!tick.to.length) return json({ action: tick.action, error: "Yönetici e-postası bulunamadı." }, 500);
 
@@ -66,18 +77,18 @@ Deno.serve(async (request) => {
   const from = Deno.env.get("SMTP_FROM") ?? user, siteUrl = Deno.env.get("SITE_URL") ?? "";
   const port = Number(Deno.env.get("SMTP_PORT") ?? "465");
   if (!host || !user || !pass) {
-    await db.rpc("health_alert_failed", { p_action: tick.action });
+    if (!test) await db.rpc("health_alert_failed", { p_action: tick.action });
     return json({ error: "SMTP_HOST, SMTP_USER ve SMTP_PASS ayarlanmalı." }, 500);
   }
 
   const m = compose(tick, `${siteUrl.replace(/\/+$/, "")}/admin.html`);
   try {
     const transport = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
-    await transport.sendMail({ from, to: tick.to.join(", "), subject: m.subject, html: m.html, text: m.text });
+    await transport.sendMail({ from, to: tick.to.join(", "), subject: (test ? "[Deneme] " : "") + m.subject, html: m.html, text: m.text });
     transport.close();
-    return json({ action: tick.action, sent: tick.to.length });
+    return json({ action: tick.action, test, sent: tick.to.length });
   } catch (e) {
-    await db.rpc("health_alert_failed", { p_action: tick.action });
+    if (!test) await db.rpc("health_alert_failed", { p_action: tick.action });
     return json({ action: tick.action, error: e instanceof Error ? e.message : String(e) }, 502);
   }
 });
