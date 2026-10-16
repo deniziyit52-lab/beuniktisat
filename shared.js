@@ -238,7 +238,7 @@ const Borsa = {
         const pct = Number(info && info.day_change_pct);
         if (!info || info.live !== true || !Number.isFinite(pct)) { el.style.display = "none"; return; }
         const sign = pct > 0 ? "+" : "";
-        el.textContent = `BIST 100: ${sign}${pct.toFixed(2).replace(".", ",")}%`;
+        el.textContent = `ZBEÜ 100: ${sign}${pct.toFixed(2).replace(".", ",")}%`;
         el.classList.toggle("is-up", pct > 0);
         el.classList.toggle("is-down", pct < 0);
         el.style.display = "";
