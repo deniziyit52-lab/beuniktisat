@@ -14,7 +14,7 @@
             const { data, error } = await window.sb.rpc("admin_push_stats");
             if (error || !data) { tag.textContent = ""; return; }
             this.players = Number(data.players || 0);
-            tag.textContent = `${this.players} oyuncu · ${Number(data.devices || 0)} cihaz`;
+            tag.textContent = `${this.players} oyuncu · ${Number(data.devices || 0)} cihaz${data.acked != null ? ` (${Number(data.acked)} tanesi bildirim alıyor)` : ""}`;
         },
 
         async send(e) {

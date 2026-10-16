@@ -124,7 +124,7 @@
                 try {
                     await this.enable();
                     el.remove();
-                    this._feedback("Açıldı. Birkaç saniye içinde bir deneme bildirimi gelecek.");
+                    this.checkDelivery();
                 } catch (err) {
                     $("pushPromptMsg").textContent = err.message || "Açılamadı.";
                     $("pushPromptYes").disabled = false;
@@ -137,6 +137,25 @@
         },
 
         // Menüdeki düğme ve emir verince çıkan kısayol bunu çağırır.
+        // Bildirimler açılınca giden deneme bildirimi bu cihaza gerçekten ulaştı mı? Cihaz bildirimi gösterince
+        // sunucuya "aldım" der (sw.js, push_ack); 45 saniye içinde haber gelmezse oyuncuya söylenir.
+        async checkDelivery() {
+            const started = Date.now();
+            this._feedback("Açıldı. Deneme bildirimi gönderildi; bu cihaza ulaştı mı bakılıyor…");
+            const sub = await this.currentSub();
+            if (!sub) return;
+            for (let i = 0; i < 15; i++) {
+                await new Promise(r => setTimeout(r, 3000));
+                const { data } = await window.sb.rpc("push_ack_status", { p_endpoint: sub.endpoint });
+                if (data && new Date(data).getTime() >= started - 5000) {
+                    this._feedback("✓ Deneme bildirimi bu cihaza ulaştı. Bildirimler açık.");
+                    return true;
+                }
+            }
+            this._feedback("Deneme bildirimi bu cihaza ulaşmadı. Bu cihaz bildirim almıyor olabilir (örneğin Google hizmetleri olmayan Huawei cihazlar). Duyurular e-postayla da gelir.", true);
+            return false;
+        },
+
         async enable() {
             if (!supported()) throw new Error("Bu tarayıcı bildirimleri desteklemiyor.");
             const perm = await Notification.requestPermission();
@@ -179,7 +198,7 @@
                 if (on) {
                     await this.enable();
                     try { localStorage.removeItem("borsa-push-optout"); } catch (e) {}
-                    this._feedback("Açıldı. Birkaç saniye içinde bir deneme bildirimi gelecek.");
+                    this.checkDelivery();
                 } else {
                     await this.disable();
                     // Bilerek kapattı: uygulama bir daha kendiliğinden açmaz, sormaz.
