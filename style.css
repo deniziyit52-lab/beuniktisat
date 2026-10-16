@@ -7775,3 +7775,62 @@ input[type="radio"] {
 .push-prompt-no { padding: 0.4rem; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 0.85rem; cursor: pointer; }
 .push-prompt-card small { color: var(--red-bright); font-size: 0.8rem; }
 .push-prompt-card small:empty { display: none; }
+
+/* iPhone ana ekrana ekleme rehberi (install.js) */
+.install-guide { position: fixed; inset: 0; z-index: 1450; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 16px 16px calc(70px + env(safe-area-inset-bottom)); background: rgba(2, 6, 23, 0.7); }
+.install-guide-card { position: relative; width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 0.6rem; padding: 1.3rem 1.1rem 1.1rem; border: 1px solid var(--border); border-radius: 18px; background: var(--bg-card); color: var(--text-primary); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); }
+.install-guide-card .install-banner-close { position: absolute; top: 8px; right: 8px; }
+.install-guide-icon { width: 56px; height: 56px; border-radius: 13px; }
+.install-guide-title { font-size: 1.05rem; }
+.install-steps { list-style: none; counter-reset: step; margin: 0.2rem 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 0.6rem; }
+.install-steps li { counter-increment: step; display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.7rem; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-secondary); font-size: 0.88rem; line-height: 1.4; }
+.install-step-text { display: flex; flex-direction: column; gap: 0.2rem; }
+.install-steps li small { color: var(--text-muted); font-size: 0.76rem; }
+.install-step-ico { flex: 0 0 auto; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); color: var(--accent-bright); }
+.install-step-ico--text { font-weight: 700; font-size: 0.85rem; }
+.install-guide-ok { width: 100%; padding: 0.7rem; margin-top: 0.2rem; }
+.install-guide-arrow { position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 2.2rem; color: #60a5fa; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); animation: install-bounce 1s ease-in-out infinite; }
+@keyframes install-bounce { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, 10px); } }
+@media (prefers-reduced-motion: reduce) { .install-guide-arrow { animation: none; } }
+
+/* Uygulama görünümü (appmode.js): telefona kurulup ana ekrandan açılınca */
+.app-mode body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+.app-mode #sidebarToggle,
+.app-mode #portfolioBtn,
+.app-mode .logout-btn,
+.app-mode .theme-toggle,
+.app-mode .user-chip,
+.app-mode .faq-fab,
+.app-mode .news-fab,
+.app-mode .install-banner { display: none !important; }
+.app-mode .logo-sub { display: none; }
+.app-mode .header { padding-top: env(safe-area-inset-top); }
+.app-tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100;
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg-secondary) 92%, transparent);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+.app-tab {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0;
+    border: 0; background: none; color: var(--text-muted); font: inherit; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.app-tab-icon { font-size: 1.3rem; line-height: 1; filter: grayscale(0.6); opacity: 0.75; transition: transform 0.15s ease; }
+.app-tab-label { font-size: 0.68rem; font-weight: 600; }
+.app-tab--active { color: var(--accent-bright); }
+.app-tab--active .app-tab-icon { filter: none; opacity: 1; transform: translateY(-1px) scale(1.08); }
+.app-tab:active .app-tab-icon { transform: scale(0.9); }
+.app-mode .order-toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+.app-mode .push-prompt { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.app-mode .sidebar-drawer { padding-top: env(safe-area-inset-top); }
+.app-menu-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45rem; padding: 0.6rem 1rem 0.2rem; }
+.app-menu-actions button {
+    display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.55rem 0.2rem;
+    border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); color: var(--text-secondary);
+    font: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+}
+.app-menu-actions button span { font-size: 1.15rem; }
+.app-menu-actions b { font-weight: 600; }
