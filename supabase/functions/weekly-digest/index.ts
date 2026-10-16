@@ -92,7 +92,7 @@ function compose(r: Recipient, p: Payload, siteUrl: string, unsubUrl: string) {
   <div style="margin-top:10px;font-size:12px;color:#64748b">Piyasa hafta içi 10:00–18:00 arası açık.</div>
 </td></tr>
 <tr><td style="padding:14px 24px;background:#f8fafc;font-size:11px;line-height:1.5;color:#94a3b8">
-  Bu e-postayı, kayıt olurken e-posta ile bilgilendirmeye onay verdiğin için alıyorsun. Paralar sanaldır; bu e-posta yatırım tavsiyesi değildir.<br>
+  Bu e-postayı ZBEÜ İktisat Topluluğu Borsa Oyunu'na kayıtlı olduğun için alıyorsun. Paralar sanaldır; bu e-posta yatırım tavsiyesi değildir.<br>
   <a href="${esc(unsubUrl)}" style="color:#64748b">Haftalık özeti artık almak istemiyorum</a>
 </td></tr>
 </table></td></tr></table></body></html>`;

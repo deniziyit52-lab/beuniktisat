@@ -7701,3 +7701,6 @@ input[type="radio"] {
 .ins-player-name small, .ins-player-num small { font-size: 0.72rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ins-player-num { flex: 0 0 auto; text-align: right; align-items: flex-end; }
 .ins-player-detail { padding: 0.4rem 0.2rem 0.8rem; }
+
+/* Kayıt formu: e-posta bilgilendirmesi notu (eski isteğe bağlı kutunun yerinde) */
+#signupForm .signup-email-note { margin: 0.6rem 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--text-secondary); }
