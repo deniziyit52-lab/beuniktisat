@@ -113,7 +113,7 @@
                 <div class="push-prompt-card">
                     <img src="/icons/icon-192.png" alt="" class="push-prompt-icon">
                     <strong>Bildirimleri aç</strong>
-                    <p>Emrin gerçekleşince, elindeki hisse sert oynayınca ve temettü yatınca haber verelim.</p>
+                    <p>Piyasa açılınca ve kapanınca, emrin gerçekleşince, elindeki hisse sert oynayınca ve temettü yatınca haber verelim.</p>
                     <button type="button" class="push-prompt-yes" id="pushPromptYes">🔔 Aç</button>
                     <button type="button" class="push-prompt-no" id="pushPromptNo">Şimdi değil</button>
                     <small id="pushPromptMsg"></small>
