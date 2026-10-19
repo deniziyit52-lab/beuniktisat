@@ -173,7 +173,7 @@
         <div class="modal-card feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle">
             <button type="button" class="modal-close" id="feedbackCloseBtn" aria-label="Kapat">×</button>
             <h2 id="feedbackTitle" class="faq-title">💡 İstek, öneri ve görüş</h2>
-            <p class="feedback-sub">Siteyi birlikte geliştirelim. Bir özellik iste, bir hata bildir ya da ne düşündüğünü yaz. Mesajını yalnızca site yöneticileri okur.</p>
+            <p class="feedback-sub">Siteyi birlikte geliştirelim. Bir özellik iste, bir hata bildir ya da ne düşündüğünü yaz. Mesajını yalnızca site yöneticileri okur; cevabımızı bu pencerede görürsün.</p>
             <form id="feedbackForm" class="feedback-form">
                 <div class="feedback-kinds" role="radiogroup" aria-label="Mesaj türü">
                     <label><input type="radio" name="feedbackKind" value="oneri" checked><span>💡 İstek / öneri</span></label>
@@ -187,6 +187,7 @@
                 </div>
                 <div id="feedbackResult" class="nickname-feedback" aria-live="polite"></div>
             </form>
+            <div id="feedbackHistory" class="feedback-history" hidden></div>
         </div>
     </div>
     <div id="faqModal" class="modal-backdrop" style="display:none;" aria-hidden="true">
