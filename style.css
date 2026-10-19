@@ -7632,6 +7632,42 @@ input[type="radio"] {
 .feedback-row .btn { flex: none; height: auto; min-height: 40px; }
 .faq-footer .auth-link { font-size: inherit; }
 
+/* Öneri kutusu: oyuncunun mesajları ve yönetici cevapları; görülmemiş cevapta 💡 düğmesinde nokta */
+.feedback-history { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.7rem; }
+.feedback-history[hidden] { display: none; }
+.feedback-history-title { margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.feedback-item { padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); }
+.feedback-item-head { font-size: 0.75rem; color: var(--text-muted); }
+.feedback-item-msg { margin: 0.25rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.86rem; line-height: 1.5; color: var(--text-primary); }
+.feedback-wait { margin-top: 0.4rem; font-size: 0.75rem; color: var(--text-muted); }
+.feedback-reply { margin-top: 0.5rem; padding: 0.5rem 0.65rem; border-left: 3px solid rgba(99, 102, 241, 0.75); border-radius: 6px; background: rgba(99, 102, 241, 0.1); font-size: 0.75rem; color: var(--text-muted); }
+.feedback-reply b { color: var(--text-primary); }
+.feedback-reply p { margin: 0.25rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.86rem; line-height: 1.5; color: var(--text-primary); }
+.feedback-reply.is-new { border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+.feedback-new { display: inline-block; padding: 0 0.4rem; border-radius: 999px; background: #f59e0b; color: #111827; font-size: 0.68rem; font-weight: 700; }
+.has-feedback-reply #feedbackBtn::after,
+.has-feedback-reply [data-app-act="feedback"]::after,
+.has-feedback-reply [data-app-tab="menu"]::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--bg-primary, #0b1220);
+    border-radius: 50%;
+    background: #ef4444;
+}
+[data-app-act="feedback"], [data-app-tab="menu"] { position: relative; }
+
+/* Admin: öneri kutusu cevap formu */
+.feedback-admin-row .column-admin-text { flex: 1; min-width: 0; }
+.feedback-reply-form { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.feedback-reply-form[hidden] { display: none; }
+.feedback-reply-form textarea { width: 100%; box-sizing: border-box; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font: inherit; font-size: 0.86rem; line-height: 1.5; resize: vertical; }
+.feedback-reply-actions { display: flex; gap: 0.4rem; }
+.feedback-reply-actions .btn { height: auto; min-height: 36px; }
+
 /* Admin: öneri kutusu satırları */
 .feedback-admin-msg { margin: 0.25rem 0 0.3rem; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-primary); font-size: 0.88rem; line-height: 1.5; }
 .feedback-admin-row.is-read { opacity: 0.6; }
